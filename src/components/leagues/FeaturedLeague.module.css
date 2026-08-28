@@ -1,0 +1,18 @@
+.card { position: relative; overflow: hidden; border-radius: 26px; padding: 26px 22px; color: var(--text-primary); background: linear-gradient(140deg, #ffffff 0%, #fffbed 100%); border: 1px solid #e6d393; box-shadow: var(--shadow); }
+.content { position: relative; z-index: 2; }
+.badge { display: inline-flex; padding: 7px 11px; border: 1px solid #e6d393; border-radius: 999px; background: #fff3c4; font-size: .7rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.category { margin: 20px 0 5px; font-size: .78rem; font-weight: 800; color: var(--success); text-transform: uppercase; letter-spacing: .09em; }
+.card h1 { max-width: 560px; margin: 0; font-size: clamp(2.2rem, 6vw, 3.7rem); line-height: .96; letter-spacing: -.055em; }
+.lead { margin: 10px 0 20px; opacity: .88; font-weight: 600; }
+.prize { margin-bottom: 18px; }
+.prize small, .prize strong { display: block; }
+.prize small { margin-bottom: 4px; opacity: .8; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
+.prize strong { color: var(--gold); font-size: clamp(1.8rem, 5vw, 2.65rem); letter-spacing: -.04em; }
+.stats { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 20px; }
+.stats span { display: flex; align-items: center; gap: 7px; font-size: .78rem; }
+.stats b { font-weight: 900; }
+.content > button { border: 0; background: var(--success); color: white; box-shadow: 0 10px 24px rgba(120,39,0,.22); }
+.content > button:hover { background: #12853d; color: white; }
+.emblem { position: absolute; display: grid; place-items: center; width: 190px; height: 220px; right: -45px; bottom: -28px; border: 2px solid rgba(255,255,255,.18); border-radius: 48% 48% 50% 50%; color: rgba(255,255,255,.22); transform: rotate(10deg); }
+.glow { position: absolute; width: 280px; height: 280px; right: -80px; top: -80px; border-radius: 50%; background: rgba(255,255,255,.12); }
+@media (min-width: 768px) { .card { padding: 36px; } .emblem { width: 280px; height: 320px; right: 40px; bottom: -90px; } .emblem svg { width: 112px; height: 112px; } .content { max-width: 700px; } }

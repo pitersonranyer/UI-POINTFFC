@@ -1,0 +1,4 @@
+import Link from "next/link";
+import {ShieldCheck} from "lucide-react";
+import styles from "./AuthLayout.module.css";
+export function AuthLayout({eyebrow,title,subtitle,children,footer}:{eyebrow:string;title:string;subtitle:string;children:React.ReactNode;footer?:React.ReactNode}){return <div className={styles.page}><section className={styles.hero} aria-hidden="true"><div className={styles.pitch}><span>P</span></div><p>Monte sua história.<br/>Dispute cada ponto.</p></section><section className={styles.panel}><div className={styles.card}><Link href="/" className={styles.logo}><span>P</span><div><strong>POINT <b>FFC</b></strong><small>Fantasy Football Club</small></div></Link><div className={styles.heading}><p>{eyebrow}</p><h1>{title}</h1><h2>{subtitle}</h2></div>{children}{footer}<div className={styles.safe}><ShieldCheck size={17}/> Ambiente seguro e protegido</div></div></section></div>}

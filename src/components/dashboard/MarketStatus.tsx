@@ -1,0 +1,7 @@
+"use client";
+import {LockKeyhole,UnlockKeyhole} from "lucide-react";
+import {useEffect,useState} from "react";
+import type {MarketStatus as MarketData} from "@/types/dashboard";
+import styles from "./Dashboard.module.css";
+function parts(value:string){const d=Math.max(0,new Date(value).getTime()-Date.now());return [Math.floor(d/86400000),Math.floor(d/3600000)%24,Math.floor(d/60000)%60,Math.floor(d/1000)%60]}
+export function MarketStatus({status}:{status:MarketData}){const[time,setTime]=useState([0,0,0,0]);useEffect(()=>{const update=()=>setTime(parts(status.closesAt));update();const timer=window.setInterval(update,1000);return()=>window.clearInterval(timer)},[status.closesAt]);const labels=["dias","horas","min","seg"];return <section className={styles.market}><div className={styles.marketHead}><div className={styles.marketTitle}>{status.isOpen?<UnlockKeyhole/>:<LockKeyhole/>}<div><small>Mercado</small><strong>{status.isOpen?"Aberto":"Fechado"} <i/></strong></div></div>{!status.isOpen&&status.bolaRolando&&<b className={styles.live}>● Ao vivo</b>}</div>{status.isOpen?<><span className={styles.closes}>Fecha em</span><div className={styles.timer}>{time.map((value,index)=><div key={labels[index]}><strong>{String(value).padStart(2,"0")}</strong><small>{labels[index]}</small></div>)}</div><p>Fecha 1 minuto antes do primeiro jogo</p></>:<p>O mercado foi fechado para a rodada. Acompanhe os jogos ao vivo.</p>}</section>}
