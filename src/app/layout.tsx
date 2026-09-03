@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navigation } from "@/components/navigation/Navigation";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { WalletProvider } from "@/contexts/WalletContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,8 +14,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="pt-BR">
       <body>
         <AuthProvider>
-          <Navigation />
-          <main>{children}</main>
+          <WalletProvider>
+            <Navigation />
+            <main>{children}</main>
+          </WalletProvider>
         </AuthProvider>
       </body>
     </html>

@@ -6,7 +6,7 @@
 .brand strong { font-size: .98rem; line-height: 1.05; }
 .brand strong b { color: var(--gold); }
 .brand small { color: var(--muted); font-size: .7rem; margin-top: 3px; }
-.desktopNav { display: none; gap: 34px; align-items: center; font-size: .92rem; font-weight: 700; color: var(--muted); }
+.desktopNav { display: none; gap: 24px; align-items: center; font-size: .92rem; font-weight: 700; color: var(--muted); }
 .desktopNav a { position: relative; padding: 27px 0; }
 .desktopNav a:hover, .activeDesktop { color: var(--success) !important; }
 .activeDesktop::after { content: ""; position: absolute; height: 3px; border-radius: 3px; background: var(--success); left: 0; right: 0; bottom: 0; }
@@ -40,7 +40,7 @@
   .brand strong { font-size:.85rem; }
   .account { margin-left:auto; }
   .signup { padding:8px!important;font-size:.66rem; }
-  .mobileNav { height:62px;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom); }
+  .mobileNav { height:62px;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom); }
   .mobileNav a { gap:3px;font-size:.56rem; }
 }
 @media (min-width:768px) { .menu { display:none; } }
