@@ -4,9 +4,13 @@ import { Check, Clipboard, Download, Loader2, Plus, Search, Trash2, Upload, X } 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { CARTOLA_CURRENT_ROUND, CARTOLA_SEASON } from "@/config/cartola";
+import { partialScoreService } from "@/services/partialScoreService";
 import { teamService } from "@/services/teamService";
+import type { TeamPartialScore } from "@/types/partial-score";
 import type { CartolaTeam, FindByIdsResult, ImportResult } from "@/types/team";
 import { normalizeImportIds } from "./teamImport";
+import { PartialScore } from "./PartialScore";
 import styles from "./MyTeamsManager.module.css";
 
 type Modal = "add" | "import" | "export" | null;
@@ -30,6 +34,7 @@ function Dialog({ title, close, children, wide = false }: { title: string; close
 export function MyTeamsManager() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [teams, setTeams] = useState<CartolaTeam[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState("");
+  const [partials, setPartials] = useState<Map<number, TeamPartialScore>>(new Map()), [partialsLoading, setPartialsLoading] = useState(false), [partialsError, setPartialsError] = useState(false), [partialAttempt, setPartialAttempt] = useState(0);
   const [modal, setModal] = useState<Modal>(null), [removing, setRemoving] = useState<number | null>(null), [confirm, setConfirm] = useState<CartolaTeam | null>(null);
   const load = useCallback(async () => { setLoading(true); setError(""); try { setTeams(await teamService.buscarMeusTimes()); } catch (e) { setError(message(e, "Não foi possível carregar seus times.")); } finally { setLoading(false); } }, []);
   useEffect(() => {
@@ -37,6 +42,17 @@ export function MyTeamsManager() {
     if (!isAuthenticated) { setLoading(false); setTeams([]); return; }
     void load();
   }, [isAuthenticated, isAuthLoading, load]);
+  useEffect(() => {
+    if (!teams.length) { setPartials(new Map()); setPartialsLoading(false); setPartialsError(false); return; }
+    let active = true;
+    setPartialsLoading(true);
+    setPartialsError(false);
+    void partialScoreService.buscarParciais(CARTOLA_SEASON, CARTOLA_CURRENT_ROUND, teams.map((team) => team.timeId))
+      .then((items) => { if (active) setPartials(new Map(items.map((item) => [item.timeId, item]))); })
+      .catch(() => { if (active) { setPartials(new Map()); setPartialsError(true); } })
+      .finally(() => { if (active) setPartialsLoading(false); });
+    return () => { active = false; };
+  }, [teams, partialAttempt]);
   const remove = async () => { if (!confirm) return; setRemoving(confirm.timeId); try { await teamService.removerMeuTime(confirm.timeId); setTeams((list) => list.filter((team) => team.timeId !== confirm.timeId)); setConfirm(null); } catch (e) { setError(message(e, "Não foi possível remover o time.")); } finally { setRemoving(null); } };
   if (isAuthLoading) return <main className="page-shell"><div className={styles.loading}><Loader2 className={styles.spin} /> Verificando sua sessão...</div></main>;
 
@@ -54,7 +70,7 @@ export function MyTeamsManager() {
     <header className={styles.pageHeader}><div><p className="eyebrow">Times vinculados</p><h1 className="page-title">Meus Times</h1><p className="page-subtitle">Seus times cadastrados no Fantasy Point</p></div><div className={styles.actions}><button className={styles.primary} onClick={() => setModal("add")}><Plus /> <span>Adicionar time</span></button><button onClick={() => setModal("import")}><Download /> <span>Importar</span></button><button onClick={() => setModal("export")} disabled={!teams.length}><Upload /> <span>Exportar</span></button></div></header>
     <div className={styles.sectionTitle}><h2>Meus Times</h2><span>{teams.length} {teams.length === 1 ? "time" : "times"}</span></div>
     {error && <div className={styles.error} role="alert"><span>{error}</span><button type="button" onClick={() => void load()} disabled={loading}>{loading ? <Loader2 className={styles.spin} /> : null}Tentar novamente</button></div>}
-    {loading ? <div className={styles.loading}><Loader2 className={styles.spin} /> Carregando seus times...</div> : teams.length ? <div className={styles.grid}>{teams.map((team) => <article className={styles.card} key={team.timeId}><Shield team={team} /><div className={styles.identity}><h3>{team.nome}</h3><p>{team.nomeCartoleiro}</p><CopyId id={team.timeId} /></div><button className={styles.remove} onClick={() => setConfirm(team)} disabled={removing === team.timeId}><Trash2 size={17} /><span>Remover</span></button></article>)}</div> : <section className={styles.empty}><span><Plus /></span><h2>Você ainda não adicionou times.</h2><p>Adicione seus times do Cartola para participar das funcionalidades do Fantasy Point.</p><button className={styles.primary} onClick={() => setModal("add")}><Plus /> Adicionar meu primeiro time</button></section>}
+    {loading ? <div className={styles.loading}><Loader2 className={styles.spin} /> Carregando seus times...</div> : teams.length ? <><div className={styles.grid}>{teams.map((team) => <article className={styles.card} key={team.timeId}><Shield team={team} /><div className={styles.identity}><h3>{team.nome}</h3><p>{team.nomeCartoleiro}</p><CopyId id={team.timeId} /></div><PartialScore partial={partials.get(team.timeId)} loading={partialsLoading} unavailable={partialsError} /><button className={styles.remove} onClick={() => setConfirm(team)} disabled={removing === team.timeId}><Trash2 size={17} /><span>Remover</span></button></article>)}</div>{partialsError && <button className={styles.partialRetry} type="button" onClick={() => setPartialAttempt((value) => value + 1)}>Tentar carregar parciais novamente</button>}</> : <section className={styles.empty}><span><Plus /></span><h2>Você ainda não adicionou times.</h2><p>Adicione seus times do Cartola para participar das funcionalidades do Fantasy Point.</p><button className={styles.primary} onClick={() => setModal("add")}><Plus /> Adicionar meu primeiro time</button></section>}
     {modal === "add" && <AddDialog teams={teams} close={() => setModal(null)} onAdded={(team) => setTeams((list) => list.some((item) => item.timeId === team.timeId) ? list : [...list, team])} />}
     {modal === "import" && <ImportDialog close={() => setModal(null)} onImported={load} />}
     {modal === "export" && <ExportDialog teams={teams} close={() => setModal(null)} />}

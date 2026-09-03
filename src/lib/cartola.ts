@@ -8,6 +8,35 @@ export function formatarPartida(partida: CartolaMatch) {
   const data = date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
   const hora = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); return { data, hora, completa: `${data} • ${hora}` };
 }
+function normalizarStatus(valor?: string) {
+  return valor?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "_").toUpperCase() ?? "";
+}
+function inicioCronometroEm(valor?: string): number | null {
+  if (!valor) return null;
+  const numerico = Number(valor);
+  if (Number.isFinite(numerico)) return numerico < 10_000_000_000 ? numerico * 1000 : numerico;
+  const data = new Date(valor).getTime();
+  return Number.isNaN(data) ? null : data;
+}
+export function statusPartida(partida: CartolaMatch, agora = Date.now()): { label: string; live: boolean } | null {
+  const status = normalizarStatus(partida.status_cronometro_tr);
+  const periodo = normalizarStatus(partida.periodo_tr);
+  if (/ENCERR|FINAL|FIM/.test(status) || /ENCERR|FINAL|FIM/.test(periodo)) return { label: "Encerrado", live: false };
+  if (/INTERVAL|HALF_TIME/.test(status) || /INTERVAL|HALF_TIME/.test(periodo)) return { label: "Intervalo", live: true };
+
+  const emAndamento = /ANDAMENTO|ROLANDO|RUNNING|PROGRESS/.test(status);
+  const primeiroTempo = /PRIMEIRO|1T|FIRST|^1$/.test(periodo);
+  const segundoTempo = /SEGUNDO|2T|SECOND|^2$/.test(periodo);
+  if (!emAndamento && !primeiroTempo && !segundoTempo) return null;
+
+  const inicio = inicioCronometroEm(partida.inicio_cronometro_tr);
+  if (inicio !== null) {
+    const decorridos = Math.max(0, Math.floor((agora - inicio) / 60_000));
+    const minuto = Math.min(120, decorridos + (segundoTempo ? 45 : 0));
+    return { label: `${minuto}'`, live: true };
+  }
+  return { label: segundoTempo ? "2º tempo" : primeiroTempo ? "1º tempo" : "Ao vivo", live: true };
+}
 export const ordenarPartidas = (partidas: CartolaMatch[]) => [...partidas].sort((a, b) => (dataPartida(a)?.getTime() ?? Infinity) - (dataPartida(b)?.getTime() ?? Infinity));
 export const obterClube = (clubes: Record<string, CartolaClub>, id: number) => clubes[String(id)] ?? {};
 export const escudoClube = (clube: CartolaClub) => clube.escudos?.["60x60"] ?? clube.escudos?.["45x45"] ?? clube.escudos?.["30x30"];

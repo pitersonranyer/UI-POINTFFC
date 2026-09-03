@@ -19,7 +19,7 @@ export interface CartolaDashboardResponse {
   mercado: CartolaMarketStatus; rodada: number; mercadoAberto: boolean; bolaRolando: boolean;
   partidas: CartolaMatch[]; clubes: Record<string, CartolaClub>;
 }
-export interface CartolaScoredAthlete { apelido:string; foto?:string; pontuacao:number; posicao_id:number; clube_id?:number; entrou_em_campo?:boolean; isMagoPick?:boolean; [key:string]:unknown }
+export interface CartolaScoredAthlete { apelido:string; foto?:string; pontuacao:number; posicao_id:number; clube_id?:number; entrou_em_campo?:boolean; scout?:Record<string,number>; isMagoPick?:boolean; [key:string]:unknown }
 export interface CartolaScoredAthletesResponse { atletas:Record<string,CartolaScoredAthlete>; clubes?:Record<string,CartolaClub>; posicoes?:Record<string,{id:number;nome:string;abreviacao:string}>; rodada?:number; total_atletas?:number; [key:string]:unknown }
 export type CartolaAthletesResponse = Record<string, unknown>;
 export type CartolaClubsResponse = Record<string, CartolaClub>;

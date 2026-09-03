@@ -1,6 +1,6 @@
-import { RoundCenter } from "@/components/round-center/RoundCenter";
-import { round24Analysis } from "@/data/round-24-analysis";
+import { AnaliseSg } from "@/components/mago/AnaliseSg";
+import { sgRodada25 } from "@/data/mago/sgRodada25";
 
 export default function RoundCenterPage() {
-  return <RoundCenter data={round24Analysis} />;
+  return <AnaliseSg data={sgRodada25} />;
 }
