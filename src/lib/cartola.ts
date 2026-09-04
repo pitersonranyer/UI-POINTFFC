@@ -40,6 +40,7 @@ export function statusPartida(partida: CartolaMatch, agora = Date.now()): { labe
 export const ordenarPartidas = (partidas: CartolaMatch[]) => [...partidas].sort((a, b) => (dataPartida(a)?.getTime() ?? Infinity) - (dataPartida(b)?.getTime() ?? Infinity));
 export const obterClube = (clubes: Record<string, CartolaClub>, id: number) => clubes[String(id)] ?? {};
 export const escudoClube = (clube: CartolaClub) => clube.escudos?.["60x60"] ?? clube.escudos?.["45x45"] ?? clube.escudos?.["30x30"];
+export const rodadaDeEscalacao = (rodadaAtual: number, mercadoAberto: boolean) => mercadoAberto ? Math.max(1, rodadaAtual - 1) : rodadaAtual;
 export const nomeClube = (clube: CartolaClub, id: number) => clube.abreviacao ?? clube.nome_fantasia ?? clube.nome ?? `Clube ${id}`;
 export function fechamentoEm(status: CartolaMarketStatus): number | null {
   const f = status.fechamento; if (!f) return null; if (typeof f.timestamp === "number") return f.timestamp * 1000;

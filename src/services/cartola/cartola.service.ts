@@ -1,4 +1,4 @@
-import type { CartolaClubsResponse, CartolaDashboardResponse, CartolaMarket, CartolaMatchesResponse, CartolaScoredAthletesResponse } from "@/types/cartola";
+import type { CartolaClubsResponse, CartolaDashboardResponse, CartolaMarket, CartolaMatchesResponse, CartolaScoredAthletesResponse, CartolaTeamLineupResponse } from "@/types/cartola";
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(/\/$/, "");
 export type CartolaResult<T> = { data: T; stale: boolean };
 async function request<T>(path: string): Promise<CartolaResult<T>> {
@@ -13,6 +13,10 @@ export const buscarDashboard = async () => (await buscarDashboardComMetadados())
 export const buscarStatusMercado = async () => (await request<CartolaDashboardResponse["mercado"]>("/cartola/mercado/status")).data;
 export const buscarClubes = async () => (await request<CartolaClubsResponse>("/cartola/clubes")).data;
 export const buscarPartidas = async () => (await request<CartolaMatchesResponse>("/cartola/partidas")).data;
+export const buscarEscalacaoTime = async (timeId: number) => {
+  if (!Number.isInteger(timeId) || timeId < 1) throw new RangeError("O ID do time deve ser um inteiro positivo.");
+  return (await request<CartolaTeamLineupResponse>(`/cartola/times/${timeId}`)).data;
+};
 export async function buscarPartidasRodada(rodada: number) {
   if (!Number.isInteger(rodada) || rodada < 1 || rodada > 38) throw new RangeError("A rodada deve estar entre 1 e 38.");
   return (await request<CartolaMatchesResponse>(`/cartola/partidas/${rodada}`)).data;

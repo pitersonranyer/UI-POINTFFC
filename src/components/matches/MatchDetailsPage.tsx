@@ -19,7 +19,7 @@ export function MatchDetailsPage({ matchId }: { matchId: number }) {
   const { dashboard, loading, error, atualizar, athletes, athletesLoading } = useCartolaDashboard();
   if (loading && !dashboard) return <main className={styles.shell}><div className={styles.loading}>Carregando jogo...</div></main>;
   const match = dashboard?.partidas.find(item => item.partida_id === matchId);
-  if (!dashboard || !match) return <main className={styles.shell}><Link className={styles.back} href="/"><ArrowLeft /> Voltar aos jogos</Link><div className={styles.empty}><h1>Jogo não encontrado</h1><p>{error ?? "A partida pode não pertencer à rodada atual."}</p></div></main>;
+  if (!dashboard || !match) return <main className={styles.shell}><Link className={styles.back} href="/jogos-da-rodada"><ArrowLeft /> Voltar aos jogos</Link><div className={styles.empty}><h1>Jogo não encontrado</h1><p>{error ?? "A partida pode não pertencer à rodada atual."}</p></div></main>;
 
   const home = obterClube(dashboard.clubes, match.clube_casa_id);
   const away = obterClube(dashboard.clubes, match.clube_visitante_id);
@@ -32,7 +32,7 @@ export function MatchDetailsPage({ matchId }: { matchId: number }) {
   const scored = match.placar_oficial_mandante != null && match.placar_oficial_visitante != null;
 
   return <main className={styles.shell}>
-    <div className={styles.toolbar}><Link className={styles.back} href="/"><ArrowLeft /> Jogos</Link><button type="button" onClick={atualizar}><RefreshCw /> Atualizar</button></div>
+    <div className={styles.toolbar}><Link className={styles.back} href="/jogos-da-rodada"><ArrowLeft /> Jogos</Link><button type="button" onClick={atualizar}><RefreshCw /> Atualizar</button></div>
     <section className={styles.scoreboard}>
       <Team club={home} id={match.clube_casa_id} total={total(homeAthletes)} />
       <div className={styles.score}><small>{status?.live ? "Ao vivo" : "Jogo"}</small><strong>{scored ? `${match.placar_oficial_mandante} × ${match.placar_oficial_visitante}` : "– × –"}</strong>{status && <b className={status.live ? styles.live : styles.finished}>{status.label}</b>}<span><MapPin /> {match.local || "Local a definir"}</span></div>
