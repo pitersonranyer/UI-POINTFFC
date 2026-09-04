@@ -40,7 +40,7 @@
   .brand strong { font-size:.85rem; }
   .account { margin-left:auto; }
   .signup { padding:8px!important;font-size:.66rem; }
-  .mobileNav { height:62px;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom); }
+  .mobileNav { height:62px;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom); }
   .mobileNav a { gap:3px;font-size:.56rem; }
 }
 @media (min-width:768px) { .menu { display:none; } }

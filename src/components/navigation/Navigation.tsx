@@ -1,16 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  BarChart3,
-  Home,
-  LogOut,
-  Menu,
-  Shirt,
-  Sparkles,
-  Trophy,
-  WalletCards,
-} from "lucide-react";
+import { Home, LogOut, Menu, Shirt, Trophy, UserRound } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,10 +12,8 @@ const links = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/provaveis", label: "Prováveis", icon: Shirt },
   { href: "/ligas", label: "Ligas", icon: Trophy },
-  { href: "/central-da-rodada", label: "Análise", icon: BarChart3 },
-  { href: "/meus-times", label: "Meus Times", icon: Sparkles },
+  { href: "/perfil", label: "Perfil", icon: UserRound },
 ];
-links.push({ href: "/carteira", label: "Carteira", icon: WalletCards });
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
@@ -87,7 +76,7 @@ export function Navigation() {
             {!isLoading &&
               (user ? (
                 <>
-                  <Link href="/carteira" className={styles.profile}>
+                  <Link href="/perfil" className={styles.profile}>
                     {user.fotoUrl ? (
                       <Image
                         src={user.fotoUrl}
