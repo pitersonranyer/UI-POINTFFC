@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, Bot, ImageOff, MapPin, Shield, Trophy, Users } from "lucide-react";
+import { ArrowRight, Bot, ImageOff, MapPin, RefreshCw, Shield, Trophy, Users } from "lucide-react";
 import { featuredOdds, oddsByMatchId, wizardAttacks, wizardCleanSheets, wizardGoals, wizardTips } from "@/data/dashboard";
 import { leagueService } from "@/services/leagueService";
 import { formatCurrency } from "@/lib/format";
@@ -13,7 +13,7 @@ import { GeneralRanking } from "./GeneralRanking";
 import styles from "./Dashboard.module.css";
 export function CartolaDashboard(){
  const {dashboard,loading,error,stale,atualizar,athletes,athletesLoading,athletesError,statisticsMatches}=useCartolaDashboard(); const featured=leagueService.getFeatured();const leagues=leagueService.getOpen().filter(item=>!item.featured).slice(0,3);
- if(!dashboard&&loading)return <div className={styles.shell}><div className={styles.pageTitle}><h1>Dashboard</h1></div><div className={styles.dashboardSkeleton} aria-label="Carregando dados da rodada"/></div>;
+ if(!dashboard&&loading)return <div className={styles.shell}><div className={styles.pageTitle}><h1>Dashboard</h1></div><div className={styles.dashboardLoading} role="status" aria-live="polite"><RefreshCw/><strong>Aguarde, carregando os dados da rodada...</strong><span>Nosso servidor pode levar alguns segundos para iniciar.</span></div></div>;
  if(!dashboard)return <div className={styles.shell}><div className={styles.pageTitle}><h1>Dashboard</h1></div><section className={styles.loadError}><p>Não foi possível atualizar os dados da rodada.</p><button type="button" onClick={atualizar}>Tentar novamente</button></section></div>;
  const round=dashboard.rodada;const matches=ordenarPartidas(dashboard.partidas).slice(0,5);const statsRound=dashboard.mercadoAberto?Math.max(1,round-1):round;const statsMatches=statisticsMatches??[];const scoredMatches=statsMatches.filter(match=>match.placar_oficial_mandante!=null&&match.placar_oficial_visitante!=null);const confirmedGoals=scoredMatches.reduce((total,match)=>total+match.placar_oficial_mandante!+match.placar_oficial_visitante!,0);const realRoundStatistics=[{label:"Jogos",value:String(statsMatches.length)},{label:"Com placar",value:String(scoredMatches.length)},{label:"Gols confirmados",value:String(confirmedGoals)},{label:"Média de gols",value:scoredMatches.length?(confirmedGoals/scoredMatches.length).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:2}):"—"}];
  return <div className={styles.shell}><div className={styles.pageTitle}><h1>Dashboard</h1><span>Rodada {round}</span></div>
