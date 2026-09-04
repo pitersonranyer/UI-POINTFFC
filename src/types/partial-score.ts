@@ -15,3 +15,15 @@ export type PartialScoresResponse = {
   rodada: number;
   parciais: TeamPartialScore[];
 };
+
+export interface PreviousRoundUpdate {
+  temporada: number;
+  rodada: number;
+  timesCadastrados: number;
+  atualizados: number;
+  jaProcessados: number;
+  semSnapshot: number;
+  timeIdsSemSnapshot: number[];
+  falhas: number;
+  detalhesFalhas: Array<{ timeId: number; motivo: string }>;
+}

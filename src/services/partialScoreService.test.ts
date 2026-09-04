@@ -40,4 +40,15 @@ describe("partialScoreService", () => {
     await expect(partialScoreService.buscarParciais(2026, 25, [1])).resolves.toEqual([]);
     expect(mockedFetch).toHaveBeenCalledTimes(2);
   });
+  it("deduplica atualizacoes simultaneas da rodada anterior", async () => {
+    let resolveRequest!: (value: unknown) => void;
+    mockedFetch.mockReturnValue(new Promise((resolve) => { resolveRequest = resolve; }) as never);
+    const first = partialScoreService.atualizarRodadaAnterior(2026);
+    const second = partialScoreService.atualizarRodadaAnterior(2026);
+    expect(first).toBe(second);
+    expect(mockedFetch).toHaveBeenCalledTimes(1);
+    expect(mockedFetch).toHaveBeenCalledWith("/parciais/atualizar-rodada-anterior?temporada=2026", { method: "POST", authenticated: true });
+    resolveRequest({ temporada: 2026, rodada: 25, timesCadastrados: 1, atualizados: 1, jaProcessados: 0, semSnapshot: 0, timeIdsSemSnapshot: [], falhas: 0, detalhesFalhas: [] });
+    await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+  });
 });

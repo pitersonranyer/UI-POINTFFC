@@ -1,8 +1,9 @@
 import { apiFetch } from "@/services/apiClient";
-import type { PartialScoresResponse, TeamPartialScore } from "@/types/partial-score";
+import type { PartialScoresResponse, PreviousRoundUpdate, TeamPartialScore } from "@/types/partial-score";
 
 export const PARTIAL_SCORE_CHUNK_SIZE = 100;
 const cache = new Map<string, Promise<TeamPartialScore[]>>();
+const previousRoundUpdates = new Map<number, Promise<PreviousRoundUpdate>>();
 
 export function chunkTeamIds(ids: number[], size = PARTIAL_SCORE_CHUNK_SIZE): number[][] {
   const unique = [...new Set(ids.filter(Number.isFinite))];
@@ -18,6 +19,14 @@ async function fetchChunk(season: number, round: number, ids: number[]) {
 }
 
 export const partialScoreService = {
+  atualizarRodadaAnterior(temporada: number): Promise<PreviousRoundUpdate> {
+    const current = previousRoundUpdates.get(temporada);
+    if (current) return current;
+    const params = new URLSearchParams({ temporada: String(temporada) });
+    const request = apiFetch<PreviousRoundUpdate>(`/parciais/atualizar-rodada-anterior?${params}`, { method: "POST", authenticated: true }).finally(() => previousRoundUpdates.delete(temporada));
+    previousRoundUpdates.set(temporada, request);
+    return request;
+  },
   async buscarParciais(temporada: number, rodada: number, timeIds: number[]): Promise<TeamPartialScore[]> {
     if (!timeIds.length) return [];
     const key = cacheKey(temporada, rodada, timeIds);
@@ -28,5 +37,5 @@ export const partialScoreService = {
     try { return await request; }
     catch (error) { cache.delete(key); throw error; }
   },
-  clearCache() { cache.clear(); },
+  clearCache() { cache.clear(); previousRoundUpdates.clear(); },
 };
