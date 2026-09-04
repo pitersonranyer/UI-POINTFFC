@@ -1,5 +1,6 @@
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { MyTeamsManager } from "@/components/teams/MyTeamsManager";
 
 export default function MyTeamsPage() {
-  return <MyTeamsManager />;
+  return <AuthGuard><MyTeamsManager /></AuthGuard>;
 }

@@ -8,11 +8,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { formatCurrency } from "@/lib/format";
 import styles from "./Navigation.module.css";
-const links = [
+const publicLinks = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/provaveis", label: "Prováveis", icon: Shirt },
   { href: "/ligas", label: "Ligas", icon: Trophy },
-  { href: "/perfil", label: "Perfil", icon: UserRound },
 ];
 export function Navigation() {
   const pathname = usePathname();
@@ -20,6 +19,7 @@ export function Navigation() {
   const { user, isLoading, logout } = useAuth();
   const { wallet } = useWallet();
   const [signingOut, setSigningOut] = useState(false);
+  const links = user ? [...publicLinks, { href: "/perfil", label: "Perfil", icon: UserRound }] : publicLinks;
   if (
     [
       "/login",
@@ -131,6 +131,7 @@ export function Navigation() {
             <span>{label}</span>
           </Link>
         ))}
+        {!isLoading && !user && <Link href="/login" className={active("/login") ? styles.activeMobile : ""}><UserRound size={19} /><span>Entrar</span></Link>}
       </nav>
     </>
   );

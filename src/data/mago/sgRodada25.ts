@@ -1,6 +1,4 @@
-import type { AnaliseSgRodada } from "@/types/mago";
-
-export const sgRodada25: AnaliseSgRodada = {
+export const sgRodada25 = {
   rodada: 25,
   introducao: "Depois de uma análise aprofundada do Mago, considerando probabilidades de SG, xG dos adversários, momento defensivo, mando de campo e diferentes cenários da rodada, estes são os principais candidatos a saldo de gols.",
   analises: [

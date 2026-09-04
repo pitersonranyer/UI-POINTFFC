@@ -1,6 +1,6 @@
 import { AnaliseSg } from "@/components/mago/AnaliseSg";
-import { sgRodada25 } from "@/data/mago/sgRodada25";
+import { sgRodada26 } from "@/data/mago/sgRodada26";
 
 export default function RoundCenterPage() {
-  return <AnaliseSg data={sgRodada25} />;
+  return <AnaliseSg data={sgRodada26} />;
 }

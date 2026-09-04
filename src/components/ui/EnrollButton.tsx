@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Download, Loader2, LogIn, Search, X } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
@@ -14,6 +15,7 @@ import styles from "./EnrollButton.module.css";
 type Props = { leagueId: string; leagueName: string; entryFee: number; maxTeamsPerUser?: number | null; compact?: boolean };
 
 export function EnrollButton({ leagueId, leagueName, entryFee, maxTeamsPerUser = null, compact = false }: Props) {
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -52,7 +54,7 @@ export function EnrollButton({ leagueId, leagueName, entryFee, maxTeamsPerUser =
       <button
         type="button"
         className={compact ? styles.compact : styles.button}
-        onClick={() => setOpen(true)}
+        onClick={() => isAuthenticated ? setOpen(true) : router.push("/login")}
         aria-label={compact ? `Entrar na liga ${leagueName}` : undefined}
         title={compact ? "Entrar na liga" : undefined}
       >

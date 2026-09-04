@@ -1,10 +1,10 @@
-import { BarChart3, Goal, ShieldCheck, Sparkles, Target, Trophy } from "lucide-react";
-import type { AnaliseSgItem, AnaliseSgRodada, ClassificacaoSg, ConfiancaSg } from "@/types/mago";
+import { BarChart3, Flame, Goal, ShieldCheck, Sparkles, Target, Trophy, WandSparkles } from "lucide-react";
+import type { AnaliseSgItem, AnaliseSgRodada, ClassificacaoSg, ConfiancaSg, DestaqueOfensivo, MelhorAtaque, ResumoMago } from "@/types/mago";
 import styles from "./AnaliseSg.module.css";
 
 const percent = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const classificationClass: Record<ClassificacaoSg, string> = { "MUITO FORTE": styles.veryStrong, FORTE: styles.strong, "BOA OPÇÃO": styles.good, DIFERENCIAL: styles.differential, COBERTURA: styles.coverage };
-const confidenceIcon: Record<ConfiancaSg, string> = { "MUITO ALTA": "🔥", ALTA: "🔥", BOA: "🟢", "MÉDIA": "🟡", BAIXA: "⚪" };
+const classificationClass: Record<ClassificacaoSg, string> = { "MUITO FORTE": styles.veryStrong, FORTE: styles.strong, "FORTE / DIFERENCIAL": styles.differential, "BOA OPÇÃO": styles.good, DIFERENCIAL: styles.differential, OUSADO: styles.coverage, COBERTURA: styles.coverage };
+const confidenceIcon: Record<ConfiancaSg, string> = { "MUITO ALTA": "🔥", ALTA: "🔥", "ALTA, COM RISCO": "🟢", BOA: "🟢", "MÉDIA": "🟡", BAIXA: "⚪" };
 
 export function AnaliseSg({ data }: { data: AnaliseSgRodada }) {
   return <main className="page-shell">
@@ -21,11 +21,14 @@ export function AnaliseSg({ data }: { data: AnaliseSgRodada }) {
     </section>
 
     <div className={styles.summaryGrid}>
-      <RankingSg times={data.rankingFinal} />
+      <RankingSg times={data.rankingFinal} rodada={data.rodada} />
       <BlocoTimes titulo="Segundo bloco" times={data.segundoBloco} />
     </div>
 
+    <MelhoresAtaques ataques={data.melhoresAtaques} />
+    <DestaqueOfensivoMago destaque={data.destaqueOfensivo} />
     <PlacaresImaginarios rodada={data.rodada} placares={data.placaresRodada} />
+    <ResumoDoMago resumo={data.resumoMago} />
     <footer className={styles.note}><Sparkles /><p><strong>Análise do Mago</strong><span>Conteúdo editorial alimentado manualmente para esta rodada. Probabilidades e placares são projeções, não garantias de resultado.</span></p></footer>
   </main>;
 }
@@ -33,16 +36,16 @@ export function AnaliseSg({ data }: { data: AnaliseSgRodada }) {
 export function AnaliseSgCard({ item }: { item: AnaliseSgItem }) {
   return <article className={styles.card}>
     <header><span className={styles.position}>{item.posicao}</span><div><h3>{item.clube}</h3><span className={`${styles.badge} ${classificationClass[item.classificacao]}`}>{item.classificacao}</span></div></header>
-    <dl><div><dt><ShieldCheck />Probabilidade de SG</dt><dd>{percent.format(item.probabilidadeSg)}%</dd></div><div><dt><Target />Adversário</dt><dd>{item.adversario}</dd></div><div><dt><BarChart3 />xG adversário</dt><dd>{percent.format(item.xgAdversario)}</dd></div></dl>
-    <p className={styles.analysis}>{item.texto}</p>
+    <dl><div><dt><ShieldCheck />Probabilidade de SG</dt><dd>{percent.format(item.probabilidadeSg)}%</dd></div><div><dt><Target />Adversário</dt><dd>{item.adversario}</dd></div><div><dt><BarChart3 />xG do {item.adversario}</dt><dd>{percent.format(item.xgAdversario)}</dd></div><div><dt><Sparkles />Especialistas</dt><dd>{item.especialistas}</dd></div></dl>
+    <div className={styles.analysis}>{item.texto.map((paragrafo) => <p key={paragrafo}>{paragrafo}</p>)}</div>
     <div className={styles.prediction}><Goal /><span><small>Placar imaginário</small><strong>{item.placarImaginario}</strong></span></div>
-    <div className={styles.confidence}><span aria-hidden>{confidenceIcon[item.confianca]}</span> Confiança: <strong>{item.confianca}</strong></div>
+    <div className={styles.confidence}><span aria-hidden>{confidenceIcon[item.confianca]}</span> Confiança do Mago: <strong>{item.confianca}</strong></div>
   </article>;
 }
 
-export function RankingSg({ times }: { times: string[] }) {
+export function RankingSg({ times, rodada }: { times: string[]; rodada: number }) {
   const medals = ["🥇", "🥈", "🥉"];
-  return <section className={`${styles.panel} ${styles.ranking}`}><SectionTitle icon={<Trophy />} title="Ranking final de SG" /><ol>{times.map((team, index) => <li key={team}><span>{medals[index] ?? index + 1}</span><strong>{team}</strong>{index < 3 && <small>Top {index + 1}</small>}</li>)}</ol></section>;
+  return <section className={`${styles.panel} ${styles.ranking}`}><SectionTitle icon={<Trophy />} title={`Ranking final do Mago — SG R${rodada}`} /><ol>{times.map((team, index) => <li key={team}><span>{medals[index] ?? index + 1}</span><strong>{team}</strong>{index < 3 && <small>Top {index + 1}</small>}</li>)}</ol></section>;
 }
 
 export function BlocoTimes({ titulo, times, principal = false }: { titulo: string; times: string[]; principal?: boolean }) {
@@ -50,7 +53,26 @@ export function BlocoTimes({ titulo, times, principal = false }: { titulo: strin
 }
 
 export function PlacaresImaginarios({ rodada, placares }: { rodada: number; placares: string[] }) {
-  return <section className={styles.section}><SectionTitle icon={<Goal />} title={`Placares imaginários da rodada ${rodada}`} subtitle="Projeções editoriais para os confrontos" /><div className={styles.scores}>{placares.map((score, index) => <div key={score}><span>{String(index + 1).padStart(2, "0")}</span><strong>{score}</strong></div>)}</div></section>;
+  return <section className={styles.section}><SectionTitle icon={<Goal />} title="Placares imaginários do Mago" subtitle={`Projeções editoriais para a rodada ${rodada}`} /><div className={styles.scores}>{placares.map((score, index) => <div key={score}><span>{String(index + 1).padStart(2, "0")}</span><strong>{score}</strong></div>)}</div></section>;
+}
+
+export function MelhoresAtaques({ ataques }: { ataques: MelhorAtaque[] }) {
+  const medals = ["🥇", "🥈", "🥉"];
+  return <section className={styles.section}><SectionTitle icon={<Flame />} title="Melhores ataques da rodada" /><ol className={styles.attackRanking}>{ataques.map((ataque, index) => <li key={ataque.clube}><span>{medals[index] ?? ataque.posicao}</span><strong>{ataque.clube}</strong><b>{percent.format(ataque.xg)} <small>xG</small></b></li>)}</ol></section>;
+}
+
+export function DestaqueOfensivoMago({ destaque }: { destaque: DestaqueOfensivo }) {
+  return <section className={styles.offensiveHighlight}><header><span><Flame /></span><div><small>Destaque ofensivo do Mago</small><h2>{destaque.clube}</h2></div></header><div>{destaque.texto.map((paragrafo) => <p key={paragrafo}>{paragrafo}</p>)}</div></section>;
+}
+
+export function ResumoDoMago({ resumo }: { resumo: ResumoMago }) {
+  const itens = [
+    ["SG mais forte", resumo.sgMaisForte], ["Segundo SG mais forte", resumo.segundoSg],
+    ["Terceiro SG", resumo.terceiroSg], ["Melhor diferencial defensivo", resumo.diferencialDefensivo],
+    ["Defesa forte com maior risco", resumo.defesaForteMaiorRisco], ["Melhores ataques", resumo.melhoresAtaques.join(", ")],
+    ["Destaque ofensivo", resumo.destaqueOfensivo],
+  ];
+  return <section className={styles.section}><SectionTitle icon={<WandSparkles />} title="Resumo do Mago" /><dl className={styles.wizardSummary}>{itens.map(([rotulo, valor]) => <div key={rotulo}><dt>{rotulo}</dt><dd>{valor}</dd></div>)}</dl></section>;
 }
 
 function SectionTitle({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) {

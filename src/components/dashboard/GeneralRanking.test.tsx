@@ -7,6 +7,8 @@ import { GeneralRanking, GeneralRankingView } from "./GeneralRanking";
 
 vi.mock("@/services/generalRankingService", () => ({ generalRankingService: { buscar: vi.fn() } }));
 vi.mock("@/services/partialScoreService", () => ({ partialScoreService: { atualizarRodadaAnterior: vi.fn() } }));
+let authenticated = true;
+vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: authenticated, isLoading: false }) }));
 const buscar = vi.mocked(generalRankingService.buscar);
 const atualizar = vi.mocked(partialScoreService.atualizarRodadaAnterior);
 const entries = [
@@ -23,12 +25,21 @@ const updateResponse = (overrides = {}) => ({
 
 afterEach(cleanup);
 beforeEach(() => {
+  authenticated = true;
   buscar.mockReset();
   atualizar.mockReset();
   atualizar.mockResolvedValue(updateResponse());
 });
 
 describe("GeneralRanking", () => {
+  it("carrega o GET público sem disparar atualização autenticada para visitante", async () => {
+    authenticated = false;
+    buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 3, ranking: entries });
+    render(<GeneralRanking season={2026} round={25} />);
+    await screen.findByText("3 times no ranking");
+    expect(atualizar).not.toHaveBeenCalled();
+    expect(buscar).toHaveBeenCalledWith(2026, 25, 100);
+  });
   it.each([
     ["atualizados", { atualizados: 30, jaProcessados: 0 }],
     ["ja processados", { atualizados: 0, jaProcessados: 30 }],

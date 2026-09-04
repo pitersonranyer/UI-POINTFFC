@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { walletService } from "@/services/walletService";
+import { useAuth } from "@/contexts/AuthContext";
 import type { PixCharge, Wallet, WalletTransaction } from "@/types/wallet";
 
 interface WalletContextValue {
@@ -19,6 +20,7 @@ interface WalletContextValue {
 const WalletContext = createContext<WalletContextValue | null>(null);
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [activeCharge, setActiveCharge] = useState<PixCharge | null>(null);
@@ -31,7 +33,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível carregar a carteira."); }
     finally { setIsLoading(false); }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (!isAuthenticated) {
+      setWallet(null); setTransactions([]); setActiveCharge(null); setError(null); setIsLoading(false);
+      return;
+    }
+    void load();
+  }, [isAuthenticated, isAuthLoading, load]);
 
   const createPixDeposit = useCallback(async (value: number) => { setError(null); const charge = await walletService.createPixDeposit(value); setActiveCharge(charge); return charge; }, []);
   const simulatePixPayment = useCallback(async (id: string) => { setError(null); const result = await walletService.simulatePixPayment(id); setWallet(result.wallet); setTransactions((current) => [result.transaction, ...current]); setActiveCharge(result.charge); return result.charge; }, []);
