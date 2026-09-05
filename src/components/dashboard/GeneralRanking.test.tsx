@@ -92,6 +92,7 @@ describe("GeneralRanking", () => {
   it("mantem o loading local enquanto a chamada esta pendente", () => {
     buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 0, ranking: [] }); render(<GeneralRanking season={2026} round={25} />);
     expect(screen.getByLabelText("Carregando ranking geral")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("Aguarde");
   });
   it("mostra erro discreto sem depender de autenticacao", async () => {
     render(<GeneralRankingView round={25} data={null} loading={false} error />);

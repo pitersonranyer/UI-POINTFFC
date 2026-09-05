@@ -1,6 +1,7 @@
 import type {MarketStatus,MatchOdds,RoundStatistic,WizardInsight} from "@/types/dashboard";
+import { sgRodada26 } from "@/data/mago/sgRodada26";
 // MOCK: substituir pelo estado oficial do Cartola quando o endpoint estiver disponível.
-export const marketStatus:MarketStatus={isOpen:true,bolaRolando:false,closesAt:"2026-08-29T15:59:00-03:00",round:25};
+export const marketStatus:MarketStatus={isOpen:true,bolaRolando:false,closesAt:"2026-09-05T15:59:00-03:00",round:sgRodada26.rodada};
 // MOCK comercial isolado e vazio: nenhuma marca ou odd é exibida.
 export const oddsByMatchId:Record<number,MatchOdds|undefined>={
   346371:{home:1.75,draw:3.4,away:4.8},
@@ -12,10 +13,11 @@ export const oddsByMatchId:Record<number,MatchOdds|undefined>={
 // MOCK comercial: preserva a apresentação enquanto não existe uma API própria de odds.
 // A ordem acompanha somente os cards em destaque e nunca faz parte do payload Cartola.
 export const featuredOdds:MatchOdds[]=Object.values(oddsByMatchId).filter((item):item is MatchOdds=>Boolean(item));
-export const openWizardInsights:WizardInsight[]=[{label:"Melhor SG",value:"PAL 62%"},{label:"Expectativa de gols",value:"FLA 1,82"},{label:"Ataque em alta",value:"PAL"}];
+export const openWizardInsights:WizardInsight[]=[{label:"Melhor SG",value:"COR 46,55%"},{label:"Expectativa de gols",value:"FLU 1,62"},{label:"Destaque ofensivo",value:sgRodada26.destaqueOfensivo.clube}];
 export const liveWizardInsights:WizardInsight[]=[{label:"Gols na rodada",value:"12"},{label:"SG mantidos",value:"4"},{label:"Atletas pontuando",value:"87"}];
 export const roundStatistics:RoundStatistic[]=[{label:"Jogos",value:"10",detail:"na rodada"},{label:"Média de gols",value:"2,4",detail:"por partida"},{label:"Mandantes",value:"54%",detail:"de favoritismo"},{label:"SG provável",value:"PAL",detail:"62% de chance"}];
-export const wizardCleanSheets=[{team:"PAL",value:"62%"},{team:"FLA",value:"58%"},{team:"CAM",value:"54%"}];
-export const wizardGoals=[{team:"FLA",value:"1,82"},{team:"PAL",value:"1,65"},{team:"CAM",value:"1,57"}];
-export const wizardAttacks=[{team:"FLA",value:"Muito alto"},{team:"PAL",value:"Alto"},{team:"CAM",value:"Alto"}];
-export const wizardTips=["Palmeiras é o time com maior probabilidade de SG na rodada.","Flamengo tem o melhor ataque e alto potencial de gols.","Observe os confrontos com defesas mais vulneráveis."];
+const decimal = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const wizardCleanSheets=sgRodada26.analises.slice(0,3).map((item)=>({team:item.clube,value:`${decimal.format(item.probabilidadeSg)}%`}));
+export const wizardGoals=sgRodada26.melhoresAtaques.slice(0,3).map((item)=>({team:item.clube,value:decimal.format(item.xg)}));
+export const wizardAttacks=sgRodada26.melhoresAtaques.slice(3,6).map((item)=>({team:item.clube,value:`${decimal.format(item.xg)} xG`}));
+export const wizardTips=[`${sgRodada26.resumoMago.sgMaisForte} é o SG mais forte da rodada.`,`${sgRodada26.resumoMago.diferencialDefensivo} é o melhor diferencial defensivo.`,`${sgRodada26.destaqueOfensivo.clube} é o destaque ofensivo do Mago.`];

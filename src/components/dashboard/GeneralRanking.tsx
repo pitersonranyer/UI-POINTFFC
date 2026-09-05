@@ -22,4 +22,4 @@ export function GeneralRankingView({ round, data, loading, error, warning = null
     <span className={styles.fullRanking} aria-disabled="true">Ver ranking completo →</span></section>;
 }
 
-function RankingSkeleton() { return <div className={styles.skeleton} aria-label="Carregando ranking geral">{Array.from({ length: 5 }, (_, index) => <span key={index} />)}</div>; }
+function RankingSkeleton() { return <div className={styles.skeleton} aria-label="Carregando ranking geral"><p className={styles.loadingMessage} role="status"><i />Aguarde, carregando o Ranking Geral...</p>{Array.from({ length: 5 }, (_, index) => <span key={index} />)}</div>; }

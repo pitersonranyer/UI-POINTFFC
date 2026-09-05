@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sgRodada26 } from "./sgRodada26";
+import { wizardAttacks, wizardCleanSheets, wizardGoals, wizardTips } from "@/data/dashboard";
 
 describe("sgRodada26", () => {
   it("entrega a análise defensiva completa da rodada 26", () => {
@@ -18,5 +19,12 @@ describe("sgRodada26", () => {
 
   it("inclui os dez placares imaginários da rodada", () => {
     expect(sgRodada26.placaresRodada).toHaveLength(10);
+  });
+
+  it("mantém o resumo do Dashboard sincronizado com a análise completa", () => {
+    expect(wizardCleanSheets[0]).toMatchObject({ team: "Corinthians", value: "46,55%" });
+    expect(wizardGoals[0]).toMatchObject({ team: "Fluminense", value: "1,62" });
+    expect(wizardAttacks.map((item) => item.team)).toEqual(["Internacional", "Red Bull Bragantino", "Palmeiras"]);
+    expect(wizardTips).toContain("Flamengo é o destaque ofensivo do Mago.");
   });
 });
