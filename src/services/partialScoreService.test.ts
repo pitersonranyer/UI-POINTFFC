@@ -15,6 +15,15 @@ describe("partialScoreService", () => {
     expect(mockedFetch).toHaveBeenCalledWith("/parciais?temporada=2026&rodada=25&timeIds=3%2C1%2C2", { authenticated: true });
   });
 
+  it("consulta a parcial atual do detalhe sem reutilizar valores anteriores do cache", async () => {
+    mockedFetch.mockResolvedValueOnce({ parciais: [{ timeId: 3, pontuacao: 8 }] })
+      .mockResolvedValueOnce({ parciais: [{ timeId: 3, pontuacao: 0 }] });
+    expect((await partialScoreService.buscarParcialTime(2026, 25, 3))?.pontuacao).toBe(8);
+    expect((await partialScoreService.buscarParcialTime(2026, 25, 3))?.pontuacao).toBe(0);
+    expect(mockedFetch).toHaveBeenCalledTimes(2);
+    expect(mockedFetch).toHaveBeenLastCalledWith("/parciais?temporada=2026&rodada=25&timeIds=3", { authenticated: true });
+  });
+
   it("divide mais de 100 ids e preserva a ordem dos lotes e da resposta", async () => {
     const ids = Array.from({ length: 101 }, (_, index) => index + 1);
     mockedFetch.mockImplementation(async (path) => {

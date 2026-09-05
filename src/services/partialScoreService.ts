@@ -19,6 +19,9 @@ async function fetchChunk(season: number, round: number, ids: number[]) {
 }
 
 export const partialScoreService = {
+  async buscarParcialTime(temporada: number, rodada: number, timeId: number): Promise<TeamPartialScore | undefined> {
+    return (await fetchChunk(temporada, rodada, [timeId])).find((team) => team.timeId === timeId);
+  },
   atualizarRodadaAnterior(temporada: number): Promise<PreviousRoundUpdate> {
     const current = previousRoundUpdates.get(temporada);
     if (current) return current;

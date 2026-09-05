@@ -29,6 +29,8 @@ export interface CartolaTeamLineupAthlete {
   pontos_num?: number | null; rodada_id?: number; entrou_em_campo?: boolean; scout?: Record<string, number>; [key: string]: unknown;
 }
 export interface CartolaTeamLineupResponse {
+  patrimonio?: number | null;
+  jogadores_jogaram?: number;
   time: { time_id: number; nome: string; nome_cartola?: string; url_escudo_png?: string; esquema_id?: number; rodada_time_id?: number; [key: string]: unknown };
   atletas: CartolaTeamLineupAthlete[]; reservas?: CartolaTeamLineupAthlete[]; capitao_id?: number | null; reserva_luxo_id?: number | null;
   pontos?: number | null; rodada_atual?: number; esquema_id?: number; ranking?: { atual?: { posicao?: number }; [key: string]: unknown }; [key: string]: unknown;

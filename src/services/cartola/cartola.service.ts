@@ -27,3 +27,17 @@ export async function buscarAtletasPontuadosRodada(rodada:number){
   if(!Number.isInteger(rodada)||rodada<1||rodada>38)throw new RangeError("A rodada deve estar entre 1 e 38.");
   return (await request<CartolaScoredAthletesResponse>(`/cartola/atletas/pontuados/${rodada}`)).data;
 }
+
+export async function buscarPontuacaoEscalacao(team: CartolaTeamLineupResponse, rodada: number): Promise<CartolaTeamLineupResponse> {
+  const scored = await buscarAtletasPontuadosRodada(rodada);
+  if (scored.rodada != null && scored.rodada !== rodada) throw new Error("Pontuação de outra rodada.");
+  const merge = (players: CartolaTeamLineupResponse["atletas"]) => players.map((player) => {
+    const points = scored.atletas[String(player.atleta_id)]?.pontuacao;
+    return typeof points === "number" && Number.isFinite(points) ? { ...player, pontos_num: points } : player;
+  });
+  const played = (team.atletas ?? []).filter((player) => {
+    const athlete = scored.atletas[String(player.atleta_id)];
+    return athlete?.entrou_em_campo === true || (player.posicao_id === 6 && athlete != null && athlete.entrou_em_campo !== false && typeof athlete.pontuacao === "number");
+  }).length;
+  return { ...team, atletas: merge(team.atletas ?? []), reservas: merge(team.reservas ?? []), jogadores_jogaram: played };
+}
