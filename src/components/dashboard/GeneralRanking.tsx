@@ -10,9 +10,9 @@ import styles from "./GeneralRanking.module.css";
 const score = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const total = new Intl.NumberFormat("pt-BR");
 
-export function GeneralRanking({ season, round }: { season: number; round: number }) {
+export function GeneralRanking({ season, round, marketOpen = false }: { season: number; round: number; marketOpen?: boolean }) {
   const state = useGeneralRanking(season, round);
-  return <GeneralRankingView round={state.ranking?.rodada ?? round} data={state.ranking} loading={state.loading} error={state.error} warning={state.warning} retry={state.retry} retrying={state.retrying} firstRound={state.firstRound} />;
+  return <GeneralRankingView round={state.ranking?.rodada ?? round} data={state.ranking} loading={state.loading} error={state.error} warning={state.warning} retry={marketOpen ? state.retry : undefined} retrying={state.retrying} firstRound={state.firstRound} />;
 }
 
 export function GeneralRankingView({ round, data, loading, error, warning = null, retry, retrying = false, firstRound = false }: { round: number; data: GeneralRankingResponse | null; loading: boolean; error: boolean; warning?: RankingWarning; retry?: () => void; retrying?: boolean; firstRound?: boolean }) {

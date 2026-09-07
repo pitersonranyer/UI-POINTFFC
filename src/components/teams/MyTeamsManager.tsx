@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Clipboard, Download, Loader2, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { Check, Clipboard, Download, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ import type { TeamPartialScore } from "@/types/partial-score";
 import type { CartolaTeam, FindByIdsResult, ImportResult } from "@/types/team";
 import { normalizeImportIds } from "./teamImport";
 import { PartialScore } from "./PartialScore";
+import { Dialog } from "@/components/ui/Dialog";
 import styles from "./MyTeamsManager.module.css";
 
 type Modal = "add" | "import" | "export" | null;
@@ -24,11 +25,6 @@ function CopyId({ id }: { id: number }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => { await navigator.clipboard.writeText(String(id)); setCopied(true); window.setTimeout(() => setCopied(false), 1800); };
   return <span className={styles.id}>ID {id}<button type="button" onClick={copy} aria-label={`Copiar ID ${id}`} title="Copiar TIME_ID"><Clipboard size={14} /></button>{copied && <small>✓ ID copiado</small>}</span>;
-}
-
-function Dialog({ title, close, children, wide = false }: { title: string; close: () => void; children: React.ReactNode; wide?: boolean }) {
-  useEffect(() => { const key = (event: KeyboardEvent) => event.key === "Escape" && close(); document.addEventListener("keydown", key); return () => document.removeEventListener("keydown", key); }, [close]);
-  return <div className={styles.backdrop} onMouseDown={close}><section className={`${styles.dialog} ${wide ? styles.wide : ""}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title" onMouseDown={(event) => event.stopPropagation()}><header><h2 id="dialog-title">{title}</h2><button type="button" onClick={close} aria-label="Fechar"><X /></button></header>{children}</section></div>;
 }
 
 export function MyTeamsManager() {

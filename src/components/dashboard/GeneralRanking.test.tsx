@@ -32,6 +32,14 @@ beforeEach(() => {
 });
 
 describe("GeneralRanking", () => {
+  it.each([false, true])("oculta tentativa com mercado fechado, falha no GET: %s", async (getFailed) => {
+    atualizar.mockRejectedValue(new Error("offline"));
+    if (getFailed) buscar.mockRejectedValue(new Error("offline"));
+    else buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 3, ranking: entries });
+    render(<GeneralRanking season={2026} round={25} marketOpen={false} />);
+    await screen.findByText(getFailed ? "Não foi possível carregar o Ranking Geral." : /Exibindo os dados disponíveis/);
+    expect(screen.queryByRole("button", { name: "Tentar novamente" })).toBeNull();
+  });
   it("carrega o GET público sem disparar atualização autenticada para visitante", async () => {
     authenticated = false;
     buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 3, ranking: entries });
@@ -64,7 +72,7 @@ describe("GeneralRanking", () => {
   it("faz fallback para GET e permite retry", async () => {
     atualizar.mockRejectedValueOnce(new Error("cold start")).mockResolvedValueOnce(updateResponse());
     buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 3, ranking: entries });
-    render(<GeneralRanking season={2026} round={25} />);
+    render(<GeneralRanking season={2026} round={25} marketOpen />);
     await screen.findByText(/Exibindo os dados disponíveis/);
     fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
     await waitFor(() => expect(atualizar).toHaveBeenCalledTimes(2));
@@ -72,7 +80,7 @@ describe("GeneralRanking", () => {
   it("mostra erro e retry quando ambas chamadas falham", async () => {
     atualizar.mockRejectedValue(new Error("offline"));
     buscar.mockRejectedValue(new Error("offline"));
-    render(<GeneralRanking season={2026} round={25} />);
+    render(<GeneralRanking season={2026} round={25} marketOpen />);
     await screen.findByRole("button", { name: "Tentar novamente" });
   });
   it("trata a primeira rodada", () => {
