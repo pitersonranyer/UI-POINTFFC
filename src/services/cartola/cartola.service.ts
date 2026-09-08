@@ -38,6 +38,7 @@ export async function buscarPontuacaoEscalacao(team: CartolaTeamLineupResponse, 
       ...player,
       ...(typeof points === "number" && Number.isFinite(points) ? { pontos_num: points } : {}),
       ...(typeof athlete?.entrou_em_campo === "boolean" ? { entrou_em_campo: athlete.entrou_em_campo } : {}),
+      ...(athlete?.scout != null ? { scout: athlete.scout } : {}),
     };
   });
   const played = (team.atletas ?? []).filter((player) => {

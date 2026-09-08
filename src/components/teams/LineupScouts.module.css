@@ -1,0 +1,5 @@
+.scouts{display:flex;flex-wrap:wrap;gap:3px 7px;margin:4px 0;font-size:.57rem;font-weight:800;line-height:1.4}
+.scouts>span{white-space:nowrap}
+.positive{color:#087c3c}
+.negative{color:#b42323}
+.neutral{color:var(--muted)}
