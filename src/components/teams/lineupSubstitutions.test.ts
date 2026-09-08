@@ -7,10 +7,9 @@ const athlete = (atleta_id: number, posicao_id: number, entrou_em_campo: boolean
 });
 
 describe("substitutionStatusByAthlete", () => {
-  it("marca em verde quem entrou e em vermelho quem saiu na mesma posição", () => {
+  it("não deduz substituições pela participação de atletas da mesma posição", () => {
     const status = substitutionStatusByAthlete([athlete(1, 4, false)], [athlete(2, 4, true)]);
-    expect(status.get(1)).toBe("out");
-    expect(status.get(2)).toBe("in");
+    expect(status.size).toBe(0);
   });
 
   it("não confunde reserva pontuado sem titular substituído com uma troca", () => {
