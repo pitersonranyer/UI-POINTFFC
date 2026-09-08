@@ -46,6 +46,9 @@ describe("pontuação da escalação", () => {
     }))));
     const result = await buscarPontuacaoEscalacao(team, 25);
     expect(result.jogadores_jogaram).toBe(3);
+    expect(result.atletas[0].entrou_em_campo).toBe(true);
+    expect(result.atletas[3].entrou_em_campo).toBe(false);
+    expect(result.reservas?.[0].entrou_em_campo).toBe(true);
   });
 
   it("não conta pontos antigos da escalação como participação na rodada", async () => {

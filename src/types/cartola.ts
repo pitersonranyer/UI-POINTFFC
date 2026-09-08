@@ -25,10 +25,14 @@ export type CartolaAthletesResponse = Record<string, unknown>;
 export type CartolaClubsResponse = Record<string, CartolaClub>;
 export type CartolaMatchesResponse = { partidas?: CartolaMatch[]; clubes?: CartolaClubsResponse; [key: string]: unknown };
 export interface CartolaTeamLineupAthlete {
+  titularEfetivo?: boolean; capitaoOriginal?: boolean; capitaoEfetivo?: boolean;
+  reservaLuxo?: boolean; reservaLuxoUtilizado?: boolean; pontuacaoContabilizada?: number | null;
   atleta_id: number; clube_id: number; posicao_id: number; apelido: string; nome?: string; foto?: string;
-  pontos_num?: number | null; rodada_id?: number; entrou_em_campo?: boolean; scout?: Record<string, number>; [key: string]: unknown;
+  pontos_num?: number | null; rodada_id?: number; entrou_em_campo?: boolean | null; scout?: Record<string, number>; [key: string]: unknown;
 }
 export interface CartolaTeamLineupResponse {
+  timeRodadaId?: number; temporada?: number; status?: "PARCIAL" | "FINAL";
+  substituicoes?: CartolaTeamSubstitution[];
   patrimonio?: number | null;
   jogadores_jogaram?: number;
   time: { time_id: number; nome: string; nome_cartola?: string; url_escudo_png?: string; esquema_id?: number; rodada_time_id?: number; [key: string]: unknown };
@@ -36,6 +40,9 @@ export interface CartolaTeamLineupResponse {
   pontos?: number | null; rodada_atual?: number; esquema_id?: number; ranking?: { atual?: { posicao?: number }; [key: string]: unknown }; [key: string]: unknown;
 }
 // Contrato legado do JSON estático da tela de prováveis (fora desta integração).
+export interface CartolaTeamSubstitution {
+  ativa: boolean; titularSaiuId: number; reservaEntrouId: number; reservaLuxo: boolean; herdouCapitao: boolean;
+}
 export type CartolaAthlete = { atleta_id:number; clube_id:number; posicao_id:number; status_id:number; apelido:string; apelido_abreviado:string; nome:string; foto:string; preco_num:number; media_num:number };
 export type CartolaLegacyClub = { id:number; nome:string; abreviacao:string; slug:string; apelido:string; escudos:Record<string,string> };
 export type CartolaMarket = { atletas:CartolaAthlete[]; clubes:Record<string,CartolaLegacyClub>; posicoes:Record<string,{id:number;nome:string;abreviacao:string}>; status:Record<string,{id:number;nome:string}> };

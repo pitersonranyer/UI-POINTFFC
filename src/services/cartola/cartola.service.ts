@@ -32,8 +32,13 @@ export async function buscarPontuacaoEscalacao(team: CartolaTeamLineupResponse, 
   const scored = await buscarAtletasPontuadosRodada(rodada);
   if (scored.rodada != null && scored.rodada !== rodada) throw new Error("Pontuação de outra rodada.");
   const merge = (players: CartolaTeamLineupResponse["atletas"]) => players.map((player) => {
-    const points = scored.atletas[String(player.atleta_id)]?.pontuacao;
-    return typeof points === "number" && Number.isFinite(points) ? { ...player, pontos_num: points } : player;
+    const athlete = scored.atletas[String(player.atleta_id)];
+    const points = athlete?.pontuacao;
+    return {
+      ...player,
+      ...(typeof points === "number" && Number.isFinite(points) ? { pontos_num: points } : {}),
+      ...(typeof athlete?.entrou_em_campo === "boolean" ? { entrou_em_campo: athlete.entrou_em_campo } : {}),
+    };
   });
   const played = (team.atletas ?? []).filter((player) => {
     const athlete = scored.atletas[String(player.atleta_id)];

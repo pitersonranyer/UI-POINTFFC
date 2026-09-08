@@ -1,4 +1,4 @@
-import { PHASE_PRODUCTION_BUILD } from "next/constants.js";
+import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from "next/constants.js";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -13,5 +13,9 @@ export default (phase) => {
       throw new Error("Build de produção exige NEXT_PUBLIC_API_URL HTTPS pública. Execute npm run build para usar a API de produção.");
     }
   }
-  return nextConfig;
+  return {
+    ...nextConfig,
+    // Development and production builds must not overwrite each other's chunks.
+    distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next-dev" : ".next",
+  };
 };
