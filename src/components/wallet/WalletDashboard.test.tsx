@@ -37,8 +37,10 @@ it("carrega resposta oficial uma vez e distingue zero real", async () => {
   expect(walletService.getWallet).toHaveBeenCalledTimes(1);
   expect(screen.getByTestId("wallet").textContent).toBe("0.00");
   expect(screen.queryByText(/125,00/)).toBeNull();
-  expect((screen.getByRole("button", { name: "Adicionar saldo" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "Adicionar saldo" }) as HTMLButtonElement).disabled).toBe(false);
   expect(screen.queryByRole("dialog")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Adicionar saldo" }));
+  expect(screen.getByRole("dialog")).toBeTruthy();
 });
 it("exibe positivo e saldo bloqueado, sem float", async () => {
   vi.mocked(walletService.getWallet).mockResolvedValue({ ...positive, saldoBloqueado: "10.99", status: "BLOQUEADA" });
@@ -46,6 +48,8 @@ it("exibe positivo e saldo bloqueado, sem float", async () => {
   expect(await screen.findByText(/R\$\s*1\.234,56/)).toBeTruthy();
   expect(screen.getByText(/R\$\s*10,99/)).toBeTruthy();
   expect(screen.getByText("Carteira bloqueada")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Adicionar saldo" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
   expect(formatWalletCurrency("9999999999.99")).toBe("R$\u00a09.999.999.999,99");
 });
 it("erro amigável não vira zero e permite retry", async () => {

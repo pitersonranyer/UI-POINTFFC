@@ -1,7 +1,13 @@
 import { apiFetch } from "./apiClient";
-import type { Wallet } from "@/types/wallet";
+import type { Wallet, WalletPix } from "@/types/wallet";
 
 export const walletService = {
+  createPix(valor: string, key: string, signal?: AbortSignal): Promise<WalletPix> {
+    return apiFetch<WalletPix>("/carteira/recargas/pix", {
+      method: "POST", authenticated: true, headers: { "Idempotency-Key": key },
+      body: JSON.stringify({ valor }), signal,
+    });
+  },
   async getWallet(signal?: AbortSignal): Promise<Wallet> {
     const wallet = await apiFetch<Wallet>("/carteira", { authenticated: true, cache: "no-store", signal });
     const decimal = (value: unknown) => typeof value === "string" && /^\d{1,10}\.\d{2}$/.test(value);
