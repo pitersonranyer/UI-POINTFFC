@@ -17,5 +17,5 @@ export function FieldLineup({ players, reserves, clubs, captainId, luxuryReserve
 
 export function Bench({ players, clubs, luxuryReserveId, substitutions = new Map(), effective = false }: { players: CartolaTeamLineupAthlete[]; clubs: Record<string, CartolaClub>; luxuryReserveId?: number | null; substitutions?: Map<number, SubstitutionStatus>; effective?: boolean }) {
   if (!players.length) return null;
-  return <section className={styles.bench}><h3>Banco de reservas</h3><div>{players.map((player) => <LineupPlayerCard key={player.atleta_id} player={player} clubs={clubs} isReserve compact isCaptain={effective && player.capitaoEfetivo === true} isLuxuryReserve={isLuxuryReserve(player, effective, luxuryReserveId)} substitution={substitutions.get(player.atleta_id)} effective={effective} />)}</div></section>;
+  return <section className={styles.bench}><h3>Banco de reservas</h3><div>{[...players].sort((a, b) => a.posicao_id - b.posicao_id).map((player) => <LineupPlayerCard key={player.atleta_id} player={player} clubs={clubs} isReserve compact isCaptain={effective && player.capitaoEfetivo === true} isLuxuryReserve={isLuxuryReserve(player, effective, luxuryReserveId)} substitution={substitutions.get(player.atleta_id)} effective={effective} />)}</div></section>;
 }

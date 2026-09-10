@@ -52,7 +52,7 @@ describe("detalhe da escalação efetiva", () => {
       expect(within(incoming).getByTitle("Capitão")).toBeTruthy();
       expect(within(outgoing).queryByTitle("Capitão")).toBeNull();
       expect(within(incoming).getByText("8,40 pts")).toBeTruthy();
-      expect(within(outgoing).getByText("-- pts")).toBeTruthy();
+      expect(within(outgoing).getByText("3,00 pts")).toBeTruthy();
       expect(within(incoming).getByText("Reserva de luxo")).toBeTruthy();
       expect(screen.getByText("Entrou no lugar de Pedro")).toBeTruthy();
       expect(screen.getByText("Saiu por Calleri")).toBeTruthy();
