@@ -1,52 +1,60 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { walletService } from "@/services/walletService";
 import { useAuth } from "@/contexts/AuthContext";
-import type { PixCharge, Wallet, WalletTransaction } from "@/types/wallet";
+import type { Wallet } from "@/types/wallet";
 
 interface WalletContextValue {
   wallet: Wallet | null;
-  transactions: WalletTransaction[];
-  activeCharge: PixCharge | null;
   isLoading: boolean;
   error: string | null;
-  createPixDeposit(value: number): Promise<PixCharge>;
-  simulatePixPayment(id: string): Promise<PixCharge>;
-  clearActiveCharge(): void;
-  resetMock(): Promise<void>;
+  refreshWallet(): Promise<void>;
 }
-
 const WalletContext = createContext<WalletContextValue | null>(null);
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user, firebaseUser, isAuthenticated, isLoading } = useAuth();
+  const identity = isAuthenticated && !isLoading && user
+    ? JSON.stringify([user.idUsuario, firebaseUser?.uid]) : null;
+  // Session changes clear the balance synchronously, before consumers render.
+  return <SessionWalletProvider key={identity ?? "signed-out"} enabled={identity !== null} authLoading={isLoading}>{children}</SessionWalletProvider>;
+}
+
+function SessionWalletProvider({ children, enabled, authLoading }: { children: React.ReactNode; enabled: boolean; authLoading: boolean }) {
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [activeCharge, setActiveCharge] = useState<PixCharge | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setIsLoading(true); setError(null);
-    try { const [nextWallet, nextTransactions] = await Promise.all([walletService.getWallet(), walletService.getTransactions()]); setWallet(nextWallet); setTransactions(nextTransactions); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível carregar a carteira."); }
-    finally { setIsLoading(false); }
-  }, []);
+  const request = useRef<{ controller: AbortController; promise: Promise<void> } | null>(null);
+  const refreshWallet = useCallback((): Promise<void> => {
+    if (!enabled) return Promise.resolve();
+    if (request.current) return request.current.promise;
+    const controller = new AbortController();
+    setIsLoading(true); setError(null); setWallet(null);
+    const promise = Promise.resolve().then(async () => {
+      if (controller.signal.aborted) return;
+      try {
+        const result = await walletService.getWallet(controller.signal);
+        if (!controller.signal.aborted) setWallet(result);
+      } catch {
+        if (!controller.signal.aborted) setError("Não foi possível carregar seu saldo.");
+      } finally {
+        if (!controller.signal.aborted) { request.current = null; setIsLoading(false); }
+      }
+    });
+    request.current = { controller, promise };
+    return promise;
+  }, [enabled]);
   useEffect(() => {
-    if (isAuthLoading) return;
-    if (!isAuthenticated) {
-      setWallet(null); setTransactions([]); setActiveCharge(null); setError(null); setIsLoading(false);
-      return;
-    }
-    void load();
-  }, [isAuthenticated, isAuthLoading, load]);
-
-  const createPixDeposit = useCallback(async (value: number) => { setError(null); const charge = await walletService.createPixDeposit(value); setActiveCharge(charge); return charge; }, []);
-  const simulatePixPayment = useCallback(async (id: string) => { setError(null); const result = await walletService.simulatePixPayment(id); setWallet(result.wallet); setTransactions((current) => [result.transaction, ...current]); setActiveCharge(result.charge); return result.charge; }, []);
-  const resetMock = useCallback(async () => { await walletService.resetMock(); setActiveCharge(null); await load(); }, [load]);
-  const value = useMemo(() => ({ wallet, transactions, activeCharge, isLoading, error, createPixDeposit, simulatePixPayment, clearActiveCharge: () => setActiveCharge(null), resetMock }), [wallet, transactions, activeCharge, isLoading, error, createPixDeposit, simulatePixPayment, resetMock]);
+    void refreshWallet();
+    return () => { request.current?.controller.abort(); request.current = null; };
+  }, [refreshWallet]);
+  const value = useMemo(() => ({ wallet, isLoading: authLoading || isLoading, error, refreshWallet }), [wallet, authLoading, isLoading, error, refreshWallet]);
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
 
-export function useWallet() { const context = useContext(WalletContext); if (!context) throw new Error("useWallet deve ser usado dentro de WalletProvider"); return context; }
+export function useWallet() {
+  const context = useContext(WalletContext);
+  if (!context) throw new Error("useWallet deve ser usado dentro de WalletProvider");
+  return context;
+}

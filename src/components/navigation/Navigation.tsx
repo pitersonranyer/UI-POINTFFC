@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/contexts/WalletContext";
-import { formatCurrency } from "@/lib/format";
+import { formatWalletCurrency } from "@/lib/format";
 import styles from "./Navigation.module.css";
 const publicLinks = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -17,7 +17,7 @@ export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading, logout } = useAuth();
-  const { wallet } = useWallet();
+  const { wallet, isLoading: walletLoading, error: walletError } = useWallet();
   const [signingOut, setSigningOut] = useState(false);
   const links = user ? [...publicLinks, { href: "/perfil", label: "Perfil", icon: UserRound }] : publicLinks;
   if (
@@ -92,7 +92,7 @@ export function Navigation() {
                     <span>
                       <strong>{user.nome || user.email.split("@")[0]}</strong>
                       <small>
-                        {formatCurrency(wallet?.balance ?? 0)}
+                        {walletLoading ? "Carregando saldo..." : walletError || !wallet ? "Saldo indisponível" : `${formatWalletCurrency(wallet.saldoDisponivel)}${wallet.status === "BLOQUEADA" ? " · Carteira bloqueada" : ""}`}
                       </small>
                     </span>
                   </Link>
