@@ -5,6 +5,8 @@ import { AddBalanceModal, normalizePixValue } from "./AddBalanceModal";
 import { walletService } from "@/services/walletService";
 import type { WalletPix } from "@/types/wallet";
 vi.mock("@/services/walletService", () => ({ walletService: { createPix: vi.fn() } }));
+vi.mock("@/contexts/WalletContext", () => ({ useWallet: () => ({ refreshWallet: refresh }) }));
+const refresh = vi.fn().mockResolvedValue(true);
 const charge: WalletPix = { id: 1, valor: "10.50", status: "PENDENTE", idPagamentoExterno: "private-order", pixCopiaCola: "pix-code", qrCode: "aGVsbG8=", expiracao: "2020-01-01T12:00:00Z", criadoEm: "", atualizadoEm: "", aprovadoEm: null };
 const copy = vi.fn().mockResolvedValue(undefined);
 beforeEach(() => {

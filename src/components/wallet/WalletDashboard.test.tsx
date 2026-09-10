@@ -7,6 +7,7 @@ import { WalletDashboard } from "./WalletDashboard";
 import { WalletStatement } from "./WalletStatement";
 import { formatWalletCurrency } from "@/lib/format";
 import type { Wallet } from "@/types/wallet";
+import type { WalletPix } from "@/types/wallet";
 
 let identity: string | null = "one";
 let authLoading = false;
@@ -14,7 +15,7 @@ vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({
   user: identity ? { idUsuario: identity } : null, firebaseUser: identity ? { uid: identity } : null,
   isAuthenticated: !!identity, isLoading: authLoading,
 }) }));
-vi.mock("@/services/walletService", () => ({ walletService: { getWallet: vi.fn() } }));
+vi.mock("@/services/walletService", () => ({ walletService: { getWallet: vi.fn(), createPix: vi.fn(), getPix: vi.fn() } }));
 const zero: Wallet = { saldoDisponivel: "0.00", saldoBloqueado: "0.00", status: "ATIVA" };
 const positive: Wallet = { ...zero, saldoDisponivel: "1234.56" };
 function Refresh() {
@@ -124,4 +125,43 @@ it("extrato preserva estrutura sem lançamentos fictícios", () => {
   expect(screen.getByText("A consulta de movimentações estará disponível em breve.")).toBeTruthy();
   expect(screen.queryByText(/Liga dos Amigos|Crédito PIX|Premiação|125,00/)).toBeNull();
   expect(walletService.getWallet).not.toHaveBeenCalled();
+});
+
+const approvedPix: WalletPix = { id: 1, valor: "10.00", status: "APROVADA", idPagamentoExterno: null, pixCopiaCola: null, qrCode: null, expiracao: null, criadoEm: "", atualizadoEm: "", aprovadoEm: null };
+it("mantém modal aprovado aberto durante refresh real e falha do saldo", async () => {
+  let fail!: (error: Error) => void;
+  const result = new Promise<Wallet>((_, reject) => { fail = reject; });
+  vi.mocked(walletService.getWallet).mockResolvedValueOnce(zero).mockReturnValueOnce(result);
+  vi.mocked(walletService.createPix).mockResolvedValueOnce(approvedPix);
+  render(view());
+  await waitFor(() => expect(screen.getByTestId("wallet").textContent).toBe("0.00"));
+  fireEvent.click(screen.getByRole("button", { name: "Adicionar saldo" }));
+  fireEvent.change(screen.getByLabelText("Valor da recarga"), { target: { value: "10" } });
+  fireEvent.click(screen.getByText("Gerar Pix"));
+  await screen.findByText("Saldo adicionado à sua carteira");
+  expect(screen.getByText("Carregando saldo...")).toBeTruthy();
+  expect(walletService.getWallet).toHaveBeenCalledTimes(2);
+  await act(async () => fail(new Error("offline")));
+  await screen.findByText("Não foi possível carregar seu saldo.");
+  expect(screen.getByText("Pagamento confirmado. Não foi possível atualizar o saldo agora.")).toBeTruthy();
+  expect(screen.getByText("Saldo adicionado à sua carteira")).toBeTruthy();
+  expect(screen.getByRole("dialog")).toBeTruthy();
+});
+it("logout desmonta modal e cancela polling em andamento", async () => {
+  vi.mocked(walletService.createPix).mockResolvedValueOnce({ ...approvedPix, status: "PENDENTE" });
+  vi.mocked(walletService.getPix).mockReturnValueOnce(new Promise(() => {}));
+  const ui = render(view());
+  await waitFor(() => expect(screen.getByTestId("wallet").textContent).toBe("0.00"));
+  fireEvent.click(screen.getByRole("button", { name: "Adicionar saldo" }));
+  fireEvent.change(screen.getByLabelText("Valor da recarga"), { target: { value: "10" } });
+  vi.useFakeTimers();
+  try {
+    await act(async () => fireEvent.click(screen.getByText("Gerar Pix")));
+    await act(async () => { await vi.advanceTimersByTimeAsync(4000); });
+    const calls = vi.mocked(walletService.getPix).mock.calls;
+    const signal = calls[calls.length - 1]?.[1];
+    identity = null; ui.rerender(view());
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(signal?.aborted).toBe(true);
+  } finally { vi.useRealTimers(); }
 });

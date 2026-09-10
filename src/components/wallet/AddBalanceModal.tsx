@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { CheckCircle2 } from "lucide-react";
+import { useWalletPixStatus } from "@/hooks/useWalletPixStatus";
 import { Dialog } from "@/components/ui/Dialog";
 import { walletService } from "@/services/walletService";
 import { ApiError } from "@/services/apiClient";
@@ -33,7 +35,8 @@ export function AddBalanceModal({ close }: { close(): void }) {
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [charge, setCharge] = useState<WalletPix | null>(null);
+  const [initialCharge, setCharge] = useState<WalletPix | null>(null);
+  const { charge, pollError, balanceError, refreshing, retryBalance } = useWalletPixStatus(initialCharge);
   const [copyMessage, setCopyMessage] = useState("");
   const [qrFailed, setQrFailed] = useState(false);
   const attempt = useRef<{ valor: string; key: string } | null>(null);
@@ -87,12 +90,15 @@ export function AddBalanceModal({ close }: { close(): void }) {
       <button className={styles.primary} disabled={busy} type="submit">{busy ? "Gerando Pix..." : attempt.current && error ? "Tentar novamente" : "Gerar Pix"}</button>
     </form> : <div className={styles.content}>
       <p className={styles.amount}><span>Valor</span><strong>{formatWalletCurrency(charge.valor)}</strong></p>
-      <p className={styles.status} role="status">{labels[charge.status]}</p>
+      {charge.status === "APROVADA" ? <div className={styles.success} role="status"><CheckCircle2 aria-hidden="true" /><strong>Pagamento confirmado</strong><span>Saldo adicionado à sua carteira</span></div> : <p className={styles.status} role="status">{labels[charge.status]}</p>}
+      {balanceError && <div className={styles.help}><p>Pagamento confirmado. Não foi possível atualizar o saldo agora.</p><button type="button" className={styles.primary} disabled={refreshing} onClick={retryBalance}>{refreshing ? "Atualizando saldo..." : "Tentar atualizar saldo"}</button></div>}
+      {charge.status !== "APROVADA" && <>
       {charge.qrCode && !qrFailed ? <Image className={styles.qr} src={`data:image/png;base64,${charge.qrCode}`} width={260} height={260} unoptimized alt="QR Code para pagamento Pix" onError={() => setQrFailed(true)} /> : <p className={styles.help}>QR Code indisponível no momento.</p>}
       {charge.pixCopiaCola ? <><label htmlFor="wallet-pix-code">Pix copia e cola</label><textarea id="wallet-pix-code" readOnly value={charge.pixCopiaCola} /><button type="button" className={styles.primary} onClick={() => void copy()}>Copiar código Pix</button></> : <p className={styles.help}>Código Pix indisponível no momento.</p>}
       {copyMessage && <p role="status">{copyMessage}</p>}
       {expiration && <p className={styles.help}>Expiração: {Number.isNaN(expiration.getTime()) ? "Não disponível" : expiration.toLocaleString("pt-BR")}</p>}
-      <p className={styles.help}>O status exibido corresponde ao retorno da geração do Pix.</p>
+      </>}
+      {pollError && <p className={styles.help} role="status">{pollError}</p>}
     </div>}
   </Dialog>;
 }

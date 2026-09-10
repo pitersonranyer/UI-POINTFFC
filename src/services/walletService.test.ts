@@ -2,6 +2,13 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { apiFetch } from "./apiClient";
 import { walletService } from "./walletService";
 vi.mock("./apiClient", () => ({ apiFetch: vi.fn() }));
+it("consulta recarga somente por GET autenticado", async () => {
+  const signal = new AbortController().signal;
+  await walletService.getPix(7, signal);
+  expect(apiFetch).toHaveBeenCalledWith("/carteira/recargas/7", {
+    method: "GET", authenticated: true, cache: "no-store", signal,
+  });
+});
 it("envia POST autenticado com chave e somente valor textual", async () => {
   await walletService.createPix("10.50", "test-idempotency-key");
   expect(apiFetch).toHaveBeenCalledWith("/carteira/recargas/pix", {

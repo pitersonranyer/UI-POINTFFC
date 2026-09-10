@@ -9,7 +9,7 @@ interface WalletContextValue {
   wallet: Wallet | null;
   isLoading: boolean;
   error: string | null;
-  refreshWallet(): Promise<void>;
+  refreshWallet(): Promise<boolean>;
 }
 const WalletContext = createContext<WalletContextValue | null>(null);
 
@@ -25,19 +25,21 @@ function SessionWalletProvider({ children, enabled, authLoading }: { children: R
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
-  const request = useRef<{ controller: AbortController; promise: Promise<void> } | null>(null);
-  const refreshWallet = useCallback((): Promise<void> => {
-    if (!enabled) return Promise.resolve();
+  const request = useRef<{ controller: AbortController; promise: Promise<boolean> } | null>(null);
+  const refreshWallet = useCallback((): Promise<boolean> => {
+    if (!enabled) return Promise.resolve(false);
     if (request.current) return request.current.promise;
     const controller = new AbortController();
     setIsLoading(true); setError(null); setWallet(null);
     const promise = Promise.resolve().then(async () => {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) return false;
       try {
         const result = await walletService.getWallet(controller.signal);
         if (!controller.signal.aborted) setWallet(result);
+        return !controller.signal.aborted;
       } catch {
         if (!controller.signal.aborted) setError("Não foi possível carregar seu saldo.");
+        return false;
       } finally {
         if (!controller.signal.aborted) { request.current = null; setIsLoading(false); }
       }
