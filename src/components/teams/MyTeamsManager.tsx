@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, Clipboard, Download, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
+import { TriangleAlert, Check, Clipboard, Download, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { CARTOLA_CURRENT_ROUND, CARTOLA_SEASON } from "@/config/cartola";
 import { partialScoreService } from "@/services/partialScoreService";
@@ -74,21 +74,80 @@ export function MyTeamsManager() {
   </main>;
 }
 
+function OwnershipNotice({ plural = false, checked, disabled, onChange }: { plural?: boolean; checked: boolean; disabled: boolean; onChange(value: boolean): void }) {
+  return <><div className={styles.ownershipNotice}><TriangleAlert aria-hidden="true" /><div><strong>ATENÇÃO</strong><p>{plural
+    ? "Para receber qualquer premiação, será necessário comprovar a titularidade dos times cadastrados. Caso a titularidade não seja comprovada, a premiação não será paga."
+    : "Para receber qualquer premiação, será necessário comprovar a titularidade do time cadastrado. Caso a titularidade não seja comprovada, a premiação não será paga."}</p></div></div>
+    <label className={styles.ownershipDeclaration}><input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} /><span>{plural
+      ? "Declaro que sou o titular dos times informados e estou ciente da necessidade de comprovação para receber premiações."
+      : "Declaro que sou o titular deste time e estou ciente da necessidade de comprovação para receber premiações."}</span></label></>;
+}
+
 function AddDialog({ teams, close, onAdded }: { teams: CartolaTeam[]; close: () => void; onAdded: (team: CartolaTeam) => void }) {
-  const [query, setQuery] = useState(""), [results, setResults] = useState<CartolaTeam[]>([]), [searching, setSearching] = useState(false), [adding, setAdding] = useState<number | null>(null), [added, setAdded] = useState(() => new Set(teams.map((team) => team.timeId))), [error, setError] = useState("");
-  useEffect(() => { const name = query.trim(); if (!name) { setResults([]); setSearching(false); setError(""); return; } setSearching(true); const timer = window.setTimeout(async () => { try { setResults(await teamService.buscarTimesPorNome(name)); setError(""); } catch (e) { setError(message(e, "Não foi possível buscar os times.")); } finally { setSearching(false); } }, 400); return () => window.clearTimeout(timer); }, [query]);
-  const add = async (team: CartolaTeam) => { if (added.has(team.timeId)) return; setAdding(team.timeId); try { const result = await teamService.adicionarMeuTime(team); setAdded((ids) => new Set(ids).add(team.timeId)); onAdded(result.time ?? team); setError(""); } catch (e) { setError(message(e, "Não foi possível adicionar este time.")); } finally { setAdding(null); } };
-  return <Dialog title="Adicionar time" close={close} wide><label className={styles.search}><Search /><input autoFocus type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Digite o nome do time" /></label>{error && <p className={styles.inlineError}>{error}</p>}<div className={styles.results}>{searching ? <p className={styles.loading}><Loader2 className={styles.spin} /> Pesquisando...</p> : results.map((team) => <article className={styles.result} key={team.timeId}><Shield team={team} /><div className={styles.identity}><h3>{team.nome}</h3><p>{team.nomeCartoleiro}</p><CopyId id={team.timeId} /></div><button className={`${styles.circle} ${added.has(team.timeId) ? styles.checked : ""}`} onClick={() => add(team)} disabled={added.has(team.timeId) || adding === team.timeId} aria-label={added.has(team.timeId) ? "Time adicionado" : `Adicionar ${team.nome}`}>{adding === team.timeId ? <Loader2 className={styles.spin} /> : added.has(team.timeId) ? <Check /> : <Plus />}</button></article>)}{query.trim() && !searching && !results.length && !error && <p className={styles.noResults}>Nenhum time encontrado.</p>}</div></Dialog>;
+  const [query, setQuery] = useState(""), [results, setResults] = useState<CartolaTeam[]>([]), [searching, setSearching] = useState(false), [adding, setAdding] = useState(false), [error, setError] = useState("");
+  const [selected, setSelected] = useState<CartolaTeam | null>(null), [accepted, setAccepted] = useState(false);
+  const running = useRef(false);
+  const added = useMemo(() => new Set(teams.map((team) => team.timeId)), [teams]);
+  useEffect(() => {
+    let active = true;
+    const name = query.trim();
+    if (!name) { setResults([]); setSearching(false); setError(""); return; }
+    setSearching(true);
+    const timer = window.setTimeout(async () => {
+      try { const found = await teamService.buscarTimesPorNome(name); if (active) { setResults(found); setError(""); } }
+      catch (e) { if (active) setError(message(e, "Não foi possível buscar os times.")); }
+      finally { if (active) setSearching(false); }
+    }, 400);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [query]);
+  const valid = !!selected && Number.isSafeInteger(selected.timeId) && selected.timeId > 0 && results.some((team) => team.timeId === selected.timeId) && !added.has(selected.timeId);
+  const add = async () => {
+    if (running.current || searching || !accepted || !valid || !selected) return;
+    running.current = true; setAdding(true);
+    try {
+      const result = await teamService.adicionarMeuTime(selected);
+      onAdded(result.time ?? selected); setSelected(null); setAccepted(false); setError("");
+    } catch (e) { setError(message(e, "Não foi possível adicionar este time.")); }
+    finally { running.current = false; setAdding(false); }
+  };
+  return <Dialog title="Adicionar time" close={() => { if (!running.current) close(); }} wide busy={adding}>
+    <OwnershipNotice checked={accepted} disabled={adding} onChange={setAccepted} />
+    <label className={styles.search}><Search /><input aria-label="Pesquisar time" type="search" value={query} disabled={adding} onChange={(e) => { setQuery(e.target.value); setSelected(null); }} placeholder="Digite o nome do time" /></label>
+    {error && <p className={styles.inlineError} role="alert">{error}</p>}
+    <div className={styles.results}>{searching ? <p className={styles.loading}><Loader2 className={styles.spin} /> Pesquisando...</p> : results.map((team) => <article className={styles.result} key={team.timeId}><Shield team={team} /><div className={styles.identity}><h3>{team.nome}</h3><p>{team.nomeCartoleiro}</p><CopyId id={team.timeId} /></div><label className={styles.teamSelection}><input type="radio" name="selected-team" checked={selected?.timeId === team.timeId} onChange={() => setSelected(team)} disabled={adding || added.has(team.timeId) || !Number.isSafeInteger(team.timeId) || team.timeId <= 0} aria-label={added.has(team.timeId) ? `Time já adicionado: ${team.nome}` : `Selecionar ${team.nome}`} />{added.has(team.timeId) && <Check aria-hidden="true" />}</label></article>)}{query.trim() && !searching && !results.length && !error && <p className={styles.noResults}>Nenhum time encontrado.</p>}</div>
+    <div className={`${styles.footer} ${styles.ownershipFooter}`}><button type="button" onClick={close} disabled={adding}>Cancelar</button><button type="button" className={styles.primary} onClick={() => void add()} disabled={adding || searching || !valid || !accepted}>{adding ? <Loader2 className={styles.spin} /> : <Plus />}Adicionar time</button></div>
+  </Dialog>;
 }
 
 function ImportDialog({ close, onImported }: { close: () => void; onImported: () => Promise<void> }) {
   const [text, setText] = useState(""), [preview, setPreview] = useState<FindByIdsResult | null>(null), [result, setResult] = useState<ImportResult | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [copied, setCopied] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const running = useRef(false);
   const ids = normalizeImportIds(text);
-  const find = async () => { if (!ids) { setError("Informe ao menos um TIME_ID válido."); return; } setBusy(true); try { setPreview(await teamService.buscarTimesPorIds(ids)); setError(""); } catch (e) { setError(message(e, "Não foi possível buscar a lista de times.")); } finally { setBusy(false); } };
-  const run = async () => { if (!preview?.times.length) return; setBusy(true); try { const response = await teamService.importarMeusTimes(preview.times); setResult(response); setError(""); await onImported(); } catch (e) { setError(message(e, "Não foi possível concluir toda a importação.")); } finally { setBusy(false); } };
+  const find = async () => {
+    if (running.current || !ids) return;
+    running.current = true; setBusy(true);
+    try { setPreview(await teamService.buscarTimesPorIds(ids)); setError(""); }
+    catch (e) { setError(message(e, "Não foi possível buscar a lista de times.")); }
+    finally { running.current = false; setBusy(false); }
+  };
+  const run = async () => {
+    if (running.current || !accepted || !ids || !preview?.times.length || result) return;
+    running.current = true; setBusy(true);
+    try { const response = await teamService.importarMeusTimes(preview.times); setResult(response); setError(""); await onImported(); }
+    catch (e) { setError(message(e, "Não foi possível concluir toda a importação.")); }
+    finally { running.current = false; setBusy(false); }
+  };
   const retry = result?.tentarNovamente ?? preview?.tentarNovamente ?? [];
   const copyRetry = async () => { await navigator.clipboard.writeText(retry.join(";")); setCopied(true); };
-  return <Dialog title={result ? "Importação concluída" : "Importar times"} close={close} wide>{result ? <div className={styles.summary}><p>✓ {result.adicionados} times adicionados</p><p>✓ {result.jaExistentes} já estavam cadastrados</p><p>⚠ {result.naoEncontrados.length} não encontrados</p><p>⚠ {result.naoProcessados || result.tentarNovamente.length} não puderam ser processados</p></div> : !preview ? <><p className={styles.helper}>Cole sua lista de times.</p><textarea className={styles.textarea} value={text} onChange={(e) => setText(e.target.value)} placeholder="Meus Favoritos=>44566162;30157334;13933388" /></> : <><p className={styles.found}>{preview.times.length} {preview.times.length === 1 ? "time encontrado" : "times encontrados"}</p><div className={styles.preview}>{preview.times.map((team) => <div key={team.timeId}><Check /><span><strong>{team.nome}</strong><small>{team.nomeCartoleiro} · ID {team.timeId}</small></span></div>)}</div></>}{(result?.naoEncontrados ?? preview?.naoEncontrados ?? []).length > 0 && <div className={styles.notice}><strong>Não encontrados</strong><p>{(result?.naoEncontrados ?? preview?.naoEncontrados ?? []).join(";")}</p></div>}{retry.length > 0 && <div className={styles.notice}><strong>Alguns times não puderam ser processados agora.</strong><p>{retry.join(";")}</p><button onClick={copyRetry}><Clipboard />{copied ? "IDs copiados" : "Copiar IDs para tentar novamente"}</button></div>}{error && <p className={styles.inlineError}>{error}</p>}<div className={styles.footer}><button onClick={close}>Cancelar</button>{!result && (!preview ? <button className={styles.primary} onClick={find} disabled={busy || !ids}>{busy ? <Loader2 className={styles.spin} /> : <Search />} Buscar times</button> : <button className={styles.primary} onClick={run} disabled={busy || !preview.times.length}>{busy ? <Loader2 className={styles.spin} /> : <Plus />} Adicionar {preview.times.length} times</button>)}</div></Dialog>;
+  return <Dialog title={result ? "Importação concluída" : "Importar times"} close={() => { if (!running.current) close(); }} wide busy={busy}>
+    {!result && <OwnershipNotice plural checked={accepted} disabled={busy} onChange={setAccepted} />}
+    {result ? <div className={styles.summary}><p>✓ {result.adicionados} times adicionados</p><p>✓ {result.jaExistentes} já estavam cadastrados</p><p>⚠ {result.naoEncontrados.length} não encontrados</p><p>⚠ {result.naoProcessados || result.tentarNovamente.length} não puderam ser processados</p></div> : !preview ? <><p className={styles.helper}>Cole sua lista de times.</p><textarea aria-label="IDs dos times" className={styles.textarea} value={text} disabled={busy} onChange={(e) => setText(e.target.value)} placeholder="Meus Favoritos=>44566162;30157334;13933388" /></> : <><p className={styles.found}>{preview.times.length} {preview.times.length === 1 ? "time encontrado" : "times encontrados"}</p><div className={styles.preview}>{preview.times.map((team) => <div key={team.timeId}><Check /><span><strong>{team.nome}</strong><small>{team.nomeCartoleiro} · ID {team.timeId}</small></span></div>)}</div></>}
+    {(result?.naoEncontrados ?? preview?.naoEncontrados ?? []).length > 0 && <div className={styles.notice}><strong>Não encontrados</strong><p>{(result?.naoEncontrados ?? preview?.naoEncontrados ?? []).join(";")}</p></div>}
+    {retry.length > 0 && <div className={styles.notice}><strong>Alguns times não puderam ser processados agora.</strong><p>{retry.join(";")}</p><button onClick={copyRetry}><Clipboard />{copied ? "IDs copiados" : "Copiar IDs para tentar novamente"}</button></div>}
+    {error && <p className={styles.inlineError} role="alert">{error}</p>}
+    <div className={`${styles.footer} ${styles.ownershipFooter}`}><button type="button" onClick={close} disabled={busy}>Cancelar</button>{!result && <>{!preview && <button type="button" onClick={() => void find()} disabled={busy || !ids}>{busy ? <Loader2 className={styles.spin} /> : <Search />}Buscar times</button>}<button type="button" className={styles.primary} onClick={() => void run()} disabled={busy || !ids || !preview?.times.length || !accepted}>{busy && preview ? <Loader2 className={styles.spin} /> : <Plus />}Importar times</button></>}</div>
+  </Dialog>;
 }
 
 function ExportDialog({ teams, close }: { teams: CartolaTeam[]; close: () => void }) {
