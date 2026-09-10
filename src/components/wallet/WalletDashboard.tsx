@@ -21,7 +21,7 @@ export function WalletDashboard() {
       <button type="button" disabled={!canDeposit} onClick={() => setModalOpen(true)}><Plus size={19} />Adicionar saldo</button>
       {!isLoading && !error && wallet && <div className={styles.summary}><div><div><span>Saldo bloqueado</span><strong>{formatWalletCurrency(wallet.saldoBloqueado)}</strong></div></div>{wallet.status === "BLOQUEADA" && <div role="status">Carteira bloqueada</div>}</div>}
     </section>
-    <Link href="/carteira/extrato" className={styles.statementLink}><span><List /><span><strong>Extrato</strong><small>Movimentações disponíveis em uma próxima etapa.</small></span></span><ChevronRight /></Link>
+    <Link href="/carteira/extrato" className={styles.statementLink}><span><List /><span><strong>Extrato</strong><small>Acompanhe as movimentações da sua carteira.</small></span></span><ChevronRight /></Link>
     {modalOpen && <AddBalanceModal close={() => setModalOpen(false)} />}
   </div>;
 }

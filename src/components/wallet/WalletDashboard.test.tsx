@@ -4,7 +4,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import { walletService } from "@/services/walletService";
 import { WalletDashboard } from "./WalletDashboard";
-import { WalletStatement } from "./WalletStatement";
 import { formatWalletCurrency } from "@/lib/format";
 import type { Wallet } from "@/types/wallet";
 import type { WalletPix } from "@/types/wallet";
@@ -119,12 +118,6 @@ it("aguarda autenticação e cancela consulta ao desmontar", async () => {
   ui.unmount();
   expect(signal?.aborted).toBe(true);
   await act(async () => next.resolve(positive));
-});
-it("extrato preserva estrutura sem lançamentos fictícios", () => {
-  render(<WalletStatement />);
-  expect(screen.getByText("A consulta de movimentações estará disponível em breve.")).toBeTruthy();
-  expect(screen.queryByText(/Liga dos Amigos|Crédito PIX|Premiação|125,00/)).toBeNull();
-  expect(walletService.getWallet).not.toHaveBeenCalled();
 });
 
 const approvedPix: WalletPix = { id: 1, valor: "10.00", status: "APROVADA", idPagamentoExterno: null, pixCopiaCola: null, qrCode: null, expiracao: null, criadoEm: "", atualizadoEm: "", aprovadoEm: null };

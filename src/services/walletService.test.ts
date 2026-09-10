@@ -2,6 +2,17 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { apiFetch } from "./apiClient";
 import { walletService } from "./walletService";
 vi.mock("./apiClient", () => ({ apiFetch: vi.fn() }));
+it("consulta extrato autenticado com página e limite, sem identidade", async () => {
+  await walletService.getWalletStatement();
+  expect(apiFetch).toHaveBeenLastCalledWith("/carteira/extrato?page=1&limit=20", {
+    method: "GET", authenticated: true, cache: "no-store", signal: undefined,
+  });
+  const signal = new AbortController().signal;
+  await walletService.getWalletStatement(2, 20, signal);
+  expect(apiFetch).toHaveBeenLastCalledWith("/carteira/extrato?page=2&limit=20", {
+    method: "GET", authenticated: true, cache: "no-store", signal,
+  });
+});
 it("consulta recarga somente por GET autenticado", async () => {
   const signal = new AbortController().signal;
   await walletService.getPix(7, signal);

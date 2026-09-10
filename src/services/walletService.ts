@@ -1,7 +1,12 @@
 import { apiFetch } from "./apiClient";
-import type { Wallet, WalletPix } from "@/types/wallet";
+import type { Wallet, WalletPix, WalletStatementResponse } from "@/types/wallet";
 
 export const walletService = {
+  getWalletStatement(page = 1, limit = 20, signal?: AbortSignal): Promise<WalletStatementResponse> {
+    return apiFetch<WalletStatementResponse>(`/carteira/extrato?page=${page}&limit=${limit}`, {
+      method: "GET", authenticated: true, cache: "no-store", signal,
+    });
+  },
   getPix(id: number, signal?: AbortSignal): Promise<WalletPix> {
     return apiFetch<WalletPix>(`/carteira/recargas/${id}`, {
       method: "GET", authenticated: true, cache: "no-store", signal,
