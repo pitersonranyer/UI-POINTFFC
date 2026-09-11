@@ -23,7 +23,7 @@ export function MatchDetailsPage({ matchId, futebolId }: { matchId: number; fute
   const jogo = futebol.data?.jogos.find(item => item.id === futebolId);
   const legacyMatch = dashboard?.partidas.find(item => item.partida_id === matchId);
   const isFutebol = futebolId !== undefined;
-  const back = isFutebol ? "/" : "/jogos-da-rodada";
+  const back = isFutebol ? "/jogos" : "/jogos-da-rodada";
   if (isFutebol ? futebol.loading : loading && !dashboard) return <main className={styles.shell}><div className={styles.loading}>Carregando jogo...</div></main>;
   if (isFutebol ? !jogo : !dashboard || !legacyMatch) return <main className={styles.shell}><Link className={styles.back} href={back}><ArrowLeft /> Voltar aos jogos</Link><div className={styles.empty}><h1>Jogo não encontrado</h1><p>{isFutebol ? futebol.error ?? "A partida pode não pertencer à rodada atual." : error ?? "A partida pode não pertencer à rodada atual."}</p></div></main>;
 

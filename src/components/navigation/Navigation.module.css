@@ -1,11 +1,7 @@
 .header { background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; backdrop-filter: blur(12px); }
 .headerInner { width: min(1120px, calc(100% - 32px)); height: 70px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-.brand { display: inline-flex; align-items: center; gap: 10px; }
-.brandMark { display: grid; place-items: center; width: 38px; height: 38px; border: 2px solid var(--gold); border-radius: 12px 12px 12px 4px; background: #111; color: white; font-size: 1.35rem; font-weight: 900; font-style: italic; box-shadow: 0 6px 16px rgba(17,17,17,.18); }
-.brand strong, .brand small { display: block; }
-.brand strong { font-size: .98rem; line-height: 1.05; }
-.brand strong b { color: var(--gold); }
-.brand small { color: var(--muted); font-size: .7rem; margin-top: 3px; }
+.brand { display: inline-flex; align-items: center; min-width: 0; flex: 0 1 auto; }
+.brandLogo { display: block; width: auto; height: 64px; max-width: 100%; object-fit: contain; }
 .desktopNav { display: none; gap: 24px; align-items: center; font-size: .92rem; font-weight: 700; color: var(--muted); }
 .desktopNav a { position: relative; padding: 27px 0; }
 .desktopNav a:hover, .activeDesktop { color: var(--success) !important; }
@@ -35,9 +31,8 @@
 @media (max-width:767px) {
   .header { position:sticky; }
   .headerInner { height:58px;justify-content:flex-start;gap:7px; }
-  .brand { gap:7px; }
-  .brandMark { width:34px;height:36px;border-radius:9px 9px 11px 11px;font-size:1.05rem; }
-  .brand strong { font-size:.85rem; }
+  .brandLogo { height:42px; }
+  .brand { max-width:clamp(70px,calc(100vw - 250px),126px); }
   .account { margin-left:auto; }
   .signup { padding:8px!important;font-size:.66rem; }
   .mobileNav { height:62px;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom); }

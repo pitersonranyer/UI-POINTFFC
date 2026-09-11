@@ -53,13 +53,7 @@ export function Navigation() {
             <Menu />
           </button>
           <Link href="/" className={styles.brand}>
-            <span className={styles.brandMark}>P</span>
-            <span>
-              <strong>
-                POINT <b>FFC</b>
-              </strong>
-              <small>Fantasy Football Club</small>
-            </span>
+            <Image src="/brand/pointffc-logo.png" alt="PointFFC — Point Fantasy Football Club" width={2048} height={682} className={styles.brandLogo} priority unoptimized />
           </Link>
           <nav className={styles.desktopNav}>
             {links.map(({ href, label }) => (

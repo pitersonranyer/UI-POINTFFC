@@ -23,6 +23,21 @@ beforeEach(() => { vi.stubGlobal("React", React); vi.mocked(buscarRodadaAtualBsa
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("card futebol", () => {
+  it("navega pelas setas e desabilita os controles nos limites", async () => {
+    render(<FutebolMatches />);
+    const track = await screen.findByRole("region", { name: "Carrossel de jogos da rodada" });
+    Object.defineProperties(track, { clientWidth: { value: 900 }, scrollWidth: { value: 1810 } });
+    const scrollBy = vi.fn(({ left }: { left: number }) => { track.scrollLeft += left; fireEvent.scroll(track); });
+    Object.defineProperty(track, "scrollBy", { value: scrollBy });
+    fireEvent.resize(window);
+    const previous = screen.getByRole("button", { name: "Jogos anteriores" }) as HTMLButtonElement;
+    const next = screen.getByRole("button", { name: "Próximos jogos" }) as HTMLButtonElement;
+    expect(previous.disabled).toBe(true); expect(next.disabled).toBe(false);
+    fireEvent.click(next); expect(scrollBy).toHaveBeenLastCalledWith({ left: 910, behavior: "smooth" });
+    expect(previous.disabled).toBe(false); expect(next.disabled).toBe(true);
+    fireEvent.click(previous); expect(track.scrollLeft).toBe(0); expect(previous.disabled).toBe(true);
+    fireEvent.keyDown(track, { key: "ArrowRight" }); expect(track.scrollLeft).toBe(910);
+  });
   it("renderiza rodada, nomes amigáveis, escudos e rota própria do detalhe", async () => {
     render(<FutebolMatches />);
     expect(screen.getByRole("status")).toBeTruthy();
@@ -30,7 +45,9 @@ describe("card futebol", () => {
     expect(screen.getByText("Flamengo")).toBeTruthy(); expect(screen.getByText("Corinthians")).toBeTruthy();
     expect(screen.queryByText("Outro")).toBeNull();
     expect(screen.getByAltText("Escudo do Flamengo").getAttribute("src")).toBe("/fla.svg");
-    const link = screen.getByRole("link"); expect(link.getAttribute("href")).toBe("/jogos?futebol=268");
+    const link = screen.getByRole("link", { name: /Ver detalhes de/ }); expect(link.getAttribute("href")).toBe("/jogos?futebol=268");
+    const viewAll = screen.getByRole("link", { name: "Ver todos" }); expect(viewAll.getAttribute("href")).toBe("/jogos");
+    expect(viewAll.closest("header")).toBeTruthy();
     expect(buscarRodadaAtualBsa).toHaveBeenCalledTimes(1);
   });
   it.each(["TIMED", "SCHEDULED"])("%s usa horário local", status => {
@@ -57,6 +74,11 @@ describe("card futebol", () => {
   });
 });
 describe("detalhe existente com futebol", () => {
+  it("não apresenta Ver todos no detalhe", async () => {
+    render(<MatchDetailsPage matchId={0} futebolId={268} />);
+    await screen.findByText("Atleta 262");
+    expect(screen.queryByRole("link", { name: /Ver todos/ })).toBeNull();
+  });
   it.each([[262,264], [282,266], [293,264]])("filtra exclusivamente clube_id %i e %i, ignorando nomes e externalId", async (home, away) => {
     vi.mocked(buscarRodadaAtualBsa).mockResolvedValue({ ...rodada, jogos: [{ ...jogo, mandante: { ...jogo.mandante, cartolaClubeId: home }, visitante: { ...jogo.visitante, cartolaClubeId: away } }] });
     render(<MatchDetailsPage matchId={0} futebolId={268} />);
