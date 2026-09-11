@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useFutebolRodada } from "@/hooks/useFutebolRodada";
+import { FutebolMatchInfo, FutebolShield } from "./FutebolMatch";
 import { ArrowLeft, ImageOff, MapPin, RefreshCw } from "lucide-react";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { escudoClube, nomeClube, obterClube, statusPartida } from "@/lib/cartola";
@@ -15,31 +17,44 @@ const points = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximu
 const positiveScouts = new Set(["G", "A", "SG", "DS", "FS", "FD", "FF", "FT", "DE", "DP", "PS"]);
 const negativeScouts = new Set(["GC", "CA", "CV", "FC", "I", "GS", "PC", "PP", "PE"]);
 
-export function MatchDetailsPage({ matchId }: { matchId: number }) {
-  const { dashboard, loading, error, atualizar, athletes, athletesLoading } = useCartolaDashboard();
-  if (loading && !dashboard) return <main className={styles.shell}><div className={styles.loading}>Carregando jogo...</div></main>;
-  const match = dashboard?.partidas.find(item => item.partida_id === matchId);
-  if (!dashboard || !match) return <main className={styles.shell}><Link className={styles.back} href="/jogos-da-rodada"><ArrowLeft /> Voltar aos jogos</Link><div className={styles.empty}><h1>Jogo não encontrado</h1><p>{error ?? "A partida pode não pertencer à rodada atual."}</p></div></main>;
+export function MatchDetailsPage({ matchId, futebolId }: { matchId: number; futebolId?: number }) {
+  const { dashboard, loading, error, atualizar, athletes, athletesLoading, athletesError } = useCartolaDashboard();
+  const futebol = useFutebolRodada(futebolId !== undefined);
+  const jogo = futebol.data?.jogos.find(item => item.id === futebolId);
+  const legacyMatch = dashboard?.partidas.find(item => item.partida_id === matchId);
+  const isFutebol = futebolId !== undefined;
+  const back = isFutebol ? "/" : "/jogos-da-rodada";
+  if (isFutebol ? futebol.loading : loading && !dashboard) return <main className={styles.shell}><div className={styles.loading}>Carregando jogo...</div></main>;
+  if (isFutebol ? !jogo : !dashboard || !legacyMatch) return <main className={styles.shell}><Link className={styles.back} href={back}><ArrowLeft /> Voltar aos jogos</Link><div className={styles.empty}><h1>Jogo não encontrado</h1><p>{isFutebol ? futebol.error ?? "A partida pode não pertencer à rodada atual." : error ?? "A partida pode não pertencer à rodada atual."}</p></div></main>;
 
-  const home = obterClube(dashboard.clubes, match.clube_casa_id);
-  const away = obterClube(dashboard.clubes, match.clube_visitante_id);
-  const allAthletes = athletes && !dashboard.mercadoAberto ? Object.values(athletes.atletas) : [];
+  const match = legacyMatch;
+  const homeId = isFutebol ? jogo!.mandante.cartolaClubeId : match!.clube_casa_id;
+  const awayId = isFutebol ? jogo!.visitante.cartolaClubeId : match!.clube_visitante_id;
+  const home = !isFutebol ? obterClube(dashboard!.clubes, homeId!) : null;
+  const away = !isFutebol ? obterClube(dashboard!.clubes, awayId!) : null;
+  // A rodada BSA nunca seleciona a coleção Cartola. A regra de mercado permanece no hook.
+  const allAthletes = athletes && dashboard && !dashboard.mercadoAberto ? Object.values(athletes.atletas) : [];
   const active = (athlete: CartolaScoredAthlete) => athlete.entrou_em_campo !== false || athlete.pontuacao !== 0 || Object.keys(athlete.scout ?? {}).length > 0;
-  const homeAthletes = allAthletes.filter(item => item.clube_id === match.clube_casa_id && active(item));
-  const awayAthletes = allAthletes.filter(item => item.clube_id === match.clube_visitante_id && active(item));
+  const homeAthletes = allAthletes.filter(item => homeId != null && item.clube_id === homeId && active(item));
+  const awayAthletes = allAthletes.filter(item => awayId != null && item.clube_id === awayId && active(item));
   const total = (items: CartolaScoredAthlete[]) => items.reduce((sum, item) => sum + item.pontuacao, 0);
-  const status = statusPartida(match);
-  const scored = match.placar_oficial_mandante != null && match.placar_oficial_visitante != null;
+  const status = match ? statusPartida(match) : null;
+  const scored = match?.placar_oficial_mandante != null && match?.placar_oficial_visitante != null;
 
   return <main className={styles.shell}>
-    <div className={styles.toolbar}><Link className={styles.back} href="/jogos-da-rodada"><ArrowLeft /> Jogos</Link><button type="button" onClick={atualizar}><RefreshCw /> Atualizar</button></div>
-    <section className={styles.scoreboard}>
-      <Team club={home} id={match.clube_casa_id} total={total(homeAthletes)} />
-      <div className={styles.score}><small>{status?.live ? "Ao vivo" : "Jogo"}</small><strong>{scored ? `${match.placar_oficial_mandante} × ${match.placar_oficial_visitante}` : "– × –"}</strong>{status && <b className={status.live ? styles.live : styles.finished}>{status.label}</b>}<span><MapPin /> {match.local || "Local a definir"}</span></div>
-      <Team club={away} id={match.clube_visitante_id} total={total(awayAthletes)} />
-    </section>
+    <div className={styles.toolbar}><Link className={styles.back} href={back}><ArrowLeft /> Jogos</Link><button type="button" onClick={atualizar}><RefreshCw /> Atualizar</button></div>
+    {isFutebol && jogo ? <section className={styles.scoreboard} aria-label={`Rodada ${jogo.rodada} · ${jogo.temporada}`}>
+      <div className={styles.team}><FutebolShield team={jogo.mandante}/><strong>{jogo.mandante.nome}</strong><small>{points.format(total(homeAthletes))} pts</small></div>
+      <FutebolMatchInfo jogo={jogo}/>
+      <div className={styles.team}><FutebolShield team={jogo.visitante}/><strong>{jogo.visitante.nome}</strong><small>{points.format(total(awayAthletes))} pts</small></div>
+    </section> : <section className={styles.scoreboard}>
+      <Team club={home!} id={homeId!} total={total(homeAthletes)} />
+      <div className={styles.score}><small>{status?.live ? "Ao vivo" : "Jogo"}</small><strong>{scored ? `${match!.placar_oficial_mandante} × ${match!.placar_oficial_visitante}` : "– × –"}</strong>{status && <b className={status.live ? styles.live : styles.finished}>{status.label}</b>}<span><MapPin /> {match!.local || "Local a definir"}</span></div>
+      <Team club={away!} id={awayId!} total={total(awayAthletes)} />
+    </section>}
 
-    {athletesLoading && !athletes ? <div className={styles.loading}>Carregando atletas...</div> :
+    {isFutebol && (homeId == null || awayId == null) && <p className={styles.empty}>Dados fantasy não disponíveis para {homeId == null ? jogo!.mandante.nome : ""}{homeId == null && awayId == null ? " e " : ""}{awayId == null ? jogo!.visitante.nome : ""}.</p>}
+    {athletesError || error ? <div className={styles.empty} role="alert">Não foi possível carregar os atletas. Tente atualizar novamente.</div> : athletesLoading && !athletes ? <div className={styles.loading}>Carregando atletas...</div> :
       homeAthletes.length || awayAthletes.length ? <section className={styles.comparison}>{positions.map(position => {
         const homePlayers = homeAthletes.filter(item => item.posicao_id === position.id).sort((a, b) => b.pontuacao - a.pontuacao);
         const awayPlayers = awayAthletes.filter(item => item.posicao_id === position.id).sort((a, b) => b.pontuacao - a.pontuacao);
