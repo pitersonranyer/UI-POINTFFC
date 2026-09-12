@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CartolaDashboard } from "./CartolaDashboard";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
@@ -38,18 +38,35 @@ describe("Dashboard e resumo do Mago", () => {
     expect(screen.getByText("Partidas da API").compareDocumentPosition(screen.getByRole("region", { name: "Mago do Point Fantasy" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("apresenta o resumo centralizado e o link na mesma aba", () => {
+  it("mostra quatro insights da R27, indicadores e link na mesma aba", () => {
     render(<MagoDashboardCard data={magoRodada27} />);
     const card = screen.getByRole("region", { name: "Mago do Point Fantasy" });
-    expect(within(card).getByText("Flamengo é o SG nº 1 do Mago")).toBeTruthy();
+    expect(within(card).getByText("Inteligência para sua rodada")).toBeTruthy();
+    expect(within(card).getByText("Rodada 27")).toBeTruthy();
+    const carousel = within(card).getByRole("region", { name: "Insights do Mago" });
+    expect(carousel.getAttribute("aria-roledescription")).toBe("carrossel");
+    expect(carousel.querySelectorAll("article")).toHaveLength(4);
     expect(within(card).getAllByText("42,66%")).toHaveLength(2);
-    expect(card.textContent).toContain("Corinthians: 0,84 xG projetado");
-    expect(card.textContent).toContain("Mirassol — 1,82 xG");
-    expect(within(card).getAllByRole("listitem").map(node => node.textContent)).toEqual(["Flamengo42,66%", "Bahia41,59%", "Palmeiras36,86%"]);
+    expect(card.textContent).toContain("Bahia41,59%");
+    expect(card.textContent).toContain("Palmeiras36,86%");
+    expect(card.textContent).toContain("Botafogo1,76 xG");
+    expect(card.textContent).toContain("Bahia1,73 xG");
+    expect(card.textContent).toContain("4 dos principais nomes");
+    expect(card.textContent).toContain("17,03% SG");
+    expect(card.textContent).toContain("1,76 xG projetado");
+    const dots = within(card).getAllByRole("button", { name: /Ir para/ });
+    expect(dots).toHaveLength(4);
+    expect(dots[0].getAttribute("aria-current")).toBe("true");
+    Object.defineProperty(carousel, "clientWidth", { value: 300, configurable: true });
+    carousel.scrollTo = vi.fn();
+    fireEvent.click(dots[1]);
+    expect(carousel.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 300 }));
+    expect(dots[1].getAttribute("aria-current")).toBe("true");
+    fireEvent.keyDown(carousel, { key: "ArrowRight" });
+    expect(carousel.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 600 }));
     const link = within(card).getByRole("link", { name: "Ver análise completa" });
     expect(link.getAttribute("href")).toBe("/mago");
     expect(link.getAttribute("target")).toBeNull();
-    expect(card.textContent).not.toContain("2 x 0");
   });
 
   it("não força a rodada ou status do backend para coincidir com a análise", () => {
@@ -64,8 +81,9 @@ describe("Dashboard e resumo do Mago", () => {
   it("aceita outra análise sem números fixados no componente", () => {
     render(<MagoDashboardCard data={{ ...magoRodada27, rodada: 28, topSg: [{ ...magoRodada27.topSg[0], clube: "Outro clube", sg: 50, xgAdversario: null }], ataques: [{ clube: "Outro ataque", xg: 2.5 }] }} />);
     expect(screen.getByText("Rodada 28")).toBeTruthy();
-    expect(screen.getByText("Outro clube é o SG nº 1 do Mago")).toBeTruthy();
-    expect(screen.getByText("Outro ataque — 2,50 xG")).toBeTruthy();
+    expect(screen.getAllByText("Outro clube")).toHaveLength(2);
+    expect(screen.getAllByText("Outro ataque")).toHaveLength(2);
+    expect(screen.getAllByText("2,50 xG")).toHaveLength(2);
     expect(screen.queryByText(/42,66/)).toBeNull();
   });
 
