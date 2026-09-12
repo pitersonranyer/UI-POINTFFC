@@ -39,7 +39,7 @@
   .mobileNav a { gap:3px;font-size:.56rem; }
 }
 @media (min-width:768px) { .menu { display:none; } }
-.mobileNav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.mobileNav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (min-width: 768px) and (max-width: 1000px) {
   .desktopNav { gap: 14px; font-size: .8rem; }
   .brandLogo { max-width: 170px; }

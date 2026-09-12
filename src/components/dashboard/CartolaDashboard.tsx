@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, Bot, RefreshCw, Shield, Trophy, Users } from "lucide-react";
-import { wizardAttacks, wizardCleanSheets, wizardGoals, wizardTips } from "@/data/dashboard";
+import { ArrowRight, RefreshCw, Shield, Trophy, Users } from "lucide-react";
+import { magoRodada27 } from "@/data/mago/rodada27";
+import { MagoDashboardCard } from "./MagoDashboardCard";
 import { leagueService } from "@/services/leagueService";
 import { formatCurrency } from "@/lib/format";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
@@ -20,7 +21,7 @@ export function CartolaDashboard(){
  {stale&&<p className={styles.staleNotice}>Dados temporariamente desatualizados.</p>}{error&&<p className={styles.refreshError}>Não foi possível buscar a atualização mais recente.</p>}
  <CartolaMarketStatus mercado={dashboard.mercado} aberto={dashboard.mercadoAberto} aoVivo={dashboard.bolaRolando} atualizar={atualizar}/>
  <FutebolMatches />
- <section className={styles.mago}><div className={styles.magoHead}><div className={styles.magoAvatar}><Bot/></div><div><small>Mago IA</small><h2>Inteligência da rodada {round}</h2></div><Link href="/central-da-rodada">Ver análise completa <ArrowRight/></Link></div><div className={styles.magoPanels}><article><h3>Melhores SG</h3>{wizardCleanSheets.map((x,i)=><p key={x.team}><span>{i+1}º <b>{x.team}</b></span><strong>{x.value}</strong></p>)}</article><article><h3>Expectativa de gols (xG)</h3>{wizardGoals.map((x,i)=><p key={x.team}><span>{i+1}º <b>{x.team}</b></span><strong>{x.value}</strong></p>)}</article><article><h3>Ataques em alta</h3>{wizardAttacks.map((x,i)=><p key={x.team}><span>{i+1}º <b>{x.team}</b></span><strong>{x.value}</strong></p>)}</article><article className={styles.tips}><h3>Dicas do Mago</h3>{wizardTips.map(x=><p key={x}>• {x}</p>)}</article></div></section>
+ <MagoDashboardCard data={magoRodada27} />
  <section className={styles.leagues}><div className={styles.sectionHead}><h2>{dashboard.mercadoAberto?"Ligas disponíveis para jogar":"Ligas em andamento"}</h2><Link href="/ligas">Ver todas <ArrowRight/></Link></div><div className={styles.leagueGrid}>{leagues.map(league=><article className={styles.league} key={league.id}><div className={styles.leagueIdentity}><span><Shield/></span><div><h3>{league.name}</h3><small>Rodada {round}</small></div></div><dl><div><dt>Premiação</dt><dd>{formatCurrency(league.prizePool)}</dd></div><div><dt>Entrada</dt><dd>{formatCurrency(league.entryFee)}</dd></div><div><dt>Participantes</dt><dd>{league.currentParticipants}</dd></div></dl><Link href={`/ligas/${league.id}`}>{dashboard.mercadoAberto?"Jogar":"Acompanhar"}</Link></article>)}</div></section>
  <GeneralRanking season={dashboard.mercado.temporada ?? new Date().getFullYear()} round={rankingRound} marketOpen={dashboard.mercadoAberto}/>
  <TopAthletes data={athletes} round={dashboard.mercadoAberto?Math.max(1,round-1):round} live={!dashboard.mercadoAberto&&dashboard.bolaRolando} loading={athletesLoading} error={athletesError} firstRound={dashboard.mercadoAberto&&round===1}/>

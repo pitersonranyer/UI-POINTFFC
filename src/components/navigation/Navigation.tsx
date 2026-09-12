@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Home, LogOut, Menu, Shirt, Trophy, UserRound, WandSparkles } from "lucide-react";
+import { Home, LogOut, Menu, Shirt, Trophy, UserRound } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,6 @@ const publicLinks = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/provaveis", label: "Prováveis", icon: Shirt },
   { href: "/ligas", label: "Ligas", icon: Trophy },
-  { href: "/mago", label: "Mago", icon: WandSparkles },
 ];
 export function Navigation() {
   const pathname = usePathname();
