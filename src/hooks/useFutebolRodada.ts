@@ -10,13 +10,21 @@ export function useFutebolRodada(enabled = true) {
   useEffect(() => {
     if (!enabled) return;
     let active = true;
+    let pending = false;
+    let loaded = false;
     setLoading(true);
-    buscarRodadaAtualBsa().then(result => {
-      if (active) { setData(result); setError(null); }
-    }).catch(() => {
-      if (active) setError("Não foi possível carregar os jogos da rodada.");
-    }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    const refresh = () => {
+      if (pending) return;
+      pending = true;
+      buscarRodadaAtualBsa().then(result => {
+        if (active) { loaded = true; setData(result); setError(null); }
+      }).catch(() => {
+        if (active && !loaded) setError("Não foi possível carregar os jogos da rodada.");
+      }).finally(() => { pending = false; if (active) setLoading(false); });
+    };
+    refresh();
+    const timer = setInterval(refresh, 5 * 60_000);
+    return () => { active = false; clearInterval(timer); };
   }, [enabled]);
   return { data, loading, error };
 }
