@@ -37,21 +37,21 @@
 .game:focus-visible{outline:3px solid #c2a351;outline-offset:3px}
 .liveGame{border-color:#c7dece}
 .liveGame::before{content:"";position:absolute;top:0;left:22px;width:32px;height:3px;border-radius:0 0 3px 3px;background:var(--success)}
-.gameHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:17px 20px 8px}
+.gameHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:11px 20px 6px}
 .gameHeader time{font-size:1.12rem;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
-.gameRound{font-size:.5rem;color:#737a75;font-weight:600;letter-spacing:.08em}
+.gameRound{font-size:.48rem;color:#737a75;font-weight:500;letter-spacing:.04em}
 .status{display:inline-flex;align-items:center;gap:6px;padding:5px 7px;border-radius:5px;background:#f3f4f3;color:var(--text-secondary);font-size:.55rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .liveStatus{background:#edf7f0;color:#14763a}
-.matchup{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:13px 16px 22px;flex:1}
-.team{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;text-align:center}
-.crest{display:grid;place-items:center;width:76px;height:76px;background:#fafaf9;border-radius:50%}
-.crest img,.crest>span{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 3px 3px #11111110)}
+.matchup{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:8px 16px 14px;flex:1}
+.team{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;text-align:center}
+.crest{display:grid;place-items:center;width:62px;height:62px;background:#fafaf9;border-radius:50%}
+.crest img,.crest>span{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 3px 3px #11111110)}
 .team strong{font-size:.79rem;font-weight:750;line-height:1.45;overflow-wrap:anywhere;max-width:100%}
-.score{align-self:start;padding-top:26px;min-width:35px;text-align:center}
+.score{align-self:start;padding-top:19px;min-width:35px;text-align:center}
 .score>span{display:flex;align-items:center;justify-content:center;gap:9px;font-size:1.65rem;font-weight:850;line-height:1;font-variant-numeric:tabular-nums}
 .score b{font-size:1rem;font-weight:500;color:#a4a9a5}
 .score .versus{font-size:1.35rem;font-weight:400;color:#a0a69f}
-.gameFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 20px;padding:13px 0;border-top:1px solid #f0f0ed;font-size:.61rem;font-weight:700;color:var(--text-secondary)}
+.gameFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 20px;padding:10px 0;border-top:1px solid #f0f0ed;font-size:.61rem;font-weight:700;color:var(--text-secondary)}
 .gameFooter svg{color:#9b7b25}
 .game:hover .gameFooter{color:var(--text-primary)}
 .footer{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:40px;color:var(--text-secondary);font-size:.6rem}
@@ -68,5 +68,5 @@
 .skeleton>div>i{width:64px;height:64px;border-radius:50%;background:#f4f4f2}
 .skeleton>i:last-child{width:100%;height:10px}
 @media(max-width:1099px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.shell{width:calc(100% - 32px)}}
-@media(max-width:599px){.shell{width:calc(100% - 24px);padding-top:14px}.header{margin:20px 0 24px}.headerMark{display:none}.header p{font-size:.75rem}.competition{padding:16px 14px;gap:8px}.competitionIdentity{gap:10px}.competitionIdentity small{font-size:.45rem;letter-spacing:.06em}.competitionIdentity strong{font-size:.77rem}.competitionIcon{width:40px;height:44px}.round{gap:2px;padding-left:12px;flex-direction:column}.round>span{font-size:.6rem}.round>strong{font-size:1.45rem}.grid{grid-template-columns:minmax(0,1fr);gap:12px}.agendaHeading{margin:26px 0 22px}.agendaHeading h2{font-size:.76rem}.agendaHeading>span{font-size:.61rem}.days{gap:26px}.gameHeader{padding:17px 20px 6px}.matchup{padding:10px 20px 21px}.crest{width:78px;height:78px}.crest img,.crest>span{width:60px;height:60px}.team strong{font-size:.82rem}.gameFooter{padding:13px 0;font-size:.68rem;min-height:44px}.footer{margin-top:32px}}
+@media(max-width:599px){.shell{width:calc(100% - 24px);padding-top:14px}.header{margin:20px 0 24px}.headerMark{display:none}.header p{font-size:.75rem}.competition{padding:16px 14px;gap:8px}.competitionIdentity{gap:10px}.competitionIdentity small{font-size:.45rem;letter-spacing:.06em}.competitionIdentity strong{font-size:.77rem}.competitionIcon{width:40px;height:44px}.round{gap:2px;padding-left:12px;flex-direction:column}.round>span{font-size:.6rem}.round>strong{font-size:1.45rem}.grid{grid-template-columns:minmax(0,1fr);gap:12px}.agendaHeading{margin:26px 0 22px}.agendaHeading h2{font-size:.76rem}.agendaHeading>span{font-size:.61rem}.days{gap:26px}.gameHeader{padding:11px 20px 6px}.matchup{padding:6px 20px 13px}.crest{width:64px;height:64px}.crest img,.crest>span{width:50px;height:50px}.team strong{font-size:.82rem}.gameFooter{padding:9px 0;font-size:.68rem;min-height:44px}.footer{margin-top:32px}}
 @media(prefers-reduced-motion:reduce){.game{transition:none}.game:hover{transform:none}}
