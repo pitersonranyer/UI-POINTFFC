@@ -15,6 +15,8 @@ export interface FutebolJogo {
   dataHoraUtc: string;
   status: string;
   vencedor: string | null;
+  local?: string | null;
+  estadio?: string | null;
   mandante: FutebolTime;
   visitante: FutebolTime;
   placar: { mandante: number | null; visitante: number | null };

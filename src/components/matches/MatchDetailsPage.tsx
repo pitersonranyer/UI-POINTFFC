@@ -8,6 +8,7 @@ import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { escudoClube, nomeClube, obterClube, statusPartida } from "@/lib/cartola";
 import type { CartolaClub, CartolaScoredAthlete } from "@/types/cartola";
 import styles from "./MatchDetailsPage.module.css";
+import { futebolCompeticoes, type FutebolCompeticaoCodigo } from "@/data/futebolCompeticoes";
 
 const positions = [
   { id: 1, label: "Goleiros" }, { id: 2, label: "Laterais" }, { id: 3, label: "Zagueiros" },
@@ -17,7 +18,31 @@ const points = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximu
 const positiveScouts = new Set(["G", "A", "SG", "DS", "FS", "FD", "FF", "FT", "DE", "DP", "PS"]);
 const negativeScouts = new Set(["GC", "CA", "CV", "FC", "I", "GS", "PC", "PP", "PE"]);
 
-export function MatchDetailsPage({ matchId, futebolId }: { matchId: number; futebolId?: number }) {
+export function MatchDetailsPage({ matchId, futebolId, codigo = "BSA" }: { matchId: number; futebolId?: number; codigo?: FutebolCompeticaoCodigo }) {
+  if (futebolId !== undefined && codigo !== "BSA") return <LeagueMatchDetails futebolId={futebolId} codigo={codigo} />;
+  return <CartolaMatchDetails matchId={matchId} futebolId={futebolId} />;
+}
+
+function LeagueMatchDetails({ futebolId, codigo }: { futebolId: number; codigo: FutebolCompeticaoCodigo }) {
+  const futebol = useFutebolRodada(true, codigo);
+  const jogo = futebol.data?.jogos.find(item => item.id === futebolId);
+  const back = `/jogos?competicao=${codigo}`;
+  const nome = futebolCompeticoes.find(item => item.codigo === codigo)?.nome;
+  if (futebol.loading) return <main className={styles.shell}><div className={styles.loading}>Carregando jogo...</div></main>;
+  if (!jogo) return <main className={styles.shell}><Link className={styles.back} href={back}><ArrowLeft /> Voltar aos jogos</Link><div className={styles.empty}><h1>Jogo não encontrado</h1><p>{futebol.error ?? "A partida pode não pertencer à rodada atual."}</p></div></main>;
+  const date = new Date(jogo.dataHoraUtc);
+  return <main className={styles.shell}>
+    <div className={styles.toolbar}><Link className={styles.back} href={back}><ArrowLeft /> Jogos</Link></div>
+    <section className={styles.scoreboard} aria-label={`${nome} · Rodada ${jogo.rodada}`}>
+      <div className={styles.team}><FutebolShield team={jogo.mandante}/><strong>{jogo.mandante.nome}</strong></div>
+      <FutebolMatchInfo jogo={jogo}/>
+      <div className={styles.team}><FutebolShield team={jogo.visitante}/><strong>{jogo.visitante.nome}</strong></div>
+    </section>
+    <section className={styles.gameFacts}><h1>{nome}</h1><p>Rodada {jogo.rodada} · Temporada {jogo.temporada}</p><p>{Number.isNaN(date.getTime()) ? "Data e horário a definir" : date.toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short" })}</p><p><MapPin size={14} /> {jogo.estadio || jogo.local || "Local a definir"}</p></section>
+  </main>;
+}
+
+function CartolaMatchDetails({ matchId, futebolId }: { matchId: number; futebolId?: number }) {
   const { dashboard, loading, error, atualizar, athletes, athletesLoading, athletesError } = useCartolaDashboard();
   const futebol = useFutebolRodada(futebolId !== undefined);
   const jogo = futebol.data?.jogos.find(item => item.id === futebolId);

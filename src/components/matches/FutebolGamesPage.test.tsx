@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { FutebolGamesPage } from "./FutebolGamesPage";
 import { useFutebolRodada } from "@/hooks/useFutebolRodada";
 import type { FutebolJogo } from "@/types/futebol";
@@ -21,6 +21,14 @@ it("ordena e agrupa por dia local sem modificar a coleção original", () => {
 it("mantém o clique pelo ID interno, nomes e escudos acessíveis", () => {
   render(<FutebolGamesPage />); expect(screen.getByRole("link", { name: "Ver confronto: Atlético-MG contra Fluminense" }).getAttribute("href")).toBe("/jogos?futebol=1");
   expect(screen.getByRole("img", { name: "Escudo do Atlético-MG indisponível" })).toBeTruthy();
+});
+it("troca para Champions e mantém o código no link do confronto", () => {
+  vi.mocked(useFutebolRodada).mockImplementation((_enabled, codigo) => ({ ...state([{ ...game, mandante: { ...game.mandante, nome: "Real Madrid" } }]), data: { ...state().data, competicao: { codigo: codigo ?? "BSA", nome: "Champions League" }, jogos: [{ ...game, mandante: { ...game.mandante, nome: "Real Madrid" } }] } }));
+  render(<FutebolGamesPage />);
+  fireEvent.click(screen.getByRole("button", { name: "Champions" }));
+  expect(useFutebolRodada).toHaveBeenLastCalledWith(true, "CL");
+  expect(screen.getByRole("button", { name: "Champions" }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByRole("link", { name: "Ver confronto: Real Madrid contra Fluminense" }).getAttribute("href")).toBe("/jogos?futebol=1&competicao=CL");
 });
 it.each([["IN_PLAY", "Ao vivo"], ["FINISHED", "Encerrado"], ["PAUSED", "Intervalo"]])("apresenta %s com placar", (status, label) => {
   vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, status, placar: { mandante: 2, visitante: 0 } }])); render(<FutebolGamesPage />);

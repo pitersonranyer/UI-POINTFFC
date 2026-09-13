@@ -8,7 +8,7 @@ import { buscarRodadaAtualBsa } from "@/services/futebolService";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import type { FutebolJogo, FutebolRodada } from "@/types/futebol";
 
-vi.mock("@/services/futebolService", () => ({ buscarRodadaAtualBsa: vi.fn() }));
+vi.mock("@/services/futebolService", () => ({ buscarRodadaAtualBsa: vi.fn(), buscarRodadaAtual: vi.fn() }));
 vi.mock("@/hooks/useCartolaDashboard", () => ({ useCartolaDashboard: vi.fn() }));
 const jogo: FutebolJogo = { id: 268, externalId: 555005, temporada: 2026, rodada: 27, dataHoraUtc: "2026-09-13T20:30:00.000Z", status: "TIMED", vencedor: null,
   mandante: { id: 14, externalId: 1783, cartolaClubeId: 262, nome: "Flamengo", nomeCurto: "Outro", sigla: "FLA", escudoUrl: "/fla.svg" },
@@ -74,6 +74,16 @@ describe("card futebol", () => {
   });
 });
 describe("detalhe existente com futebol", () => {
+  it("não monta Cartola fora da BSA", async () => {
+    const { buscarRodadaAtual } = await import("@/services/futebolService");
+    vi.mocked(buscarRodadaAtual).mockResolvedValue({ ...rodada, competicao: { codigo: "CL", nome: "Champions League" }, jogos: [{ ...jogo, mandante: { ...jogo.mandante, cartolaClubeId: null }, visitante: { ...jogo.visitante, cartolaClubeId: null } }] });
+    vi.mocked(useCartolaDashboard).mockClear();
+    render(<MatchDetailsPage matchId={0} futebolId={268} codigo="CL" />);
+    expect(await screen.findByText("Champions League")).toBeTruthy();
+    expect(useCartolaDashboard).not.toHaveBeenCalled();
+    expect(buscarRodadaAtual).toHaveBeenCalledWith("CL");
+    expect(screen.queryByText(/Atleta/)).toBeNull();
+  });
   it("não apresenta Ver todos no detalhe", async () => {
     render(<MatchDetailsPage matchId={0} futebolId={268} />);
     await screen.findByText("Atleta 262");

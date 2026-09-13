@@ -10,6 +10,7 @@
 .headerMark svg{width:42px;height:42px;color:#b79b4d}
 .headerMark span{font-size:.58rem;font-weight:700;letter-spacing:.16em}
 .competition{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow)}
+.competitionSelector{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:2px 0 12px;margin-bottom:10px}.competitionSelector button{flex:0 0 auto;min-height:40px;padding:0 16px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text-primary);font:inherit;font-size:.72rem;font-weight:700;white-space:nowrap;cursor:pointer}.competitionSelector button:hover,.competitionSelector button:focus-visible{border-color:#b89737}.competitionSelector .selectedCompetition{border-color:#b89737;background:#1b1b1b;color:#d8bd6b}
 .competitionIdentity{display:flex;align-items:center;gap:14px;min-width:0}
 .competitionIcon{display:grid;place-items:center;flex-shrink:0;width:48px;height:52px;color:var(--gold);background:#1b1b1b;border:1px solid #3c3726;border-radius:12px 12px 16px 16px}
 .competitionIdentity small{display:block;margin-bottom:5px;color:var(--text-secondary);font-size:.55rem;font-weight:700;letter-spacing:.1em}
@@ -53,6 +54,7 @@
 .score .versus{font-size:1.35rem;font-weight:400;color:#a0a69f}
 .gameFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 20px;padding:10px 0;border-top:1px solid #f0f0ed;font-size:.61rem;font-weight:700;color:var(--text-secondary)}
 .gameFooter svg{color:#9b7b25}
+.gameFooter>span:last-child{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .game:hover .gameFooter{color:var(--text-primary)}
 .footer{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:40px;color:var(--text-secondary);font-size:.6rem}
 .footerAccent{width:16px;height:2px;background:#c0a04a}
