@@ -36,7 +36,13 @@ it("troca para Champions e mantém o código no link do confronto", () => {
   fireEvent.click(screen.getByRole("button", { name: "Champions" }));
   expect(useFutebolRodada).toHaveBeenLastCalledWith(true, "CL");
   expect(screen.getByRole("button", { name: "Champions" }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByRole("img", { name: "Logo de Champions League" }).getAttribute("src")).toBe("https://crests.football-data.org/CL.png");
   expect(screen.getByRole("link", { name: "Ver confronto: Real Madrid contra Fluminense" }).getAttribute("href")).toBe("/jogos?futebol=1&competicao=CL");
+});
+it("mostra a sigla se a logo da competição falhar", () => {
+  render(<FutebolGamesPage />);
+  fireEvent.error(screen.getByRole("img", { name: "Logo de Brasileirão Série A" }));
+  expect(screen.getByLabelText("Logo de Brasileirão Série A indisponível").textContent).toBe("BSA");
 });
 it.each([["IN_PLAY", "Ao vivo"], ["FINISHED", "Encerrado"], ["PAUSED", "Intervalo"]])("apresenta %s com placar", (status, label) => {
   vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, status, placar: { mandante: 2, visitante: 0 } }])); render(<FutebolGamesPage />);

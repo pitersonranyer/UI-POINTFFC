@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, CalendarDays, ChevronRight, MapPin, Trophy } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronRight, MapPin } from "lucide-react";
 import { useFutebolRodada } from "@/hooks/useFutebolRodada";
 import type { FutebolJogo } from "@/types/futebol";
 import { FutebolShield } from "./FutebolMatch";
@@ -39,13 +39,13 @@ export function FutebolGamesPage({ initialCodigo = "BSA" }: { initialCodigo?: Fu
     <Link className={styles.back} href="/"><ArrowLeft size={14} /> Dashboard</Link>
     <header className={styles.header}>
       <div><span className={styles.eyebrow}>O palco da rodada</span><h1>Jogos<span>.</span></h1><p>Acompanhe os confrontos da rodada</p></div>
-      <div className={styles.headerMark} aria-hidden="true"><Trophy strokeWidth={1.3} /><span>{competicao.nome.toUpperCase()}</span></div>
+      <div className={styles.headerMark} aria-hidden="true"><CompetitionLogo key={codigo} codigo={codigo} nome={competicao.nome} url={competicao.logoUrl} /><span>{competicao.nome.toUpperCase()}</span></div>
     </header>
 
     <nav className={styles.competitionSelector} aria-label="Selecionar competição">{futebolCompeticoes.map(item => <button key={item.codigo} type="button" className={item.codigo === codigo ? styles.selectedCompetition : undefined} aria-pressed={item.codigo === codigo} onClick={() => { setCodigo(item.codigo); window.history.replaceState(null, "", item.codigo === "BSA" ? "/jogos" : `/jogos?competicao=${item.codigo}`); }}>{item.aba}</button>)}</nav>
 
     <section className={styles.competition} aria-label="Competição e rodada">
-      <div className={styles.competitionIdentity}><span className={styles.competitionIcon}><Trophy size={22} strokeWidth={1.5} /></span><div><small>COMPETIÇÃO</small><strong>{competicao.nome}</strong></div></div>
+      <div className={styles.competitionIdentity}><CompetitionLogo key={codigo} codigo={codigo} nome={competicao.nome} url={competicao.logoUrl} /><div><small>COMPETIÇÃO</small><strong>{competicao.nome}</strong></div></div>
       <div className={styles.round}>{currentData?.rodada != null ? <><span>Rodada</span><strong>{String(currentData.rodada).padStart(2, "0")}</strong></> : <span>Rodada atual</span>}</div>
     </section>
 
@@ -60,6 +60,11 @@ export function FutebolGamesPage({ initialCodigo = "BSA" }: { initialCodigo?: Fu
       </section>)}</div>}
     <footer className={styles.footer}><span className={styles.footerAccent} />Cada confronto, uma nova história.<ChevronRight size={12} /></footer>
   </div>;
+}
+
+function CompetitionLogo({ codigo, nome, url }: { codigo: FutebolCompeticaoCodigo; nome: string; url: string }) {
+  const [failed, setFailed] = useState(false);
+  return <span className={styles.competitionIcon}>{failed ? <b aria-label={`Logo de ${nome} indisponível`}>{codigo}</b> : <img src={url} alt={`Logo de ${nome}`} onError={() => setFailed(true)} />}</span>;
 }
 
 function GameCard({ game, codigo }: { game: FutebolJogo; codigo: FutebolCompeticaoCodigo }) {

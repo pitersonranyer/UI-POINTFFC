@@ -76,6 +76,12 @@
 /* Compact premium match list */
 .competition{border-color:#9b7b31;background:linear-gradient(115deg,#151515 0%,#23231f 100%);box-shadow:0 12px 28px #15151520,inset 0 1px #d7bc6540;color:#f7f5ed}
 .competitionIcon{color:#e3c66e;background:#27241a;border-color:#8b702d}
+.competitionIdentity{gap:18px}
+.competitionIdentity .competitionIcon{width:72px;height:72px;border-radius:14px;background:#f8f7f2;border-color:#b59a55;box-shadow:0 0 0 3px #c6a85118}
+.competitionIcon img{display:block;width:100%;height:100%;padding:8px;object-fit:contain}
+.competitionIcon b{font-size:.7rem;letter-spacing:.04em}
+.headerMark .competitionIcon{width:42px;height:42px;border-radius:10px;background:#f8f7f2;border-color:#b59a55}
+.headerMark .competitionIcon img{padding:5px}
 .competitionIdentity small{color:#b69d5c}
 .competitionIdentity strong{color:#fff;font-size:1.06rem}
 .round{border-left-color:#8b702d}
@@ -113,3 +119,4 @@
 .skeleton>i:last-child{width:50px}
 @media(max-width:899px){.game{grid-template-columns:70px minmax(0,1fr) minmax(34px,auto) minmax(0,1fr) 22px;gap:8px;padding:9px 11px}.venue{grid-column:2/5;grid-row:2;padding-left:2px}.gameArrow{grid-column:5;grid-row:1/3}.schedule{grid-row:1/3}.team{gap:5px}.crest{flex-basis:30px;width:30px;height:30px}.crest img,.crest>span{width:27px;height:27px}}
 @media(max-width:599px){.competition{padding:14px 13px}.competitionIdentity strong{font-size:.84rem}.round>strong{font-size:1.5rem}.grid{gap:7px}.game{grid-template-columns:57px minmax(0,1fr) 28px minmax(0,1fr) 14px;gap:4px;min-height:67px;padding:8px 8px}.schedule{padding-right:4px}.schedule time{font-size:.78rem}.status{font-size:.43rem;letter-spacing:0}.team strong{font-size:.66rem;line-height:1.15}.crest{flex-basis:24px;width:24px;height:24px}.crest img,.crest>span{width:22px;height:22px}.score{min-width:28px}.score>span{font-size:1rem;gap:2px}.score b{font-size:.68rem}.score .versus{font-size:.9rem}.venue{font-size:.56rem;line-height:1.1}.venue svg{width:11px;height:11px}.gameArrow{width:14px}.agendaHeading{margin:22px 0 15px}.days{gap:20px}}
+@media(max-width:599px){.competitionIdentity{gap:11px}.competitionIdentity .competitionIcon{width:52px;height:52px;border-radius:11px}.competitionIcon img{padding:6px}}
