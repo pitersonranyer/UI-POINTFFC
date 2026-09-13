@@ -22,6 +22,14 @@ it("mantém o clique pelo ID interno, nomes e escudos acessíveis", () => {
   render(<FutebolGamesPage />); expect(screen.getByRole("link", { name: "Ver confronto: Atlético-MG contra Fluminense" }).getAttribute("href")).toBe("/jogos?futebol=1");
   expect(screen.getByRole("img", { name: "Escudo do Atlético-MG indisponível" })).toBeTruthy();
 });
+it("mostra horário, status e estádio no card compacto", () => {
+  vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, estadio: "Stade Bollaert-Delelis" }]));
+  render(<FutebolGamesPage />);
+  const card = screen.getByRole("link", { name: "Ver confronto: Atlético-MG contra Fluminense" });
+  expect(within(card).getByText("16:00")).toBeTruthy();
+  expect(within(card).getByText("Em breve")).toBeTruthy();
+  expect(within(card).getByText("Stade Bollaert-Delelis")).toBeTruthy();
+});
 it("troca para Champions e mantém o código no link do confronto", () => {
   vi.mocked(useFutebolRodada).mockImplementation((_enabled, codigo) => ({ ...state([{ ...game, mandante: { ...game.mandante, nome: "Real Madrid" } }]), data: { ...state().data, competicao: { codigo: codigo ?? "BSA", nome: "Champions League" }, jogos: [{ ...game, mandante: { ...game.mandante, nome: "Real Madrid" } }] } }));
   render(<FutebolGamesPage />);

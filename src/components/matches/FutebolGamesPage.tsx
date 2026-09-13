@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronRight, Trophy } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronRight, MapPin, Trophy } from "lucide-react";
 import { useFutebolRodada } from "@/hooks/useFutebolRodada";
 import type { FutebolJogo } from "@/types/futebol";
 import { FutebolShield } from "./FutebolMatch";
@@ -68,13 +68,13 @@ function GameCard({ game, codigo }: { game: FutebolJogo; codigo: FutebolCompetic
   const labels: Record<string, string> = { IN_PLAY: "Ao vivo", PAUSED: "Intervalo", FINISHED: "Encerrado", AWARDED: "Encerrado", POSTPONED: "Adiado", SUSPENDED: "Suspenso", CANCELLED: "Cancelado" };
   const score = ["IN_PLAY", "PAUSED", "FINISHED", "AWARDED", "SUSPENDED"].includes(game.status) && game.placar.mandante != null && game.placar.visitante != null;
   const date = localDate(game.dataHoraUtc);
+  const venue = game.estadio || game.local;
   return <Link href={`/jogos?futebol=${game.id}${codigo === "BSA" ? "" : `&competicao=${codigo}`}`} className={`${styles.game} ${live ? styles.liveGame : ""}`} aria-label={`Ver confronto: ${game.mandante.nome} contra ${game.visitante.nome}`}>
-    <div className={styles.gameHeader}>{future ? <time dateTime={game.dataHoraUtc}>{date ? date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "Horário a definir"}</time> : <span className={`${styles.status} ${live ? styles.liveStatus : ""}`}>{live && <i />}{labels[game.status] ?? "A definir"}</span>}<span className={styles.gameRound}>RODADA {game.rodada}</span></div>
-    <div className={styles.matchup}>
-      <div className={styles.team}><span className={styles.crest}><FutebolShield team={game.mandante} /></span><strong>{game.mandante.nome}</strong></div>
-      <div className={styles.score}>{score ? <span aria-label={`Placar ${game.placar.mandante} a ${game.placar.visitante}`}>{game.placar.mandante}<b>:</b>{game.placar.visitante}</span> : <span className={styles.versus}>×</span>}</div>
-      <div className={styles.team}><span className={styles.crest}><FutebolShield team={game.visitante} /></span><strong>{game.visitante.nome}</strong></div>
-    </div>
-    <div className={styles.gameFooter}><span>{game.estadio || game.local || (live ? "Acompanhar confronto" : "Ver confronto")}</span><span>Ver confronto <ArrowUpRight size={16} /></span></div>
+    <div className={styles.schedule}><time dateTime={game.dataHoraUtc}>{date ? date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "--:--"}</time><span className={`${styles.status} ${live ? styles.liveStatus : ""}`}>{live && <i />}{future ? "Em breve" : labels[game.status] ?? "A definir"}</span></div>
+    <div className={`${styles.team} ${styles.homeTeam}`}><strong>{game.mandante.nome}</strong><span className={styles.crest}><FutebolShield team={game.mandante} /></span></div>
+    <div className={styles.score}>{score ? <span aria-label={`Placar ${game.placar.mandante} a ${game.placar.visitante}`}>{game.placar.mandante}<b>:</b>{game.placar.visitante}</span> : <span className={styles.versus}>×</span>}</div>
+    <div className={`${styles.team} ${styles.awayTeam}`}><span className={styles.crest}><FutebolShield team={game.visitante} /></span><strong>{game.visitante.nome}</strong></div>
+    <div className={styles.venue}>{venue && <><MapPin size={14} aria-hidden="true" /><span>{venue}</span></>}</div>
+    <ChevronRight className={styles.gameArrow} size={18} aria-hidden="true" />
   </Link>;
 }
