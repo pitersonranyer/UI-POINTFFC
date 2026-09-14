@@ -27,6 +27,7 @@ describe("Dashboard e resumo do Mago", () => {
     setup();
     const { container } = render(<CartolaDashboard />);
     expect(screen.getByRole("heading", { name: "Dashboard" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ver liga" }).getAttribute("href")).toBe("/ligas/point-ffc");
     expect(screen.getAllByText("Rodada 27").length).toBeGreaterThan(0);
     expect(screen.getByText("Aberto")).toBeTruthy();
     expect(screen.getByText("Ranking 26")).toBeTruthy();
