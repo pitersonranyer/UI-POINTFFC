@@ -4,7 +4,7 @@ export interface PointLeague { id: number; nome: string; slug: string; descricao
 export interface Competition { id: number; nome: string; slug: string; descricao: string | null; tipoAcesso: string; valorInscricao: number; rodadaInicio: number | null; rodadaFim: number | null; inicioInscricao: string | null; fimInscricao: string | null; limiteTimesUsuario: number | null; limiteParticipantes: number | null; status: string; quantidadeInscritos?: number; premiacao?: Prize[] }
 export interface Prize { posicaoInicio: number; posicaoFim: number; tipoPremiacao: string; valor: number | null; percentual: number | null; ordem: number }
 export interface Entry { id: number; timeIdCartola?: number; nomeTime: string; nomeCartoleiro: string | null; escudoUrl: string | null; pontuacao: number | null; posicao: number | null; posicaoAnterior: number | null }
-export interface RankingEntry extends Entry { inscricaoId: number; timeIdCartola: number }
+export interface RankingEntry extends Entry { inscricaoId: number; timeIdCartola: number; capitao?: { atletaId?: number; apelido: string; fotoUrl?: string | null } | null }
 export interface CompetitionSummary { competicao: Competition; liga: Pick<PointLeague, "id" | "nome" | "slug" | "imagemUrl">; inscritos: { quantidade: number }; premiacao: Prize[]; usuario?: { quantidadeTimesInscritos: number; limiteTimesUsuario: number | null; podeInscrever: boolean; motivoBloqueio: string | null; melhorPosicaoUsuario: number | null; melhorPontuacaoUsuario: number | null }; minhasInscricoes?: Entry[] }
 
 export const pointLeagueService = {

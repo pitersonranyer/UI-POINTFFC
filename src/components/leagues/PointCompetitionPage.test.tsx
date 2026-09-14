@@ -12,7 +12,7 @@ vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { summary:
 vi.mock("@/services/teamService", () => ({ teamService: { buscarMeusTimes: vi.fn() } }));
 const entry: Entry = { id: 7, timeIdCartola: 123, nomeTime: "Meu FC", nomeCartoleiro: "Ana", escudoUrl: null, pontuacao: null, posicao: null, posicaoAnterior: null };
 const rival: Entry = { id: 8, nomeTime: "Rival FC", nomeCartoleiro: "Bia", escudoUrl: null, pontuacao: 88.5, posicao: 1, posicaoAnterior: 2 };
-const ranking: RankingEntry[] = [{ ...rival, inscricaoId: 8, timeIdCartola: 456 }, { ...entry, inscricaoId: 7, timeIdCartola: 123 }];
+const ranking: RankingEntry[] = [{ ...rival, inscricaoId: 8, timeIdCartola: 456, capitao: { atletaId: 99, apelido: "Arrascaeta" } }, { ...entry, inscricaoId: 7, timeIdCartola: 123, capitao: null }];
 const summary: CompetitionSummary = { competicao: { id: 42, nome: "Disputa 42", slug: "disputa-42", descricao: "Rodada de teste", tipoAcesso: "FREE", valorInscricao: 0, rodadaInicio: 27, rodadaFim: 27, inicioInscricao: null, fimInscricao: null, limiteTimesUsuario: 2, limiteParticipantes: null, status: "INSCRICOES_ABERTAS" }, liga: { id: 1, nome: "POINT FFC", slug: "point-ffc", imagemUrl: null }, inscritos: { quantidade: 1 }, premiacao: [] };
 const member: CompetitionSummary = { ...summary, usuario: { quantidadeTimesInscritos: 0, limiteTimesUsuario: 2, podeInscrever: true, motivoBloqueio: null, melhorPosicaoUsuario: null, melhorPontuacaoUsuario: null }, minhasInscricoes: [] };
 beforeEach(() => {
@@ -80,24 +80,36 @@ it("mostra meus times e ausência de pontuação sem inventar zero", async () =>
   expect(screen.getByText("Sem pontuação")).toBeTruthy();
   expect(pointLeagueService.myEntries).toHaveBeenCalledWith(42);
 });
-it("mostra participantes na ordem e valores recebidos", async () => {
-  await open(); fireEvent.click(screen.getByRole("button", { name: "Participantes" }));
-  expect(await screen.findByText("Rival FC")).toBeTruthy();
-  expect(screen.getByText("88,50")).toBeTruthy();
-  expect(pointLeagueService.participants).toHaveBeenCalledWith(42);
+it("remove a aba Participantes e exibe inscritos sem posição ou pontuação no Ranking", async () => {
+  vi.mocked(pointLeagueService.ranking).mockResolvedValue({ ranking: [{ ...entry, inscricaoId: 7, timeIdCartola: 123, capitao: null }] });
+  await open();
+  expect(screen.queryByRole("button", { name: "Participantes" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Ver ranking completo" }));
+  expect(await screen.findByText("Meu FC")).toBeTruthy();
+  expect(screen.getByText("Ana")).toBeTruthy();
+  expect(screen.getAllByText("—")).toHaveLength(2);
+  expect(pointLeagueService.ranking).toHaveBeenCalledWith(42);
+  expect(pointLeagueService.participants).not.toHaveBeenCalled();
 });
-it("mostra ranking, movimento, destaque do usuário e atualização manual", async () => {
+it("mostra ranking na ordem da API, posição, cartoleiro, pontuação, destaque e atualização", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, minhasInscricoes: [entry] });
   await open(); fireEvent.click(screen.getByRole("button", { name: "Ranking" }));
-  expect(await screen.findByText("Meu FC · Meu time")).toBeTruthy();
-  expect(screen.getByText("↑ 1")).toBeTruthy();
-  expect(screen.getByText("Meu FC · Meu time").closest("article")?.className).toContain("own");
+  expect(await screen.findByText("Rival FC")).toBeTruthy();
+  expect(screen.getByText("1º")).toBeTruthy();
+  expect(screen.getByText("Bia")).toBeTruthy();
+  expect(within(screen.getByText("Rival FC").closest("article")!).getByText("Arrascaeta")).toBeTruthy();
+  expect(within(screen.getByText("Rival FC").closest("article")!).getByText("C")).toBeTruthy();
+  expect(within(screen.getByText("Meu FC").closest("article")!).queryByText("C")).toBeNull();
+  expect(screen.getByText("88,50 pts")).toBeTruthy();
+  expect(screen.getByText("Seu time").closest("article")?.className).toContain("own");
+  const cards = Array.from(screen.getByText("Rival FC").closest("section")?.querySelectorAll("article") ?? []);
+  expect(cards.map((card) => card.textContent)).toEqual([expect.stringContaining("Rival FC"), expect.stringContaining("Meu FC")]);
   expect(pointLeagueService.ranking).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("button", { name: "Atualizar" }));
   await waitFor(() => expect(pointLeagueService.ranking).toHaveBeenCalledTimes(2));
   fireEvent.click(screen.getByRole("button", { name: "Visão geral" }));
   expect(screen.getByRole("heading", { name: "Classificação parcial" })).toBeTruthy();
-  expect(screen.getByText("Meu FC · Meu time")).toBeTruthy();
+  expect(screen.getByText("Seu time")).toBeTruthy();
   expect(pointLeagueService.ranking).toHaveBeenCalledTimes(2);
 });
 it("mostra resumo real para usuário já inscrito e mantém a ordem das abas", async () => {
@@ -109,7 +121,7 @@ it("mostra resumo real para usuário já inscrito e mantém a ordem das abas", a
   expect(screen.getByText("84,37 pts")).toBeTruthy();
   expect(screen.queryByText("Ainda não inscrito")).toBeNull();
   const tabs = within(screen.getByRole("navigation", { name: "Seções da competição" })).getAllByRole("button").map((button) => button.textContent);
-  expect(tabs).toEqual(["Visão geral", "Meus times", "Participantes", "Ranking", "Premiação"]);
+  expect(tabs).toEqual(["Visão geral", "Meus times", "Ranking", "Premiação"]);
   fireEvent.click(screen.getByRole("button", { name: "Ver meus times" }));
   expect(await screen.findByRole("heading", { name: "Meus times" })).toBeTruthy();
 });
