@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MyTeamsManager } from "./MyTeamsManager";
 import { teamService } from "@/services/teamService";
+import { partialScoreService } from "@/services/partialScoreService";
 import type { AddTeamResult, ImportResult } from "@/types/team";
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: true, isLoading: false }) }));
 vi.mock("./PartialScore", () => ({ PartialScore: () => null }));
@@ -20,6 +21,7 @@ const declarations = [
   "Declaro que sou o titular dos times informados e estou ciente da necessidade de comprovação para receber premiações.",
 ];
 beforeEach(() => {
+  vi.mocked(partialScoreService.buscarParciais).mockReset().mockResolvedValue([]);
   vi.mocked(teamService.buscarMeusTimes).mockReset().mockResolvedValue([]);
   vi.mocked(teamService.buscarTimesPorNome).mockReset().mockResolvedValue([team]);
   vi.mocked(teamService.adicionarMeuTime).mockReset().mockResolvedValue({ time: team });
