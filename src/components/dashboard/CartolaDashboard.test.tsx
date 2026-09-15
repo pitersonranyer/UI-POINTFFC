@@ -5,11 +5,17 @@ import { CartolaDashboard } from "./CartolaDashboard";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { MagoDashboardCard } from "./MagoDashboardCard";
 import { magoRodada27 } from "@/data/mago/rodada27";
+import { buscarJogosHoje } from "@/services/futebolService";
+
+vi.mock("@/services/futebolService", () => ({ buscarJogosHoje: vi.fn().mockResolvedValue({ total: 0, jogos: [] }) }));
 
 vi.mock("@/hooks/useCartolaDashboard");
 vi.mock("@/components/matches/FutebolMatches", () => ({ FutebolMatches: () => <section>Partidas da API</section> }));
 vi.mock("./GeneralRanking", () => ({ GeneralRanking: ({ round }: { round: number }) => <section>Ranking {round}</section> }));
-beforeEach(() => vi.stubGlobal("React", React));
+beforeEach(() => {
+  vi.stubGlobal("React", React);
+  vi.mocked(buscarJogosHoje).mockResolvedValue({ data: "2026-09-15", timezone: "America/Sao_Paulo", total: 0, jogos: [] });
+});
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 function setup(round = 27, open = true) {
@@ -23,6 +29,15 @@ function setup(round = 27, open = true) {
 }
 
 describe("Dashboard e resumo do Mago", () => {
+  it("isola falha dos jogos de hoje e preserva os demais blocos", async () => {
+    setup();
+    vi.mocked(buscarJogosHoje).mockRejectedValueOnce(new Error("offline"));
+    render(<CartolaDashboard />);
+    expect(await screen.findByText("Não foi possível carregar os jogos de hoje.")).toBeTruthy();
+    expect(screen.getByText("Partidas da API")).toBeTruthy();
+    expect(screen.getByText("Ranking 26")).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Mago do Point Fantasy" })).toBeTruthy();
+  });
   it("mostra R27, preserva os blocos existentes e usa a rodada anterior enquanto o mercado está aberto", () => {
     setup();
     const { container } = render(<CartolaDashboard />);

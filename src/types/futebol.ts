@@ -29,3 +29,14 @@ export interface FutebolRodada {
   total: number;
   jogos: FutebolJogo[];
 }
+
+export interface FutebolJogoHoje extends FutebolJogo {
+  competicao: { id: number; codigo: string; nome: string; nomeCurto?: string | null; emblemaUrl: string | null };
+}
+
+export interface FutebolJogosHoje {
+  data: string;
+  timezone: string;
+  total: number;
+  jogos: FutebolJogoHoje[];
+}

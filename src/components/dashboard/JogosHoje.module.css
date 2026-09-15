@@ -1,0 +1,28 @@
+.section{min-width:0;color:var(--text-primary)}
+.section header{min-height:40px;margin-bottom:8px}
+.carousel,.skeletonTrack{display:flex;gap:10px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:2px 0 6px;scrollbar-width:thin;scrollbar-color:#ccc transparent}
+.match{box-sizing:border-box;flex:0 0 178px;min-width:0;min-height:138px;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fff;scroll-snap-align:start}
+.meta{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:.68rem}
+.meta time{font-weight:800;white-space:nowrap}
+.meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)}
+.team{display:flex;align-items:center;gap:7px;min-width:0;margin-top:6px}
+.team>img,.team>span{width:24px;height:24px;flex:0 0 24px}
+.team svg{width:20px;height:20px}
+.team strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.75rem}
+.team b{font-size:.85rem;font-variant-numeric:tabular-nums}
+.status,.live{display:block;margin-top:9px;font-size:.65rem;color:var(--text-secondary)}
+.live{color:var(--success);font-weight:800}
+.controls{margin-top:0}
+.message{box-sizing:border-box;min-height:146px;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:.75rem;color:var(--text-secondary);text-align:center}
+.message p{margin:0}
+.message button{padding:9px 15px;border:0;border-radius:8px;color:#fff;background:var(--success);font-weight:800;cursor:pointer}
+.skeletonTrack{overflow:hidden}
+.skeleton{background:linear-gradient(90deg,#f0f2f1 25%,#fafafa 37%,#f0f2f1 63%);background-size:400% 100%;animation:pulse 1.4s ease infinite}
+.carousel:focus-visible,.section a:focus-visible,.section button:focus-visible{outline:2px solid #967723;outline-offset:2px}
+@keyframes pulse{0%{background-position:100% 0}100%{background-position:0 0}}
+@media(min-width:600px){.match{flex-basis:calc((100% - 20px)/3)}}
+@media(min-width:900px){.match{flex-basis:calc((100% - 30px)/4)}}
+@media(min-width:1200px){.match{flex-basis:calc((100% - 40px)/5)}}
+@media(min-width:1440px){.match{flex-basis:calc((100% - 50px)/6)}}
+@media(max-width:599px){.controls{display:none}}
+@media(prefers-reduced-motion:reduce){.skeleton{animation:none}}
