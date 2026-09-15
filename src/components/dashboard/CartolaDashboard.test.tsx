@@ -35,7 +35,8 @@ describe("Dashboard e resumo do Mago", () => {
     expect(screen.getByText("Ainda não há pontuações disponíveis.")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Estatísticas da rodada 26" })).toBeTruthy();
     const headings = Array.from(container.querySelectorAll("h2")).map(node => node.textContent);
-    expect(headings.indexOf("Mago do Point Fantasy")).toBeLessThan(headings.indexOf("Ligas disponíveis para jogar"));
+    expect(headings).not.toContain("Ligas disponíveis para jogar");
+    expect(headings).not.toContain("Ligas em andamento");
     expect(screen.getByText("Partidas da API").compareDocumentPosition(screen.getByRole("region", { name: "Mago do Point Fantasy" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

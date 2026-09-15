@@ -1,2 +1,2 @@
-export type GeneralRankingEntry = { posicao: number; timeId: number; nomeTime: string; nomeCartoleiro: string; escudoUrl: string; pontuacao: number; status: string };
-export type GeneralRankingResponse = { temporada: number; rodada: number; total: number; ranking: GeneralRankingEntry[] };
+export type GeneralRankingEntry = { posicao: number; timeId: number; nomeTime: string; nomeCartoleiro: string | null; escudoUrl: string | null; pontuacao: number; status: string; capitao?: { atletaId?: number; apelido: string } | null };
+export type GeneralRankingResponse = { temporada: number; rodada: number; total: number; ranking: GeneralRankingEntry[]; paginacao?: { pagina: number; limite: number; total: number; totalPaginas: number } };

@@ -17,4 +17,8 @@ describe("generalRankingService", () => {
     await generalRankingService.buscar(2026, 25);
     expect(mockedFetch).toHaveBeenCalledWith(expect.stringContaining("/ranking-geral?"));
   });
+  it("envia pagina e filtros opcionais pela URL", async () => {
+    await generalRankingService.buscar(2026, 27, 20, { page: 2, nomeTime: "Real Prime", nomeCartoleiro: "Piterson" });
+    expect(mockedFetch).toHaveBeenCalledWith("/ranking-geral?temporada=2026&rodada=27&limit=20&page=2&nomeTime=Real+Prime&nomeCartoleiro=Piterson");
+  });
 });

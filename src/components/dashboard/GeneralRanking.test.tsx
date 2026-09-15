@@ -32,13 +32,22 @@ beforeEach(() => {
 });
 
 describe("GeneralRanking", () => {
+  it("pede apenas cinco times e liga ao ranking completo", async () => {
+    authenticated = false;
+    buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 40, ranking: Array.from({ length: 7 }, (_, index) => ({ ...entries[0], timeId: index + 1, nomeTime: `Time ${index + 1}`, posicao: index + 1 })) });
+    render(<GeneralRanking season={2026} round={25} />);
+    await screen.findByText("Time 1");
+    expect(buscar).toHaveBeenCalledWith(2026, 25, 5);
+    expect(screen.queryByText("Time 6")).toBeNull();
+    expect(screen.getByRole("link", { name: "Ver ranking completo →" }).getAttribute("href")).toBe("/ranking?temporada=2026&rodada=25");
+  });
   it.each([false, true])("oculta tentativa com mercado fechado, falha no GET: %s", async (getFailed) => {
     atualizar.mockRejectedValue(new Error("offline"));
     if (getFailed) buscar.mockRejectedValue(new Error("offline"));
     else buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 3, ranking: entries });
     render(<GeneralRanking season={2026} round={25} marketOpen={false} />);
-    await screen.findByText(getFailed ? "Não foi possível carregar o Ranking Geral." : /Exibindo os dados disponíveis/);
-    expect(screen.queryByRole("button", { name: "Tentar novamente" })).toBeNull();
+    await screen.findByText(getFailed ? "Não foi possível carregar o ranking." : /Exibindo os dados disponíveis/);
+    expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeTruthy();
   });
   it("carrega o GET público sem disparar atualização autenticada para visitante", async () => {
     authenticated = false;
@@ -46,7 +55,7 @@ describe("GeneralRanking", () => {
     render(<GeneralRanking season={2026} round={25} />);
     await screen.findByText("3 times no ranking");
     expect(atualizar).not.toHaveBeenCalled();
-    expect(buscar).toHaveBeenCalledWith(2026, 25, 100);
+    expect(buscar).toHaveBeenCalledWith(2026, 25, 5);
   });
   it.each([
     ["atualizados", { atualizados: 30, jaProcessados: 0 }],
@@ -57,7 +66,7 @@ describe("GeneralRanking", () => {
     buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 3, ranking: entries });
     render(<GeneralRanking season={2026} round={24} />);
     await screen.findByText("3 times no ranking");
-    expect(buscar).toHaveBeenCalledWith(2026, 25, 100);
+    expect(buscar).toHaveBeenCalledWith(2026, 25, 5);
     expect(atualizar.mock.invocationCallOrder[0]).toBeLessThan(buscar.mock.invocationCallOrder[0]);
   });
   it.each([
@@ -104,10 +113,10 @@ describe("GeneralRanking", () => {
   });
   it("mostra erro discreto sem depender de autenticacao", async () => {
     render(<GeneralRankingView round={25} data={null} loading={false} error />);
-    expect(screen.getByText(/carregar o Ranking Geral/)).toBeTruthy();
+    expect(screen.getByText(/carregar o ranking/)).toBeTruthy();
   });
   it("mostra o estado vazio", async () => {
     buscar.mockResolvedValue({ temporada: 2026, rodada: 25, total: 0, ranking: [] }); render(<GeneralRanking season={2026} round={25} />);
-    await waitFor(() => expect(screen.getByText("Ranking ainda não disponível para esta rodada")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("A classificação ainda não está disponível.")).toBeTruthy());
   });
 });

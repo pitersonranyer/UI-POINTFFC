@@ -21,7 +21,7 @@ export function useGeneralRanking(temporada: number, fallbackRound: number) {
           if (update.falhas > 0 || update.semSnapshot > 0) { setWarning("partial"); if (process.env.NODE_ENV === "development" && update.detalhesFalhas.length) console.debug("Falhas ao atualizar ranking", update.detalhesFalhas); }
         } catch { updateFailed = true; setWarning("update-failed"); }
       }
-      const response = await generalRankingService.buscar(season, round, 100);
+      const response = await generalRankingService.buscar(season, round, 5);
       if (mounted.current && currentAttempt === attempt.current) setRanking(response);
     } catch { updateFailed = false; if (mounted.current && currentAttempt === attempt.current) { setRanking(null); setWarning(null); setError(true); } }
     finally { if (mounted.current && currentAttempt === attempt.current) { setLoading(false); setRetrying(false); if (updateFailed) setWarning("update-failed"); } }
