@@ -71,16 +71,32 @@ it("abre modal, seleciona time vinculado, inscreve FREE e atualiza resumo", asyn
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   const dialog = await screen.findByRole("dialog");
   await within(dialog).findByText("Meu FC");
-  expect((within(dialog).getByRole("button", { name: "Inscrever 0 times" }) as HTMLButtonElement).disabled).toBe(true);
+  const values = within(dialog).getByText("Valor por time").closest("dl")!;
+  expect(within(values).getByText("Valor por time").nextElementSibling?.textContent).toMatch(/R\$\s*0,00/);
+  expect(within(values).getByText("Total da inscrição").nextElementSibling?.textContent).toMatch(/R\$\s*0,00/);
+  expect((within(dialog).getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(within(dialog).getByRole("checkbox", { name: "Selecionar Meu FC" }));
   expect(within(dialog).queryByText(/titularidade|titular dos times|comprovação/i)).toBeNull();
   expect(within(dialog).queryByRole("checkbox", { name: /Declaro/ })).toBeNull();
-  fireEvent.click(within(dialog).getByRole("button", { name: "Inscrever time" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }));
   await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledWith(42, 123));
   await screen.findByText("1 time inscrito com sucesso.");
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.queryByText("Você ainda não está participando.")).toBeNull();
   expect(pointLeagueService.summary).toHaveBeenCalledTimes(2);
+});
+it("calcula o total com o valor real retornado pela competição", async () => {
+  state.authenticated = true;
+  const teams = [{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Time C", nomeCartoleiro: "Caio", escudoUrl: "" }];
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, competicao: { ...member.competicao, tipoAcesso: "PAGO", valorInscricao: 10, limiteTimesUsuario: 3 }, usuario: { ...member.usuario!, limiteTimesUsuario: 3 } });
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue(teams);
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
+  const dialog = within(await screen.findByRole("dialog"));
+  fireEvent.click(dialog.getByRole("button", { name: "Selecionar todos" }));
+  const values = dialog.getByText("Valor por time").closest("dl")!;
+  expect(within(values).getByText("Valor por time").nextElementSibling?.textContent).toMatch(/R\$\s*10,00/);
+  expect(within(values).getByText("Total da inscrição").nextElementSibling?.textContent).toMatch(/R\$\s*30,00/);
+  expect(dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*30,00/i })).toBeTruthy();
 });
 it("respeita bloqueio por limite retornado pelo backend", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, podeInscrever: false, motivoBloqueio: "LIMITE_TIMES_USUARIO_ATINGIDO" } });
@@ -165,7 +181,7 @@ it("seleciona e desmarca vários times, atualiza contador e respeita o limite re
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" }));
   expect(dialog.getAllByText("2 times selecionados")).toHaveLength(2);
-  expect((dialog.getByRole("button", { name: "Inscrever 2 times" }) as HTMLButtonElement).disabled).toBe(false);
+  expect((dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(false);
   expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).disabled).toBe(true);
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
   expect(dialog.getAllByText("1 time selecionado")).toHaveLength(2);
@@ -186,10 +202,10 @@ it("busca, seleciona todos os resultados até o limite e desmarca todos", async 
   fireEvent.click(dialog.getByRole("button", { name: "Selecionar todos" }));
   expect(dialog.getAllByText("2 times selecionados")).toHaveLength(2);
   expect(dialog.getByText("0 vagas restantes")).toBeTruthy();
-  expect((dialog.getByRole("button", { name: "Inscrever 2 times" }) as HTMLButtonElement).disabled).toBe(false);
+  expect((dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(false);
   fireEvent.click(dialog.getByRole("button", { name: "Desmarcar todos" }));
   expect(dialog.getAllByText("0 times selecionados")).toHaveLength(2);
-  expect((dialog.getByRole("button", { name: "Inscrever 0 times" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(true);
 });
 
 it("identifica time já inscrito e impede nova seleção", async () => {
@@ -201,16 +217,18 @@ it("identifica time já inscrito e impede nova seleção", async () => {
   expect(screen.getByText("Já inscrito")).toBeTruthy();
 });
 
-it("Importar IDs seleciona somente times já vinculados pela fonte oficial", async () => {
+it("Selecionar por IDs seleciona somente times já vinculados pela fonte oficial", async () => {
   state.authenticated = true;
   const linkedTeam = { timeId: 456, nome: "Vinculado", nomeCartoleiro: "Bia", escudoUrl: "" };
   vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 4 } });
   vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([linkedTeam]);
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   expect(await screen.findByRole("checkbox", { name: "Selecionar Vinculado" })).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Importar IDs" }));
+  expect(screen.queryByRole("button", { name: "Importar IDs" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar por IDs" }));
   fireEvent.change(screen.getByLabelText("IDs dos times"), { target: { value: "Favoritos=>456;789" } });
-  fireEvent.click(screen.getByRole("button", { name: "Selecionar times da lista" }));
+  expect(screen.getByRole("button", { name: "Voltar" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar times" }));
   const selected = screen.getByRole("checkbox", { name: "Selecionar Vinculado" }) as HTMLInputElement;
   expect(selected.checked).toBe(true);
   expect(screen.queryByText("789")).toBeNull();
@@ -226,9 +244,9 @@ it("ID de time não vinculado não entra na lista nem pode ser inscrito", async 
   vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([]);
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   expect(screen.getByText("Nenhum time vinculado. Cadastre seus times em Meus Times para continuar.")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Importar IDs" }));
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar por IDs" }));
   fireEvent.change(screen.getByLabelText("IDs dos times"), { target: { value: "789" } });
-  fireEvent.click(screen.getByRole("button", { name: "Selecionar times da lista" }));
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar times" }));
   expect(screen.getByText("0 times selecionados. 1 não encontrado(s) ou indisponível(is) nesta competição.")).toBeTruthy();
   expect(screen.queryByRole("checkbox", { name: /789/ })).toBeNull();
   expect(pointLeagueService.enroll).not.toHaveBeenCalled();
@@ -250,7 +268,7 @@ it("inscreve sequencialmente, continua após falha, preserva somente retry e imp
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   const dialog = within(await screen.findByRole("dialog"));
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time C" }));
-  const confirm = dialog.getByRole("button", { name: "Inscrever 3 times" }); fireEvent.click(confirm); fireEvent.click(confirm);
+  const confirm = dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }); fireEvent.click(confirm); fireEvent.click(confirm);
   expect(pointLeagueService.enroll).toHaveBeenCalledTimes(1);
   expect(dialog.getByRole("button", { name: "Inscrevendo 1 de 3..." })).toBeTruthy();
   resolveFirst(entry);
@@ -267,7 +285,7 @@ it("inscreve sequencialmente, continua após falha, preserva somente retry e imp
   expect((dialog.getByRole("checkbox", { name: "Selecionar Time A" }) as HTMLInputElement).checked).toBe(false);
   expect((dialog.getByRole("checkbox", { name: "Selecionar Time B" }) as HTMLInputElement).checked).toBe(true);
   expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).checked).toBe(false);
-  fireEvent.click(dialog.getByRole("button", { name: "Inscrever time" }));
+  fireEvent.click(dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }));
   await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledTimes(4));
   expect(pointLeagueService.enroll).toHaveBeenNthCalledWith(4, 42, 456);
   expect(await screen.findByText("1 time inscrito com sucesso.")).toBeTruthy();
@@ -283,7 +301,7 @@ it.each(["resumo", "times"])("preserva o sucesso quando falha o refresh de %s", 
   else vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([team]);
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   fireEvent.click(await screen.findByRole("checkbox", { name: "Selecionar Time A" }));
-  fireEvent.click(screen.getByRole("button", { name: "Inscrever time" }));
+  fireEvent.click(screen.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }));
   expect(await screen.findByText("1 time inscrito com sucesso.")).toBeTruthy();
   expect(screen.getByText("Inscrições concluídas, mas não foi possível atualizar os dados da tela.")).toBeTruthy();
   expect(screen.queryByText("Internal server error")).toBeNull();
