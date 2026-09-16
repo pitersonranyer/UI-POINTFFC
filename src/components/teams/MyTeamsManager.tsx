@@ -1,6 +1,6 @@
 "use client";
 
-import { TriangleAlert, Check, Clipboard, Download, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
+import { Check, Clipboard, Download, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ import type { CartolaTeam, FindByIdsResult, ImportResult } from "@/types/team";
 import { normalizeImportIds } from "./teamImport";
 import { PartialScore } from "./PartialScore";
 import { Dialog } from "@/components/ui/Dialog";
+import { TeamOwnershipNotice } from "./TeamOwnershipNotice";
 import styles from "./MyTeamsManager.module.css";
 
 type Modal = "add" | "import" | "export" | null;
@@ -74,15 +75,6 @@ export function MyTeamsManager() {
   </main>;
 }
 
-function OwnershipNotice({ plural = false, checked, disabled, onChange }: { plural?: boolean; checked: boolean; disabled: boolean; onChange(value: boolean): void }) {
-  return <><div className={styles.ownershipNotice}><TriangleAlert aria-hidden="true" /><div><strong>ATENÇÃO</strong><p>{plural
-    ? "Para receber qualquer premiação, será necessário comprovar a titularidade dos times cadastrados. Caso a titularidade não seja comprovada, a premiação não será paga."
-    : "Para receber qualquer premiação, será necessário comprovar a titularidade do time cadastrado. Caso a titularidade não seja comprovada, a premiação não será paga."}</p></div></div>
-    <label className={styles.ownershipDeclaration}><input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} /><span>{plural
-      ? "Declaro que sou o titular dos times informados e estou ciente da necessidade de comprovação para receber premiações."
-      : "Declaro que sou o titular deste time e estou ciente da necessidade de comprovação para receber premiações."}</span></label></>;
-}
-
 function AddDialog({ teams, close, onAdded }: { teams: CartolaTeam[]; close: () => void; onAdded: (team: CartolaTeam) => void }) {
   const [query, setQuery] = useState(""), [results, setResults] = useState<CartolaTeam[]>([]), [searching, setSearching] = useState(false), [adding, setAdding] = useState(false), [error, setError] = useState("");
   const [selected, setSelected] = useState<CartolaTeam | null>(null), [accepted, setAccepted] = useState(false);
@@ -111,7 +103,7 @@ function AddDialog({ teams, close, onAdded }: { teams: CartolaTeam[]; close: () 
     finally { running.current = false; setAdding(false); }
   };
   return <Dialog title="Adicionar time" close={() => { if (!running.current) close(); }} wide busy={adding}>
-    <OwnershipNotice checked={accepted} disabled={adding} onChange={setAccepted} />
+    <TeamOwnershipNotice checked={accepted} disabled={adding} onChange={setAccepted} />
     <label className={styles.search}><Search /><input aria-label="Pesquisar time" type="search" value={query} disabled={adding} onChange={(e) => { setQuery(e.target.value); setSelected(null); }} placeholder="Digite o nome do time" /></label>
     {error && <p className={styles.inlineError} role="alert">{error}</p>}
     <div className={styles.results}>{searching ? <p className={styles.loading}><Loader2 className={styles.spin} /> Pesquisando...</p> : results.map((team) => <article className={styles.result} key={team.timeId}><Shield team={team} /><div className={styles.identity}><h3>{team.nome}</h3><p>{team.nomeCartoleiro}</p><CopyId id={team.timeId} /></div><label className={styles.teamSelection}><input type="radio" name="selected-team" checked={selected?.timeId === team.timeId} onChange={() => setSelected(team)} disabled={adding || added.has(team.timeId) || !Number.isSafeInteger(team.timeId) || team.timeId <= 0} aria-label={added.has(team.timeId) ? `Time já adicionado: ${team.nome}` : `Selecionar ${team.nome}`} />{added.has(team.timeId) && <Check aria-hidden="true" />}</label></article>)}{query.trim() && !searching && !results.length && !error && <p className={styles.noResults}>Nenhum time encontrado.</p>}</div>
@@ -141,7 +133,7 @@ function ImportDialog({ close, onImported }: { close: () => void; onImported: ()
   const retry = result?.tentarNovamente ?? preview?.tentarNovamente ?? [];
   const copyRetry = async () => { await navigator.clipboard.writeText(retry.join(";")); setCopied(true); };
   return <Dialog title={result ? "Importação concluída" : "Importar times"} close={() => { if (!running.current) close(); }} wide busy={busy}>
-    {!result && <OwnershipNotice plural checked={accepted} disabled={busy} onChange={setAccepted} />}
+    {!result && <TeamOwnershipNotice plural checked={accepted} disabled={busy} onChange={setAccepted} />}
     {result ? <div className={styles.summary}><p>✓ {result.adicionados} times adicionados</p><p>✓ {result.jaExistentes} já estavam cadastrados</p><p>⚠ {result.naoEncontrados.length} não encontrados</p><p>⚠ {result.naoProcessados || result.tentarNovamente.length} não puderam ser processados</p></div> : !preview ? <><p className={styles.helper}>Cole sua lista de times.</p><textarea aria-label="IDs dos times" className={styles.textarea} value={text} disabled={busy} onChange={(e) => setText(e.target.value)} placeholder="Meus Favoritos=>44566162;30157334;13933388" /></> : <><p className={styles.found}>{preview.times.length} {preview.times.length === 1 ? "time encontrado" : "times encontrados"}</p><div className={styles.preview}>{preview.times.map((team) => <div key={team.timeId}><Check /><span><strong>{team.nome}</strong><small>{team.nomeCartoleiro} · ID {team.timeId}</small></span></div>)}</div></>}
     {(result?.naoEncontrados ?? preview?.naoEncontrados ?? []).length > 0 && <div className={styles.notice}><strong>Não encontrados</strong><p>{(result?.naoEncontrados ?? preview?.naoEncontrados ?? []).join(";")}</p></div>}
     {retry.length > 0 && <div className={styles.notice}><strong>Alguns times não puderam ser processados agora.</strong><p>{retry.join(";")}</p><button onClick={copyRetry}><Clipboard />{copied ? "IDs copiados" : "Copiar IDs para tentar novamente"}</button></div>}

@@ -9,7 +9,7 @@ const state = vi.hoisted(() => ({ authenticated: false, push: vi.fn() }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: state.authenticated, isLoading: false }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: state.push }) }));
 vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { summary: vi.fn(), myEntries: vi.fn(), participants: vi.fn(), ranking: vi.fn(), enroll: vi.fn() }, blockMessages: { LIMITE_TIMES_USUARIO_ATINGIDO: "Você já atingiu o limite de times desta competição." } }));
-vi.mock("@/services/teamService", () => ({ teamService: { buscarMeusTimes: vi.fn() } }));
+vi.mock("@/services/teamService", () => ({ teamService: { buscarMeusTimes: vi.fn(), buscarTimesPorIds: vi.fn(), importarMeusTimes: vi.fn() } }));
 const entry: Entry = { id: 7, timeIdCartola: 123, nomeTime: "Meu FC", nomeCartoleiro: "Ana", escudoUrl: null, pontuacao: null, posicao: null, posicaoAnterior: null };
 const rival: Entry = { id: 8, nomeTime: "Rival FC", nomeCartoleiro: "Bia", escudoUrl: null, pontuacao: 88.5, posicao: 1, posicaoAnterior: 2 };
 const ranking: RankingEntry[] = [{ ...rival, inscricaoId: 8, timeIdCartola: 456, capitao: { atletaId: 99, apelido: "Arrascaeta" } }, { ...entry, inscricaoId: 7, timeIdCartola: 123, capitao: null }];
@@ -24,44 +24,54 @@ beforeEach(() => {
   vi.mocked(pointLeagueService.ranking).mockReset().mockResolvedValue({ ranking });
   vi.mocked(pointLeagueService.enroll).mockReset().mockResolvedValue(entry);
   vi.mocked(teamService.buscarMeusTimes).mockReset().mockResolvedValue([{ timeId: 123, nome: "Meu FC", nomeCartoleiro: "Ana", escudoUrl: "" }]);
+  vi.mocked(teamService.buscarTimesPorIds).mockReset().mockResolvedValue({ times: [], naoEncontrados: [], tentarNovamente: [] });
+  vi.mocked(teamService.importarMeusTimes).mockReset().mockResolvedValue({ adicionados: 0, jaExistentes: 0, naoEncontrados: [], tentarNovamente: [], naoProcessados: 0 });
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const open = async () => { render(<PointCompetitionPage id={42} />); return screen.findByRole("heading", { name: "Disputa 42" }); };
-it("abre resumo público com skeleton, Grátis e status humanizado", async () => {
+it("abre resumo público com cabeçalho clean, métricas reais e participação simplificada", async () => {
   render(<PointCompetitionPage id={42} />);
   expect(screen.getByRole("status", { name: "Carregando competição" })).toBeTruthy();
   await screen.findByRole("heading", { name: "Disputa 42" });
   expect(pointLeagueService.summary).toHaveBeenCalledWith(42, false);
   expect(screen.getAllByText("Grátis").length).toBeGreaterThan(0);
   expect(screen.queryByText("FREE")).toBeNull();
-  expect(screen.getByText("Inscrições abertas")).toBeTruthy();
   expect(screen.getByText("Rodada de teste")).toBeTruthy();
-  expect(screen.getByText("Entre para participar")).toBeTruthy();
-  expect(screen.getAllByRole("button", { name: "Entre para inscrever time" })).toHaveLength(2);
+  expect(screen.getAllByText("Rodada 27")).toHaveLength(2);
+  expect(screen.getByText("1")).toBeTruthy();
+  expect(screen.getByText("Até 2")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Entrar para inscrever time" })).toBeTruthy();
+  expect(screen.queryByText("Entre para participar")).toBeNull();
+  expect(screen.queryByText("Acompanhe seus times nesta competição.")).toBeNull();
+  expect(screen.queryByText("Faça login para inscrever um time e acompanhar sua posição.")).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Classificação parcial" })).toBeNull();
+  expect(pointLeagueService.ranking).not.toHaveBeenCalled();
 });
 it("envia visitante ao login ao tentar inscrever", async () => {
-  await open(); fireEvent.click(screen.getAllByRole("button", { name: "Entre para inscrever time" })[0]);
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Entrar para inscrever time" }));
   expect(state.push).toHaveBeenCalledWith("/login?next=%2Fcompeticoes%3Fid%3D42");
   expect(pointLeagueService.enroll).not.toHaveBeenCalled();
 });
 it("mostra resumo autenticado e estado vazio de premiação", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValue(member);
   await open(); expect(pointLeagueService.summary).toHaveBeenCalledWith(42, true);
-  expect(screen.getByText("Ainda não inscrito")).toBeTruthy();
-  expect(screen.getByText("Você ainda não está participando.")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Premiação" }));
+  expect(screen.getByRole("button", { name: "Inscrever meu time" })).toBeTruthy();
+  expect(screen.queryByText("Ainda não inscrito")).toBeNull();
+  expect(screen.queryByText("Você ainda não está participando.")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Premiações" }));
   expect(screen.getByText("Premiação ainda não definida para esta competição.")).toBeTruthy();
 });
 it("abre modal, seleciona time vinculado, inscreve FREE e atualiza resumo", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValueOnce(member).mockResolvedValue({ ...member, inscritos: { quantidade: 2 }, usuario: { ...member.usuario!, quantidadeTimesInscritos: 1 }, minhasInscricoes: [entry] });
-  await open(); fireEvent.click(screen.getAllByRole("button", { name: "Inscrever meu time" })[0]);
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscrever meu time" }));
   const dialog = await screen.findByRole("dialog");
   await within(dialog).findByText("Meu FC");
-  expect((within(dialog).getByRole("button", { name: "Confirmar inscrição FREE" }) as HTMLButtonElement).disabled).toBe(true);
-  fireEvent.click(within(dialog).getByRole("radio"));
-  fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar inscrição FREE" }));
+  expect((within(dialog).getByRole("button", { name: "Inscrever 0 times" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(within(dialog).getByRole("checkbox", { name: "Selecionar Meu FC" }));
+  fireEvent.click(within(dialog).getByRole("checkbox", { name: /Declaro que sou o titular/ }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "Inscrever time" }));
   await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledWith(42, 123));
-  await screen.findByText("Time inscrito com sucesso!");
+  await screen.findByText("1 time inscrito com sucesso.");
   expect(screen.queryByRole("dialog")).toBeNull();
   await waitFor(() => expect(screen.getByText("1 time inscrito")).toBeTruthy());
   expect(screen.queryByText("Você ainda não está participando.")).toBeNull();
@@ -69,8 +79,8 @@ it("abre modal, seleciona time vinculado, inscreve FREE e atualiza resumo", asyn
 });
 it("respeita bloqueio por limite retornado pelo backend", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, podeInscrever: false, motivoBloqueio: "LIMITE_TIMES_USUARIO_ATINGIDO" } });
-  await open(); expect((screen.getAllByRole("button", { name: "Inscrever meu time" })[0] as HTMLButtonElement).disabled).toBe(true);
-  expect(screen.getAllByText("Você já atingiu o limite de times desta competição.").length).toBeGreaterThan(0);
+  await open(); expect((screen.getByRole("button", { name: "Inscrever meu time" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText("Você já atingiu o limite de times desta competição.")).toBeTruthy();
   expect(teamService.buscarMeusTimes).not.toHaveBeenCalled();
 });
 it("mostra meus times e ausência de pontuação sem inventar zero", async () => {
@@ -84,7 +94,7 @@ it("remove a aba Participantes e exibe inscritos sem posição ou pontuação no
   vi.mocked(pointLeagueService.ranking).mockResolvedValue({ ranking: [{ ...entry, inscricaoId: 7, timeIdCartola: 123, capitao: null }] });
   await open();
   expect(screen.queryByRole("button", { name: "Participantes" })).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Ver ranking completo" }));
+  fireEvent.click(screen.getByRole("button", { name: "Ranking" }));
   expect(await screen.findByText("Meu FC")).toBeTruthy();
   expect(screen.getByText("Ana")).toBeTruthy();
   expect(screen.getAllByText("—")).toHaveLength(2);
@@ -108,8 +118,7 @@ it("mostra ranking na ordem da API, posição, cartoleiro, pontuação, destaque
   fireEvent.click(screen.getByRole("button", { name: "Atualizar" }));
   await waitFor(() => expect(pointLeagueService.ranking).toHaveBeenCalledTimes(2));
   fireEvent.click(screen.getByRole("button", { name: "Visão geral" }));
-  expect(screen.getByRole("heading", { name: "Classificação parcial" })).toBeTruthy();
-  expect(screen.getByText("Seu time")).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: "Classificação parcial" })).toBeNull();
   expect(pointLeagueService.ranking).toHaveBeenCalledTimes(2);
 });
 it("mostra resumo real para usuário já inscrito e mantém a ordem das abas", async () => {
@@ -121,7 +130,7 @@ it("mostra resumo real para usuário já inscrito e mantém a ordem das abas", a
   expect(screen.getByText("84,37 pts")).toBeTruthy();
   expect(screen.queryByText("Ainda não inscrito")).toBeNull();
   const tabs = within(screen.getByRole("navigation", { name: "Seções da competição" })).getAllByRole("button").map((button) => button.textContent);
-  expect(tabs).toEqual(["Visão geral", "Meus times", "Ranking", "Premiação"]);
+  expect(tabs).toEqual(["Visão geral", "Meus times", "Ranking", "Premiações"]);
   fireEvent.click(screen.getByRole("button", { name: "Ver meus times" }));
   expect(await screen.findByRole("heading", { name: "Meus times" })).toBeTruthy();
 });
@@ -129,8 +138,80 @@ it("evita repetir a rodada no título quando ela já está no badge", async () =
   vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, competicao: { ...summary.competicao, nome: "POINT FFC - Rodada 27", descricao: null } });
   render(<PointCompetitionPage id={42} />);
   expect(await screen.findByRole("heading", { name: "POINT FFC" })).toBeTruthy();
-  expect(screen.getByText("Rodada 27")).toBeTruthy();
+  expect(screen.getAllByText("Rodada 27")).toHaveLength(2);
   expect(screen.getByText("Competição oficial da rodada")).toBeTruthy();
+});
+it("mostra Sobre como lista compacta com os dados disponíveis", async () => {
+  await open();
+  expect(screen.getByText("Período de inscrições")).toBeTruthy();
+  expect(screen.getByText("Período da competição")).toBeTruthy();
+  expect(screen.getByText("Formato")).toBeTruthy();
+  expect(screen.getByText("Limite de times por usuário")).toBeTruthy();
+  expect(screen.getByText("Consulte a aba Premiações")).toBeTruthy();
+});
+it("seleciona e desmarca vários times, atualiza contador e respeita o limite restante", async () => {
+  state.authenticated = true;
+  const teams = [{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Time C", nomeCartoleiro: "Caio", escudoUrl: "" }];
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 2 } });
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue(teams);
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscrever meu time" }));
+  const dialog = within(await screen.findByRole("dialog"));
+  fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
+  fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" }));
+  expect(dialog.getByText("2 times selecionados")).toBeTruthy();
+  expect((dialog.getByRole("button", { name: "Inscrever 2 times" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).disabled).toBe(true);
+  fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
+  expect(dialog.getByText("1 time selecionado")).toBeTruthy();
+  expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).disabled).toBe(false);
+});
+
+it("identifica time já inscrito e impede nova seleção", async () => {
+  state.authenticated = true;
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, quantidadeTimesInscritos: 1 }, minhasInscricoes: [entry] });
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscrever mais times" }));
+  const checkbox = await screen.findByRole("checkbox", { name: "Meu FC: Já inscrito" }) as HTMLInputElement;
+  expect(checkbox.disabled).toBe(true);
+  expect(screen.getByText("Já inscrito")).toBeTruthy();
+});
+
+it("reutiliza busca, prévia e importação múltipla sem inscrever automaticamente", async () => {
+  state.authenticated = true;
+  const importedTeams = [{ timeId: 456, nome: "Importado A", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Importado B", nomeCartoleiro: "Caio", escudoUrl: "" }];
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 4 } });
+  vi.mocked(teamService.buscarTimesPorIds).mockResolvedValue({ times: importedTeams, naoEncontrados: [], tentarNovamente: [] });
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValueOnce([]).mockResolvedValueOnce(importedTeams);
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscrever meu time" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Importar times" }));
+  fireEvent.change(screen.getByLabelText("IDs dos times"), { target: { value: "Favoritos=>456;789" } });
+  fireEvent.click(screen.getByRole("button", { name: "Buscar times" }));
+  expect(await screen.findByText("2 times encontrados")).toBeTruthy();
+  expect(screen.getByText("Importado A")).toBeTruthy(); expect(screen.getByText("Importado B")).toBeTruthy();
+  expect(teamService.buscarTimesPorIds).toHaveBeenCalledWith("456;789");
+  expect(pointLeagueService.enroll).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("checkbox", { name: /Declaro que sou o titular/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Importar times" }));
+  await waitFor(() => expect(teamService.importarMeusTimes).toHaveBeenCalledWith(importedTeams));
+  expect(pointLeagueService.enroll).not.toHaveBeenCalled();
+  expect(await screen.findByRole("checkbox", { name: "Selecionar Importado A" })).toBeTruthy();
+});
+
+it("inscreve múltiplos times, relata sucesso parcial e impede duplo envio", async () => {
+  state.authenticated = true;
+  const teams = [{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }];
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 3 } });
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue(teams);
+  let resolveFirst!: (value: Entry) => void;
+  vi.mocked(pointLeagueService.enroll).mockImplementation((_id, timeId) => timeId === 123 ? new Promise((resolve) => { resolveFirst = resolve; }) : Promise.reject(new Error("falhou")));
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscrever meu time" }));
+  const dialog = within(await screen.findByRole("dialog"));
+  fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" }));
+  fireEvent.click(dialog.getByRole("checkbox", { name: /Declaro que sou o titular/ }));
+  const confirm = dialog.getByRole("button", { name: "Inscrever 2 times" }); fireEvent.click(confirm); fireEvent.click(confirm);
+  expect(pointLeagueService.enroll).toHaveBeenCalledTimes(2);
+  resolveFirst(entry);
+  expect(await screen.findByText("1 time inscrito com sucesso. 1 time não pôde ser inscrito.")).toBeTruthy();
+  expect(screen.getByRole("dialog")).toBeTruthy();
 });
 it("mostra erro do resumo", async () => {
   vi.mocked(pointLeagueService.summary).mockRejectedValue(new Error("API offline"));
