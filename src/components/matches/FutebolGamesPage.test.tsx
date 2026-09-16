@@ -13,18 +13,18 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 it("ordena e agrupa por dia local sem modificar a coleção original", () => {
   const jogos = [{ ...game, id: 2, dataHoraUtc: new Date(2026, 8, 13, 19).toISOString() }, game, { ...game, id: 3, dataHoraUtc: new Date(2026, 8, 12, 20).toISOString() }];
-  vi.mocked(useFutebolRodada).mockReturnValue(state(jogos)); render(<FutebolGamesPage />);
+  vi.mocked(useFutebolRodada).mockReturnValue(state(jogos)); render(<FutebolGamesPage initialCodigo="BSA" />);
   const days = screen.getAllByRole("heading", { level: 3 }); expect(days[0].textContent).toContain("sábado"); expect(days[1].textContent).toContain("domingo");
   expect(within(days[0].closest("section")!).getAllByRole("link")).toHaveLength(2); expect(jogos.map(item => item.id)).toEqual([2, 1, 3]);
   expect(screen.getByText("16:00")).toBeTruthy();
 });
 it("mantém o clique pelo ID interno, nomes e escudos acessíveis", () => {
-  render(<FutebolGamesPage />); expect(screen.getByRole("link", { name: "Ver confronto: Atlético-MG contra Fluminense" }).getAttribute("href")).toBe("/jogos?futebol=1");
+  render(<FutebolGamesPage initialCodigo="BSA" />); expect(screen.getByRole("link", { name: "Ver confronto: Atlético-MG contra Fluminense" }).getAttribute("href")).toBe("/jogos?futebol=1");
   expect(screen.getByRole("img", { name: "Escudo do Atlético-MG indisponível" })).toBeTruthy();
 });
 it("mostra horário, status e estádio no card compacto", () => {
   vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, estadio: "Stade Bollaert-Delelis" }]));
-  render(<FutebolGamesPage />);
+  render(<FutebolGamesPage initialCodigo="BSA" />);
   const card = screen.getByRole("link", { name: "Ver confronto: Atlético-MG contra Fluminense" });
   expect(within(card).getByText("16:00")).toBeTruthy();
   expect(within(card).getByText("Em breve")).toBeTruthy();
@@ -32,7 +32,7 @@ it("mostra horário, status e estádio no card compacto", () => {
 });
 it("troca para Champions e mantém o código no link do confronto", () => {
   vi.mocked(useFutebolRodada).mockImplementation((_enabled, codigo) => ({ ...state([{ ...game, mandante: { ...game.mandante, nome: "Real Madrid" } }]), data: { ...state().data, competicao: { codigo: codigo ?? "BSA", nome: "Champions League" }, jogos: [{ ...game, mandante: { ...game.mandante, nome: "Real Madrid" } }] } }));
-  render(<FutebolGamesPage />);
+  render(<FutebolGamesPage initialCodigo="BSA" />);
   fireEvent.click(screen.getByRole("button", { name: "Champions" }));
   expect(useFutebolRodada).toHaveBeenLastCalledWith(true, "CL");
   expect(screen.getByRole("button", { name: "Champions" }).getAttribute("aria-pressed")).toBe("true");
@@ -40,27 +40,27 @@ it("troca para Champions e mantém o código no link do confronto", () => {
   expect(screen.getByRole("link", { name: "Ver confronto: Real Madrid contra Fluminense" }).getAttribute("href")).toBe("/jogos?futebol=1&competicao=CL");
 });
 it("mostra a sigla se a logo da competição falhar", () => {
-  render(<FutebolGamesPage />);
+  render(<FutebolGamesPage initialCodigo="BSA" />);
   fireEvent.error(screen.getByRole("img", { name: "Logo de Brasileirão Série A" }));
   expect(screen.getByLabelText("Logo de Brasileirão Série A indisponível").textContent).toBe("BSA");
 });
 it.each([["IN_PLAY", "Ao vivo"], ["FINISHED", "Encerrado"], ["PAUSED", "Intervalo"]])("apresenta %s com placar", (status, label) => {
-  vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, status, placar: { mandante: 2, visitante: 0 } }])); render(<FutebolGamesPage />);
+  vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, status, placar: { mandante: 2, visitante: 0 } }])); render(<FutebolGamesPage initialCodigo="BSA" />);
   expect(screen.getByText(label)).toBeTruthy(); expect(screen.getByLabelText("Placar 2 a 0")).toBeTruthy();
 });
 it("jogo adiado não apresenta um placar inexistente", () => {
-  vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, status: "POSTPONED" }])); render(<FutebolGamesPage />);
+  vi.mocked(useFutebolRodada).mockReturnValue(state([{ ...game, status: "POSTPONED" }])); render(<FutebolGamesPage initialCodigo="BSA" />);
   expect(screen.getByText("Adiado")).toBeTruthy(); expect(screen.queryByLabelText(/Placar/)).toBeNull();
 });
 it("apresenta loading sem cards navegáveis", () => {
-  vi.mocked(useFutebolRodada).mockReturnValue({ data: null, loading: true, error: null }); render(<FutebolGamesPage />);
+  vi.mocked(useFutebolRodada).mockReturnValue({ data: null, loading: true, error: null }); render(<FutebolGamesPage initialCodigo="BSA" />);
   expect(screen.getByRole("status")).toBeTruthy(); expect(screen.queryByRole("link", { name: /Ver confronto/ })).toBeNull();
 });
 it("mantém a identidade da página em caso de erro", () => {
-  vi.mocked(useFutebolRodada).mockReturnValue({ data: null, loading: false, error: "Erro" }); render(<FutebolGamesPage />);
+  vi.mocked(useFutebolRodada).mockReturnValue({ data: null, loading: false, error: "Erro" }); render(<FutebolGamesPage initialCodigo="BSA" />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Jogos."); expect(screen.getByRole("alert")).toBeTruthy();
 });
 it.each([false, true])("trata vazio e rodada nula: %s", nullRound => {
-  const result = state([]); vi.mocked(useFutebolRodada).mockReturnValue({ ...result, data: { ...result.data, rodada: nullRound ? null : 27 } }); render(<FutebolGamesPage />);
+  const result = state([]); vi.mocked(useFutebolRodada).mockReturnValue({ ...result, data: { ...result.data, rodada: nullRound ? null : 27 } }); render(<FutebolGamesPage initialCodigo="BSA" />);
   expect(screen.getByText("Nenhum jogo disponível no momento.")).toBeTruthy();
 });

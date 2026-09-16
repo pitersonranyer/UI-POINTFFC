@@ -8,8 +8,7 @@ import { formatCurrency } from "@/lib/format";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { CartolaMarketStatus } from "./CartolaMarketStatus";
 import { TopAthletes } from "./TopAthletes";
-import { FutebolMatches } from "@/components/matches/FutebolMatches";
-import { JogosHoje } from "./JogosHoje";
+import { DashboardGames } from "./DashboardGames";
 import { GeneralRanking } from "./GeneralRanking";
 import styles from "./Dashboard.module.css";
 export function CartolaDashboard(){
@@ -21,8 +20,7 @@ export function CartolaDashboard(){
  {featured&&<section className={styles.feature}><div><small>Liga destaque</small><div className={styles.featureIdentity}><span><Trophy/></span><div><h2>{featured.name}</h2><p>Competições da rodada {round}</p></div></div></div><div className={styles.featurePrize}><small>POINT FFC</small><strong>Rodada</strong><Link href="/ligas/point-ffc">Ver liga</Link></div></section>}
  {stale&&<p className={styles.staleNotice}>Dados temporariamente desatualizados.</p>}{error&&<p className={styles.refreshError}>Não foi possível buscar a atualização mais recente.</p>}
  <CartolaMarketStatus mercado={dashboard.mercado} aberto={dashboard.mercadoAberto} aoVivo={dashboard.bolaRolando} atualizar={atualizar}/>
- <FutebolMatches />
- <JogosHoje />
+ <DashboardGames />
  <MagoDashboardCard data={magoRodada27} />
  <GeneralRanking season={dashboard.mercado.temporada ?? new Date().getFullYear()} round={rankingRound} marketOpen={dashboard.mercadoAberto}/>
  <TopAthletes data={athletes} round={dashboard.mercadoAberto?Math.max(1,round-1):round} live={!dashboard.mercadoAberto&&dashboard.bolaRolando} loading={athletesLoading} error={athletesError} firstRound={dashboard.mercadoAberto&&round===1}/>

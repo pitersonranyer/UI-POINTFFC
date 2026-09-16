@@ -3,10 +3,16 @@ import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useFutebolRodada } from "@/hooks/useFutebolRodada";
+import { futebolLeadingTeam } from "@/lib/futebolStatus";
 import { FutebolMatchInfo, FutebolShield } from "./FutebolMatch";
 import styles from "./FutebolMatches.module.css";
 
-export function FutebolMatches() {
+export function FutebolMatches({ embedded = false }: { embedded?: boolean }) {
+  const [attempt, setAttempt] = useState(0);
+  return <RoundMatchesContent key={attempt} embedded={embedded} retry={() => setAttempt(value => value + 1)} />;
+}
+
+function RoundMatchesContent({ embedded, retry }: { embedded: boolean; retry: () => void }) {
   const { data, loading, error } = useFutebolRodada();
   const carousel = useRef<HTMLDivElement>(null);
   const carouselId = useId();
@@ -29,13 +35,13 @@ export function FutebolMatches() {
     if (!element) return;
     element.scrollBy({ left: direction * (element.clientWidth + 10), behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
-  return <section className={styles.card} aria-label="Jogos da Rodada">
-    <header><h2>Jogos da Rodada</h2><div className={styles.headingActions}>{data?.rodada != null && <span>Rodada {data.rodada}</span>}<Link className={styles.viewAll} href="/jogos">Ver todos <ArrowRight size={14} /></Link></div></header>
-    {loading ? <p role="status">Carregando jogos da rodada...</p> : error ? <p role="alert">{error}</p> : !data || data.rodada == null || !data.jogos.length ? <p>Nenhum jogo disponível no momento.</p> :
+  return <section className={embedded ? styles.embedded : styles.card} aria-label="Jogos da Rodada">
+    <header><h2>Jogos da Rodada</h2><div className={styles.headingActions}>{data?.rodada != null && <span>Rodada {data.rodada}</span>}{!embedded && <Link className={styles.viewAll} href="/jogos">Ver todos <ArrowRight size={14} /></Link>}</div></header>
+    {loading ? <p role="status">Carregando jogos da rodada...</p> : error ? <div className={styles.feedback}><p role="alert">{error}</p><button type="button" onClick={retry}>Tentar novamente</button></div> : !data || data.rodada == null || !data.jogos.length ? <p>Nenhum jogo disponível no momento.</p> :
       <><div className={styles.carousel} ref={carousel} id={carouselId} role="region" aria-label="Carrossel de jogos da rodada" aria-roledescription="carrossel" tabIndex={0} onScroll={updateArrows} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); move(event.key === "ArrowLeft" ? -1 : 1); } }}>{data.jogos.map(jogo => <Link className={styles.match} key={jogo.id} href={`/jogos?futebol=${jogo.id}`} aria-label={`Ver detalhes de ${jogo.mandante.nome} contra ${jogo.visitante.nome}`}>
-        <div className={styles.team}><FutebolShield team={jogo.mandante} /><strong>{jogo.mandante.nome}</strong></div>
+        <div className={`${styles.team} ${futebolLeadingTeam(jogo) === "mandante" ? styles.leadingTeam : ""}`}><FutebolShield team={jogo.mandante} /><strong>{jogo.mandante.nome}</strong></div>
         <FutebolMatchInfo jogo={jogo} />
-        <div className={styles.team}><FutebolShield team={jogo.visitante} /><strong>{jogo.visitante.nome}</strong></div>
+        <div className={`${styles.team} ${futebolLeadingTeam(jogo) === "visitante" ? styles.leadingTeam : ""}`}><FutebolShield team={jogo.visitante} /><strong>{jogo.visitante.nome}</strong></div>
       </Link>)}</div><div className={styles.controls} aria-label="Navegação dos jogos"><button type="button" aria-label="Jogos anteriores" aria-controls={carouselId} disabled={!arrows.previous} onClick={() => move(-1)}><ArrowLeft size={17} /></button><button type="button" aria-label="Próximos jogos" aria-controls={carouselId} disabled={!arrows.next} onClick={() => move(1)}><ArrowRight size={17} /></button></div></>}
   </section>;
 }

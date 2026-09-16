@@ -2,6 +2,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FutebolMatches } from "./FutebolMatches";
+import styles from "./FutebolMatches.module.css";
 import { MatchDetailsPage } from "./MatchDetailsPage";
 import { FutebolMatchInfo } from "./FutebolMatch";
 import { buscarRodadaAtualBsa } from "@/services/futebolService";
@@ -23,6 +24,21 @@ beforeEach(() => { vi.stubGlobal("React", React); vi.mocked(buscarRodadaAtualBsa
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("card futebol", () => {
+  it.each([["IN_PLAY", 2, 0], ["FINISHED", 0, 2], ["FINISHED", 1, 1], ["SCHEDULED", 2, 0]] as const)("destaca o time correto na rodada %s (%s x %s)", async (status, mandante, visitante) => {
+    vi.mocked(buscarRodadaAtualBsa).mockResolvedValue({ ...rodada, jogos: [{ ...jogo, status, placar: { mandante, visitante } }] });
+    render(<FutebolMatches />);
+    await screen.findByText("Flamengo");
+    expect(screen.getByText("Flamengo").parentElement?.classList.contains(styles.leadingTeam)).toBe(status !== "SCHEDULED" && mandante > visitante);
+    expect(screen.getByText("Corinthians").parentElement?.classList.contains(styles.leadingTeam)).toBe(status !== "SCHEDULED" && visitante > mandante);
+  });
+  it("permite recuperar a rodada após erro", async () => {
+    vi.mocked(buscarRodadaAtualBsa).mockRejectedValueOnce(new Error("offline"));
+    render(<FutebolMatches embedded />);
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
+    expect(await screen.findByText("Flamengo")).toBeTruthy();
+    expect(buscarRodadaAtualBsa).toHaveBeenCalledTimes(2);
+  });
   it("navega pelas setas e desabilita os controles nos limites", async () => {
     render(<FutebolMatches />);
     const track = await screen.findByRole("region", { name: "Carrossel de jogos da rodada" });

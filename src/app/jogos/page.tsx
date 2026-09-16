@@ -7,6 +7,6 @@ import { codigoCompeticao } from "@/data/futebolCompeticoes";
 
 export default function MatchRoute() {
   const searchParams = useSearchParams();
-  if (!searchParams.has("partida") && !searchParams.has("futebol")) return <FutebolGamesPage initialCodigo={codigoCompeticao(searchParams.get("competicao"))} />;
+  if (!searchParams.has("partida") && !searchParams.has("futebol")) return <FutebolGamesPage initialCodigo={searchParams.has("competicao") ? codigoCompeticao(searchParams.get("competicao")) : undefined} />;
   return <MatchDetailsPage matchId={Number(searchParams.get("partida"))} futebolId={searchParams.has("futebol") ? Number(searchParams.get("futebol")) : undefined} codigo={codigoCompeticao(searchParams.get("competicao"))} />;
 }

@@ -29,11 +29,26 @@ function setup(round = 27, open = true) {
 }
 
 describe("Dashboard e resumo do Mago", () => {
+  it("preserva bloco e aba Hoje vazia com agenda e sem carrossel", async () => {
+    setup();
+    render(<CartolaDashboard />);
+    const block = within(screen.getByRole("region", { name: "Acompanhe os jogos" }));
+    expect(await block.findByText("Nenhum jogo programado para hoje")).toBeTruthy();
+    expect(block.getByText("Confira a agenda completa e os próximos jogos.")).toBeTruthy();
+    expect(block.getByRole("link", { name: "Ver agenda" }).getAttribute("href")).toBe("/jogos");
+    expect(block.getByRole("link", { name: "Ver todos" }).getAttribute("href")).toBe("/jogos");
+    expect(block.getByRole("button", { name: "Hoje" }).getAttribute("aria-pressed")).toBe("true");
+    expect(block.queryByText("Partidas da API")).toBeNull();
+    expect(block.queryByRole("region", { name: /Carrossel/ })).toBeNull();
+    expect(block.getAllByRole("button")).toHaveLength(2);
+  });
   it("isola falha dos jogos de hoje e preserva os demais blocos", async () => {
     setup();
     vi.mocked(buscarJogosHoje).mockRejectedValueOnce(new Error("offline"));
     render(<CartolaDashboard />);
     expect(await screen.findByText("Não foi possível carregar os jogos de hoje.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Hoje" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Brasileirão" }));
     expect(screen.getByText("Partidas da API")).toBeTruthy();
     expect(screen.getByText("Ranking 26")).toBeTruthy();
     expect(screen.getByRole("region", { name: "Mago do Point Fantasy" })).toBeTruthy();
@@ -52,7 +67,7 @@ describe("Dashboard e resumo do Mago", () => {
     const headings = Array.from(container.querySelectorAll("h2")).map(node => node.textContent);
     expect(headings).not.toContain("Ligas disponíveis para jogar");
     expect(headings).not.toContain("Ligas em andamento");
-    expect(screen.getByText("Partidas da API").compareDocumentPosition(screen.getByRole("region", { name: "Mago do Point Fantasy" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Acompanhe os jogos" }).compareDocumentPosition(screen.getByRole("region", { name: "Mago do Point Fantasy" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("mostra quatro insights da R27, indicadores e link na mesma aba", () => {

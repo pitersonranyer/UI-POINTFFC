@@ -2,6 +2,7 @@ import React from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { JogosHoje } from "./JogosHoje";
+import shared from "@/components/matches/FutebolMatches.module.css";
 import { buscarJogosHoje } from "@/services/futebolService";
 import type { FutebolJogoHoje, FutebolJogosHoje } from "@/types/futebol";
 
@@ -14,6 +15,17 @@ const jogo: FutebolJogoHoje = {
   placar: { mandante: null, visitante: null }, placarIntervalo: { mandante: null, visitante: null },
 };
 const response: FutebolJogosHoje = { data: "2026-09-15", timezone: "America/Sao_Paulo", total: 1, jogos: [jogo] };
+it.each([
+  ["IN_PLAY", 2, 0, "mandante"], ["PAUSED", 0, 1, "visitante"],
+  ["FINISHED", 0, 2, "visitante"], ["FINISHED", 1, 1, null],
+  ["IN_PLAY", null, 1, null], ["TIMED", 2, 0, null], ["CANCELLED", 2, 0, null],
+])("destaca somente o líder em %s (%s x %s)", async (status, mandante, visitante, expected) => {
+  vi.mocked(buscarJogosHoje).mockResolvedValue({ ...response, jogos: [{ ...jogo, status: String(status), placar: { mandante: mandante as number | null, visitante: visitante as number | null } }] });
+  render(<JogosHoje />);
+  await screen.findByText("Arsenal");
+  expect(screen.getByText("Arsenal").parentElement?.classList.contains(shared.leadingTeam)).toBe(expected === "mandante");
+  expect(screen.getByText("Inter").parentElement?.classList.contains(shared.leadingTeam)).toBe(expected === "visitante");
+});
 beforeEach(() => { vi.stubGlobal("React", React); vi.mocked(buscarJogosHoje).mockResolvedValue(response); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -29,6 +41,7 @@ it("renderiza aliases, múltiplas competições e todos os jogos sem filtrar dat
   expect(await screen.findByText("Champions League")).toBeTruthy();
   expect(screen.getByText("Nova competição")).toBeTruthy();
   expect(screen.getAllByRole("article")).toHaveLength(2);
+  expect(screen.queryByRole("link", { name: "Ver agenda" })).toBeNull();
   expect(screen.getAllByText("Arsenal")).toHaveLength(2);
   expect(screen.getAllByText("Inter")).toHaveLength(2);
   expect(screen.getByText("15:00")).toBeTruthy();
@@ -56,7 +69,12 @@ it.each([["POSTPONED", "Adiado"], ["CANCELLED", "Cancelado"], ["UNKNOWN", "A def
 it("mantém seção vazia quando total é zero", async () => {
   vi.mocked(buscarJogosHoje).mockResolvedValue({ ...response, total: 0, jogos: [] });
   render(<JogosHoje />);
-  expect(await screen.findByText("Nenhum jogo programado para hoje.")).toBeTruthy();
+  expect(await screen.findByText("Nenhum jogo programado para hoje")).toBeTruthy();
+  expect(screen.getByText("Confira a agenda completa e os próximos jogos.")).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Ver agenda" }).getAttribute("href")).toBe("/jogos");
+  expect(screen.queryByRole("region", { name: "Carrossel de jogos de hoje" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Próximos jogos de hoje" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Jogos de hoje anteriores" })).toBeNull();
   expect(screen.getByRole("heading", { name: "Jogos de hoje" })).toBeTruthy();
 });
 it("mostra erro e permite tentar novamente", async () => {
