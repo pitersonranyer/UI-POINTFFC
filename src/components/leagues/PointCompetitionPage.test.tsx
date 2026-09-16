@@ -2,6 +2,7 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PointCompetitionPage } from "./PointCompetitionPage";
+import { ApiError } from "@/services/apiClient";
 import { pointLeagueService, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
 import { teamService } from "@/services/teamService";
 
@@ -235,21 +236,59 @@ it("ID de time não vinculado não entra na lista nem pode ser inscrito", async 
   expect(teamService.importarMeusTimes).not.toHaveBeenCalled();
 });
 
-it("inscreve múltiplos times, relata sucesso parcial e impede duplo envio", async () => {
+it("inscreve sequencialmente, continua após falha, preserva somente retry e impede duplo envio", async () => {
   state.authenticated = true;
-  const teams = [{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }];
-  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 3 } });
+  const teams = [{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Time C", nomeCartoleiro: "Caio", escudoUrl: "" }];
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 4 } });
   vi.mocked(teamService.buscarMeusTimes).mockResolvedValue(teams);
-  let resolveFirst!: (value: Entry) => void;
-  vi.mocked(pointLeagueService.enroll).mockImplementation((_id, timeId) => timeId === 123 ? new Promise((resolve) => { resolveFirst = resolve; }) : Promise.reject(new Error("falhou")));
+  let resolveFirst!: (value: Entry) => void; let rejectSecond!: (reason: Error) => void; let resolveThird!: (value: Entry) => void;
+  vi.mocked(pointLeagueService.enroll)
+    .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+    .mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectSecond = reject; }))
+    .mockImplementationOnce(() => new Promise((resolve) => { resolveThird = resolve; }))
+    .mockResolvedValueOnce(entry);
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   const dialog = within(await screen.findByRole("dialog"));
-  fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" }));
-  const confirm = dialog.getByRole("button", { name: "Inscrever 2 times" }); fireEvent.click(confirm); fireEvent.click(confirm);
-  expect(pointLeagueService.enroll).toHaveBeenCalledTimes(2);
+  fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time C" }));
+  const confirm = dialog.getByRole("button", { name: "Inscrever 3 times" }); fireEvent.click(confirm); fireEvent.click(confirm);
+  expect(pointLeagueService.enroll).toHaveBeenCalledTimes(1);
+  expect(dialog.getByRole("button", { name: "Inscrevendo 1 de 3..." })).toBeTruthy();
   resolveFirst(entry);
-  expect(await screen.findByText("1 time inscrito com sucesso. 1 time não pôde ser inscrito.")).toBeTruthy();
+  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledTimes(2));
+  expect(pointLeagueService.enroll).toHaveBeenNthCalledWith(2, 42, 456);
+  rejectSecond(new ApiError(500, "Internal server error"));
+  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledTimes(3));
+  expect(pointLeagueService.enroll).toHaveBeenNthCalledWith(3, 42, 789);
+  resolveThird(entry);
+  expect(await screen.findByText("2 de 3 times inscritos. 1 não pôde ser inscrito.")).toBeTruthy();
+  expect(screen.getByText("Não foi possível concluir a inscrição").closest("li")?.textContent).toContain("Time B");
+  expect(screen.queryByText("Internal server error")).toBeNull();
   expect(screen.getByRole("dialog")).toBeTruthy();
+  expect((dialog.getByRole("checkbox", { name: "Selecionar Time A" }) as HTMLInputElement).checked).toBe(false);
+  expect((dialog.getByRole("checkbox", { name: "Selecionar Time B" }) as HTMLInputElement).checked).toBe(true);
+  expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).checked).toBe(false);
+  fireEvent.click(dialog.getByRole("button", { name: "Inscrever time" }));
+  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledTimes(4));
+  expect(pointLeagueService.enroll).toHaveBeenNthCalledWith(4, 42, 456);
+  expect(await screen.findByText("1 time inscrito com sucesso.")).toBeTruthy();
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it.each(["resumo", "times"])("preserva o sucesso quando falha o refresh de %s", async (target) => {
+  state.authenticated = true;
+  const team = { timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" };
+  if (target === "resumo") vi.mocked(pointLeagueService.summary).mockResolvedValueOnce(member).mockRejectedValueOnce(new ApiError(500, "Internal server error"));
+  else vi.mocked(pointLeagueService.summary).mockResolvedValue(member);
+  if (target === "times") vi.mocked(teamService.buscarMeusTimes).mockResolvedValueOnce([team]).mockRejectedValueOnce(new ApiError(500, "Internal server error"));
+  else vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([team]);
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
+  fireEvent.click(await screen.findByRole("checkbox", { name: "Selecionar Time A" }));
+  fireEvent.click(screen.getByRole("button", { name: "Inscrever time" }));
+  expect(await screen.findByText("1 time inscrito com sucesso.")).toBeTruthy();
+  expect(screen.getByText("Inscrições concluídas, mas não foi possível atualizar os dados da tela.")).toBeTruthy();
+  expect(screen.queryByText("Internal server error")).toBeNull();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(pointLeagueService.enroll).toHaveBeenCalledTimes(1);
 });
 it("mostra erro do resumo", async () => {
   vi.mocked(pointLeagueService.summary).mockRejectedValue(new Error("API offline"));

@@ -85,6 +85,7 @@
 .prizeEmpty svg{width:32px;height:32px;color:#c3af80}
 .prizeEmpty p{margin:0}
 .success{padding:11px;border-radius:8px;background:#e8f7ec;color:#146c3b}
+.refreshWarning{padding:10px;border-radius:8px;background:#fff8e7;color:#705619;font-size:12px}.batchFeedback{margin:12px 0 0!important;padding:10px;border-radius:8px;background:#e8f7ec;color:#146c3b!important;font-weight:700}.enrollmentFailures{display:grid;gap:5px;margin:8px 0 0;padding:0;list-style:none}.enrollmentFailures li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:7px;background:#fff4f2;font-size:11px}.enrollmentFailures strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.enrollmentFailures span{color:#8b3a2f;text-align:right}
 .notice{color:#8a6e34!important}
 .sectionLoading{padding:18px;border-radius:8px;background:#fff;color:#777}
 .error{display:flex;align-items:center;gap:14px;padding:20px;border:1px solid #ebd6d6;border-radius:12px;background:#fff7f7;color:#a12f2f}
