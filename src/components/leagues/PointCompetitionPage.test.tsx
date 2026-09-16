@@ -163,12 +163,32 @@ it("seleciona e desmarca vários times, atualiza contador e respeita o limite re
   const dialog = within(await screen.findByRole("dialog"));
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" }));
-  expect(dialog.getByText("2 times selecionados")).toBeTruthy();
+  expect(dialog.getAllByText("2 times selecionados")).toHaveLength(2);
   expect((dialog.getByRole("button", { name: "Inscrever 2 times" }) as HTMLButtonElement).disabled).toBe(false);
   expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).disabled).toBe(true);
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
-  expect(dialog.getByText("1 time selecionado")).toBeTruthy();
+  expect(dialog.getAllByText("1 time selecionado")).toHaveLength(2);
   expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).disabled).toBe(false);
+});
+
+it("busca, seleciona todos os resultados até o limite e desmarca todos", async () => {
+  state.authenticated = true;
+  const teams = [{ timeId: 123, nome: "Real Prime", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Real Madrid", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Outro Time", nomeCartoleiro: "Caio", escudoUrl: "" }];
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 2 } });
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue(teams);
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
+  const dialog = within(await screen.findByRole("dialog"));
+  fireEvent.change(dialog.getByRole("searchbox", { name: "Buscar pelo nome do time" }), { target: { value: "real" } });
+  expect(dialog.getByText("Real Prime")).toBeTruthy();
+  expect(dialog.getByText("Real Madrid")).toBeTruthy();
+  expect(dialog.queryByText("Outro Time")).toBeNull();
+  fireEvent.click(dialog.getByRole("button", { name: "Selecionar todos" }));
+  expect(dialog.getAllByText("2 times selecionados")).toHaveLength(2);
+  expect(dialog.getByText("0 vagas restantes")).toBeTruthy();
+  expect((dialog.getByRole("button", { name: "Inscrever 2 times" }) as HTMLButtonElement).disabled).toBe(false);
+  fireEvent.click(dialog.getByRole("button", { name: "Desmarcar todos" }));
+  expect(dialog.getAllByText("0 times selecionados")).toHaveLength(2);
+  expect((dialog.getByRole("button", { name: "Inscrever 0 times" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
 it("identifica time já inscrito e impede nova seleção", async () => {
@@ -199,6 +219,8 @@ it("reutiliza busca, prévia e importação múltipla sem inscrever automaticame
   await waitFor(() => expect(teamService.importarMeusTimes).toHaveBeenCalledWith(importedTeams));
   expect(pointLeagueService.enroll).not.toHaveBeenCalled();
   expect(await screen.findByRole("checkbox", { name: "Selecionar Importado A" })).toBeTruthy();
+  expect(screen.queryByText(/R\$|por time|Total|carteira|PIX/i)).toBeNull();
+  expect(screen.queryByText(/titularidade|titular dos times|comprovação/i)).toBeNull();
 });
 
 it("inscreve múltiplos times, relata sucesso parcial e impede duplo envio", async () => {
