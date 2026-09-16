@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarDays, Check, Clock3, Crown, Download, Gift, Home, Loader2, Plus, RefreshCw, Search, Shield, Trophy, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Clock3, Download, Gift, Home, Loader2, Plus, RefreshCw, Search, Shield, Trophy, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { CartolaMarketStatus } from "@/components/dashboard/CartolaMarketStatus";
 import { Dialog } from "@/components/ui/Dialog";
-import { TeamOwnershipNotice } from "@/components/teams/TeamOwnershipNotice";
 import { normalizeImportIds } from "@/components/teams/teamImport";
+import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { teamService } from "@/services/teamService";
 import type { CartolaTeam } from "@/types/team";
 import { blockMessages, pointLeagueService, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
@@ -29,17 +30,18 @@ function Entries({ entries, ownIds = new Set<number>(), ranking = false }: { ent
 export function PointCompetitionPage({ id }: { id: number }) {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { dashboard, loading: marketLoading, error: marketError, atualizar: refreshMarket } = useCartolaDashboard();
   const [summary, setSummary] = useState<CompetitionSummary | null>(null), [tab, setTab] = useState<Tab>("Visão geral");
   const [entries, setEntries] = useState<Entry[]>([]), [ranking, setRanking] = useState<RankingEntry[]>([]), [teams, setTeams] = useState<CartolaTeam[]>([]);
   const [loading, setLoading] = useState(true), [sectionLoading, setSectionLoading] = useState(false), [modal, setModal] = useState(false), [busy, setBusy] = useState(false);
   const [error, setError] = useState(""), [sectionError, setSectionError] = useState(""), [feedback, setFeedback] = useState(""), [selected, setSelected] = useState<Set<number>>(new Set());
-  const [ownershipAccepted, setOwnershipAccepted] = useState(false), [importing, setImporting] = useState(false), [importText, setImportText] = useState(""), [importPreview, setImportPreview] = useState<CartolaTeam[] | null>(null), [importNotFound, setImportNotFound] = useState<number[]>([]), [importRetry, setImportRetry] = useState<number[]>([]);
+  const [importing, setImporting] = useState(false), [importText, setImportText] = useState(""), [importPreview, setImportPreview] = useState<CartolaTeam[] | null>(null), [importNotFound, setImportNotFound] = useState<number[]>([]), [importRetry, setImportRetry] = useState<number[]>([]);
   const running = useRef(false);
   const loadSummary = useCallback(async () => setSummary(await pointLeagueService.summary(id, isAuthenticated)), [id, isAuthenticated]);
   useEffect(() => { if (authLoading) return; let active = true; setLoading(true); setError(""); pointLeagueService.summary(id, isAuthenticated).then((data) => { if (active) setSummary(data); }).catch((e) => { if (active) setError(message(e)); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [id, isAuthenticated, authLoading]);
   const loadTab = useCallback(async (current: Tab) => { setSectionLoading(true); setSectionError(""); try { if (current === "Meus times" && isAuthenticated) setEntries(await pointLeagueService.myEntries(id)); if (current === "Ranking") setRanking((await pointLeagueService.ranking(id)).ranking); } catch (e) { setSectionError(message(e)); } finally { setSectionLoading(false); } }, [id, isAuthenticated]);
   useEffect(() => { if (!summary) return; void loadTab(tab); }, [tab, summary, loadTab]);
-  const resetEnrollmentModal = () => { setSelected(new Set()); setOwnershipAccepted(false); setImporting(false); setImportText(""); setImportPreview(null); setImportNotFound([]); setImportRetry([]); };
+  const resetEnrollmentModal = () => { setSelected(new Set()); setImporting(false); setImportText(""); setImportPreview(null); setImportNotFound([]); setImportRetry([]); };
   const competition = summary?.competicao;
   const refreshTeams = async () => setTeams(await teamService.buscarMeusTimes());
   const openModal = async () => { if (!isAuthenticated) { router.push(`/login?next=${encodeURIComponent(`/competicoes?id=${id}`)}`); return; } if (!summary?.usuario?.podeInscrever) return; resetEnrollmentModal(); setModal(true); setSectionError(""); try { await refreshTeams(); } catch (e) { setSectionError(message(e)); } };
@@ -48,12 +50,11 @@ export function PointCompetitionPage({ id }: { id: number }) {
   const remaining = userLimit === null ? Number.POSITIVE_INFINITY : Math.max(0, userLimit - (summary?.usuario?.quantidadeTimesInscritos ?? 0));
   const toggleTeam = (timeId: number) => setSelected((current) => { const next = new Set(current); if (next.has(timeId)) next.delete(timeId); else if (next.size < remaining && !registeredIds.has(timeId)) next.add(timeId); return next; });
   const findImport = async () => { const ids = normalizeImportIds(importText); if (running.current || !ids) return; running.current = true; setBusy(true); setSectionError(""); try { const result = await teamService.buscarTimesPorIds(ids); setImportPreview(result.times); setImportNotFound(result.naoEncontrados); setImportRetry(result.tentarNovamente); } catch (e) { setSectionError(message(e)); } finally { running.current = false; setBusy(false); } };
-  const importTeams = async () => { if (running.current || !ownershipAccepted || !importPreview?.length) return; running.current = true; setBusy(true); setSectionError(""); try { await teamService.importarMeusTimes(importPreview); await refreshTeams(); setImporting(false); setImportText(""); setImportPreview(null); setOwnershipAccepted(false); setFeedback("Times adicionados aos Meus Times. Selecione-os para inscrever."); } catch (e) { setSectionError(message(e)); } finally { running.current = false; setBusy(false); } };
-  const enroll = async () => { if (running.current || busy || !ownershipAccepted || !selected.size || selected.size > remaining || !summary?.usuario?.podeInscrever) return; running.current = true; setBusy(true); setSectionError(""); const ids = [...selected]; try { const results = await Promise.allSettled(ids.map((teamId) => pointLeagueService.enroll(id, teamId))); const successes = results.filter((result) => result.status === "fulfilled").length; const failures = results.length - successes; setFeedback(`${successes} ${successes === 1 ? "time inscrito" : "times inscritos"} com sucesso.${failures ? ` ${failures} ${failures === 1 ? "time não pôde" : "times não puderam"} ser inscrito${failures === 1 ? "" : "s"}.` : ""}`); await loadSummary(); await refreshTeams(); if (!failures) { setModal(false); resetEnrollmentModal(); } else { setSelected(new Set()); setOwnershipAccepted(false); } if (tab === "Meus times" || tab === "Ranking") await loadTab(tab); } catch (e) { setSectionError(message(e)); } finally { running.current = false; setBusy(false); } };
+  const importTeams = async () => { if (running.current || !importPreview?.length) return; running.current = true; setBusy(true); setSectionError(""); try { await teamService.importarMeusTimes(importPreview); await refreshTeams(); setImporting(false); setImportText(""); setImportPreview(null); setFeedback("Times adicionados aos Meus Times. Selecione-os para inscrever."); } catch (e) { setSectionError(message(e)); } finally { running.current = false; setBusy(false); } };
+  const enroll = async () => { if (running.current || busy || !selected.size || selected.size > remaining || !summary?.usuario?.podeInscrever) return; running.current = true; setBusy(true); setSectionError(""); const ids = [...selected]; try { const results = await Promise.allSettled(ids.map((teamId) => pointLeagueService.enroll(id, teamId))); const successes = results.filter((result) => result.status === "fulfilled").length; const failures = results.length - successes; setFeedback(`${successes} ${successes === 1 ? "time inscrito" : "times inscritos"} com sucesso.${failures ? ` ${failures} ${failures === 1 ? "time não pôde" : "times não puderam"} ser inscrito${failures === 1 ? "" : "s"}.` : ""}`); await loadSummary(); await refreshTeams(); if (!failures) { setModal(false); resetEnrollmentModal(); } else { setSelected(new Set()); } if (tab === "Meus times" || tab === "Ranking") await loadTab(tab); } catch (e) { setSectionError(message(e)); } finally { running.current = false; setBusy(false); } };
   const ownIds = new Set(summary?.minhasInscricoes?.map((item) => item.id) ?? []);
   const roundLabel = competition?.rodadaInicio === null ? null : competition?.rodadaFim && competition.rodadaFim !== competition.rodadaInicio ? `${competition.rodadaInicio}–${competition.rodadaFim}` : competition?.rodadaInicio;
   const heroName = competition && roundLabel !== null && roundLabel !== undefined && competition.nome === `${summary?.liga.nome} - Rodada ${roundLabel}` ? summary!.liga.nome : competition?.nome;
-  const enrolled = summary?.usuario?.quantidadeTimesInscritos ?? 0;
   const canEnroll = !isAuthenticated || Boolean(summary?.usuario?.podeInscrever);
   const blockReason = summary?.usuario && !summary.usuario.podeInscrever ? blockMessages[summary.usuario.motivoBloqueio ?? ""] ?? "Inscrição indisponível no momento." : null;
   const retry = async () => { setLoading(true); setError(""); try { await loadSummary(); } catch (cause) { setError(message(cause)); } finally { setLoading(false); } };
@@ -69,15 +70,12 @@ export function PointCompetitionPage({ id }: { id: number }) {
         {feedback && <p role="status" className={styles.success}>{feedback}</p>}
         <nav className={styles.tabs} aria-label="Seções da competição">{tabs.map((item) => { const Icon = tabIcons[item]; return <button type="button" key={item} className={tab === item ? styles.active : ""} onClick={() => setTab(item)}><Icon size={15} aria-hidden="true" />{item}</button>; })}</nav>
         {tab === "Visão geral" && <div className={styles.overview}>
-          <section className={styles.panel}><div className={styles.panelTitle}><Crown aria-hidden="true" /><h2>Sua participação</h2></div>
-            {isAuthenticated && enrolled > 0 ? <>
-              <strong className={styles.participationCount}>{enrolled} {enrolled === 1 ? "time inscrito" : "times inscritos"}</strong>
-              <div className={styles.participationStats}><div><small>Melhor posição</small><strong>{summary.usuario?.melhorPosicaoUsuario === null || summary.usuario?.melhorPosicaoUsuario === undefined ? "—" : position(summary.usuario.melhorPosicaoUsuario)}</strong></div><div><small>Melhor pontuação</small><strong>{summary.usuario?.melhorPontuacaoUsuario === null || summary.usuario?.melhorPontuacaoUsuario === undefined ? "—" : `${score(summary.usuario.melhorPontuacaoUsuario)} pts`}</strong></div></div>
-              <div className={styles.secondaryActions}>{canEnroll && <button type="button" onClick={() => void openModal()}><Plus size={14} aria-hidden="true" />Inscrever mais times</button>}<button type="button" onClick={() => setTab("Meus times")}>Ver meus times</button><button type="button" onClick={() => setTab("Ranking")}>Ver ranking</button></div>
-            </> : <>
-              <button className={styles.participationCta} type="button" onClick={() => void openModal()} disabled={!canEnroll}><Plus size={16} aria-hidden="true" />{isAuthenticated ? "Inscrever meu time" : "Entrar para inscrever time"}<ArrowRight size={16} aria-hidden="true" /></button>
-              {blockReason && <p className={styles.notice}>{blockReason}</p>}
-            </>}
+          <section className={styles.marketEnrollment}>
+            {dashboard ? <CartolaMarketStatus mercado={dashboard.mercado} aberto={dashboard.mercadoAberto} aoVivo={dashboard.bolaRolando} atualizar={refreshMarket} />
+              : marketLoading ? <div className={styles.marketPlaceholder} role="status">Carregando mercado...</div>
+                : <div className={styles.marketPlaceholder} role="alert">{marketError || "Não foi possível carregar o mercado."}</div>}
+            <button className={styles.enrollmentCta} type="button" onClick={() => void openModal()} disabled={!canEnroll}><Plus size={18} aria-hidden="true" />Inscreva seu time<ArrowRight size={18} aria-hidden="true" /></button>
+            {blockReason && <p className={styles.notice}>{blockReason}</p>}
           </section>
           <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Sobre a competição</h2></div>
             <div className={styles.aboutList}>
@@ -95,21 +93,19 @@ export function PointCompetitionPage({ id }: { id: number }) {
         {sectionLoading && ["Meus times", "Ranking"].includes(tab) ? <p role="status" className={styles.sectionLoading}>Carregando...</p> : tab === "Meus times" && isAuthenticated ? <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Meus times</h2></div>{entries.length ? <Entries entries={entries} /> : <p className={styles.empty}>Você ainda não inscreveu times nesta competição.</p>}</section> : tab === "Ranking" ? <section className={styles.panel}><div className={styles.heading}><div><h2>Ranking</h2>{roundLabel !== null && roundLabel !== undefined && <p>Rodada {roundLabel}</p>}</div><button type="button" onClick={() => void loadTab("Ranking")}><RefreshCw size={15} aria-hidden="true" />Atualizar</button></div><Entries entries={ranking} ownIds={ownIds} ranking /></section> : null}
         {modal && <Dialog title="Inscrever times" close={() => { if (!busy) { setModal(false); resetEnrollmentModal(); } }} wide busy={busy}>
           {importing ? <>
-            <button type="button" className={styles.backToTeams} onClick={() => { setImporting(false); setImportPreview(null); setOwnershipAccepted(false); }} disabled={busy}>← Meus times</button>
+            <button type="button" className={styles.backToTeams} onClick={() => { setImporting(false); setImportPreview(null); }} disabled={busy}>← Meus times</button>
             <p className={styles.modalHelper}>Informe um ou vários IDs do Cartola. Importar adiciona aos Meus Times, mas não inscreve na competição.</p>
             {!importPreview ? <textarea aria-label="IDs dos times" className={styles.importInput} value={importText} disabled={busy} onChange={(event) => setImportText(event.target.value)} placeholder="44566162;30157334;13933388" /> : <div className={styles.importPreview}><strong>{importPreview.length} {importPreview.length === 1 ? "time encontrado" : "times encontrados"}</strong>{importPreview.map((team) => <div key={team.timeId}>{team.escudoUrl && <img src={team.escudoUrl} alt="" />}<span><b>{team.nome}</b><small>{team.nomeCartoleiro} · ID {team.timeId}</small></span><Check aria-hidden="true" /></div>)}</div>}
             {importNotFound.length > 0 && <p className={styles.importWarning}>Não encontrados: {importNotFound.join("; ")}</p>}
             {importRetry.length > 0 && <p className={styles.importWarning}>Tente novamente: {importRetry.join("; ")}</p>}
-            {importPreview && <TeamOwnershipNotice plural={importPreview.length > 1} checked={ownershipAccepted} disabled={busy} onChange={setOwnershipAccepted} />}
             {sectionError && <p role="alert" className={styles.inlineError}>{sectionError}</p>}
-            <div className={styles.actions}><button type="button" onClick={() => setImporting(false)} disabled={busy}>Cancelar</button>{!importPreview ? <button type="button" className={styles.primary} onClick={() => void findImport()} disabled={busy || !normalizeImportIds(importText)}>{busy ? <Loader2 className={styles.spin} /> : <Search />}Buscar times</button> : <button type="button" className={styles.primary} onClick={() => void importTeams()} disabled={busy || !ownershipAccepted || !importPreview.length}>{busy ? <Loader2 className={styles.spin} /> : <Download />}Importar times</button>}</div>
+            <div className={styles.actions}><button type="button" onClick={() => setImporting(false)} disabled={busy}>Cancelar</button>{!importPreview ? <button type="button" className={styles.primary} onClick={() => void findImport()} disabled={busy || !normalizeImportIds(importText)}>{busy ? <Loader2 className={styles.spin} /> : <Search />}Buscar times</button> : <button type="button" className={styles.primary} onClick={() => void importTeams()} disabled={busy || !importPreview.length}>{busy ? <Loader2 className={styles.spin} /> : <Download />}Importar times</button>}</div>
           </> : <>
-            <div className={styles.modalLead}><div><strong>Meus times</strong><small>{Number.isFinite(remaining) ? `${remaining} ${remaining === 1 ? "vaga restante" : "vagas restantes"}` : "Sem limite de times"}</small></div><button type="button" onClick={() => { setImporting(true); setOwnershipAccepted(false); setSectionError(""); }} disabled={busy}><Download size={15} />Importar times</button></div>
+            <div className={styles.modalLead}><div><strong>Meus times</strong><small>{Number.isFinite(remaining) ? `${remaining} ${remaining === 1 ? "vaga restante" : "vagas restantes"}` : "Sem limite de times"}</small></div><button type="button" onClick={() => { setImporting(true); setSectionError(""); }} disabled={busy}><Download size={15} />Importar times</button></div>
             {teams.length ? <div className={styles.choices}>{teams.map((team) => { const registered = registeredIds.has(team.timeId); const limitReached = !selected.has(team.timeId) && selected.size >= remaining; return <label key={team.timeId} className={registered ? styles.registered : ""}><input type="checkbox" checked={selected.has(team.timeId)} onChange={() => toggleTeam(team.timeId)} disabled={busy || registered || limitReached} aria-label={registered ? `${team.nome}: Já inscrito` : `Selecionar ${team.nome}`} />{team.escudoUrl && <img src={team.escudoUrl} alt="" />}<span><strong>{team.nome}</strong><small>{registered ? "Já inscrito" : team.nomeCartoleiro}</small></span></label>; })}</div> : <p>Nenhum time vinculado. Importe seus times do Cartola para continuar.</p>}
             <p className={styles.selectionCount}>{selected.size} {selected.size === 1 ? "time selecionado" : "times selecionados"}</p>
-            <TeamOwnershipNotice plural={selected.size !== 1} checked={ownershipAccepted} disabled={busy} onChange={setOwnershipAccepted} />
             {sectionError && <p role="alert" className={styles.inlineError}>{sectionError}</p>}
-            <div className={styles.actions}><button type="button" onClick={() => { setModal(false); resetEnrollmentModal(); }} disabled={busy}>Cancelar</button><button type="button" className={styles.primary} disabled={busy || !selected.size || selected.size > remaining || !ownershipAccepted} onClick={() => void enroll()}>{busy ? <><Loader2 className={styles.spin} />Inscrevendo...</> : selected.size === 1 ? "Inscrever time" : `Inscrever ${selected.size} times`}</button></div>
+            <div className={styles.actions}><button type="button" onClick={() => { setModal(false); resetEnrollmentModal(); }} disabled={busy}>Cancelar</button><button type="button" className={styles.primary} disabled={busy || !selected.size || selected.size > remaining} onClick={() => void enroll()}>{busy ? <><Loader2 className={styles.spin} />Inscrevendo...</> : selected.size === 1 ? "Inscrever time" : `Inscrever ${selected.size} times`}</button></div>
           </>}
         </Dialog>}
       </>}
