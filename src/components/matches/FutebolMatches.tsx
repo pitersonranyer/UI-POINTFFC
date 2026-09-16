@@ -4,8 +4,10 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useFutebolRodada } from "@/hooks/useFutebolRodada";
 import { futebolLeadingTeam } from "@/lib/futebolStatus";
+import { DashboardMatchCard } from "@/components/dashboard/JogosHoje";
 import { FutebolMatchInfo, FutebolShield } from "./FutebolMatch";
 import styles from "./FutebolMatches.module.css";
+import compact from "@/components/dashboard/JogosHoje.module.css";
 
 export function FutebolMatches({ embedded = false }: { embedded?: boolean }) {
   const [attempt, setAttempt] = useState(0);
@@ -35,6 +37,18 @@ function RoundMatchesContent({ embedded, retry }: { embedded: boolean; retry: ()
     if (!element) return;
     element.scrollBy({ left: direction * (element.clientWidth + 10), behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
+  if (embedded) return <section className={compact.section} aria-label="Jogos da Rodada">
+    <header><span className={compact.date}>{data?.rodada != null ? `Rodada ${data.rodada}` : "Brasileirão"}</span><div className={styles.headingActions}>
+      {!loading && !error && data?.jogos.length ? <div className={`${styles.controls} ${compact.controls}`} aria-label="Navegação dos jogos do Brasileirão">
+        <button type="button" aria-label="Jogos anteriores" aria-controls={carouselId} disabled={!arrows.previous} onClick={() => move(-1)}><ArrowLeft size={17} /></button>
+        <button type="button" aria-label="Próximos jogos" aria-controls={carouselId} disabled={!arrows.next} onClick={() => move(1)}><ArrowRight size={17} /></button>
+      </div> : null}
+    </div></header>
+    {loading ? <div role="status" aria-label="Carregando jogos do Brasileirão" className={compact.skeletonTrack}>{Array.from({ length: 6 }, (_, index) => <div key={index} className={`${compact.match} ${compact.skeleton}`} aria-hidden="true" />)}</div>
+      : error ? <div className={compact.message}><p role="alert">{error}</p><button type="button" onClick={retry}>Tentar novamente</button></div>
+      : !data || data.rodada == null || !data.jogos.length ? <div className={compact.empty}><strong><span aria-hidden="true">⚽</span> Nenhum jogo disponível no momento</strong><p>Confira novamente quando a próxima rodada estiver definida.</p></div>
+      : <div className={compact.carousel} ref={carousel} id={carouselId} role="region" aria-label="Carrossel de jogos da rodada" aria-roledescription="carrossel" tabIndex={0} onScroll={updateArrows} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); move(event.key === "ArrowLeft" ? -1 : 1); } }}>{data.jogos.map(jogo => <DashboardMatchCard key={jogo.id} jogo={jogo} competitionName={data.competicao.nome} href={`/jogos?futebol=${jogo.id}`} />)}</div>}
+  </section>;
   return <section className={embedded ? styles.embedded : styles.card} aria-label="Jogos da Rodada">
     <header><h2>Jogos da Rodada</h2><div className={styles.headingActions}>{data?.rodada != null && <span>Rodada {data.rodada}</span>}{!embedded && <Link className={styles.viewAll} href="/jogos">Ver todos <ArrowRight size={14} /></Link>}</div></header>
     {loading ? <p role="status">Carregando jogos da rodada...</p> : error ? <div className={styles.feedback}><p role="alert">{error}</p><button type="button" onClick={retry}>Tentar novamente</button></div> : !data || data.rodada == null || !data.jogos.length ? <p>Nenhum jogo disponível no momento.</p> :

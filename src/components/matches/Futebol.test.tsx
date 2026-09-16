@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FutebolMatches } from "./FutebolMatches";
 import styles from "./FutebolMatches.module.css";
+import compact from "@/components/dashboard/JogosHoje.module.css";
 import { MatchDetailsPage } from "./MatchDetailsPage";
 import { FutebolMatchInfo } from "./FutebolMatch";
 import { buscarRodadaAtualBsa } from "@/services/futebolService";
@@ -24,6 +25,17 @@ beforeEach(() => { vi.stubGlobal("React", React); vi.mocked(buscarRodadaAtualBsa
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("card futebol", () => {
+  it("usa no Dashboard o mesmo card compacto da aba Hoje sem alterar os dados da rodada", async () => {
+    render(<FutebolMatches embedded />);
+    const card = await screen.findByRole("link", { name: "Ver detalhes de Flamengo contra Corinthians" });
+    expect(card.classList.contains(compact.match)).toBe(true);
+    expect(card.getAttribute("href")).toBe("/jogos?futebol=268");
+    expect(screen.getByText("Brasileirão")).toBeTruthy();
+    expect(screen.getAllByText("Outro")).toHaveLength(2);
+    expect(screen.getByText("Às 17:30")).toBeTruthy();
+    expect(screen.getByText("Rodada 27")).toBeTruthy();
+    expect(buscarRodadaAtualBsa).toHaveBeenCalledTimes(1);
+  });
   it.each([["IN_PLAY", 2, 0], ["FINISHED", 0, 2], ["FINISHED", 1, 1], ["SCHEDULED", 2, 0]] as const)("destaca o time correto na rodada %s (%s x %s)", async (status, mandante, visitante) => {
     vi.mocked(buscarRodadaAtualBsa).mockResolvedValue({ ...rodada, jogos: [{ ...jogo, status, placar: { mandante, visitante } }] });
     render(<FutebolMatches />);
@@ -36,7 +48,7 @@ describe("card futebol", () => {
     render(<FutebolMatches embedded />);
     expect(await screen.findByRole("alert")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
-    expect(await screen.findByText("Flamengo")).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "Ver detalhes de Flamengo contra Corinthians" })).toBeTruthy();
     expect(buscarRodadaAtualBsa).toHaveBeenCalledTimes(2);
   });
   it("navega pelas setas e desabilita os controles nos limites", async () => {

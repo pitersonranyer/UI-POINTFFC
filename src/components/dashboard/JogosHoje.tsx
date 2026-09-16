@@ -5,23 +5,27 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useJogosHoje } from "@/hooks/useJogosHoje";
 import { futebolLeadingTeam, futebolStatus } from "@/lib/futebolStatus";
 import { FutebolShield } from "@/components/matches/FutebolMatch";
-import type { FutebolJogoHoje } from "@/types/futebol";
+import type { FutebolJogo, FutebolJogoHoje } from "@/types/futebol";
 import shared from "@/components/matches/FutebolMatches.module.css";
 import styles from "./JogosHoje.module.css";
 
-function Match({ jogo }: { jogo: FutebolJogoHoje }) {
+export function DashboardMatchCard({ jogo, competitionName, href }: { jogo: FutebolJogo; competitionName: string; href?: string }) {
   const { label, scheduled, score } = futebolStatus(jogo);
   const leading = futebolLeadingTeam(jogo);
   const date = new Date(jogo.dataHoraUtc);
   const time = Number.isNaN(date.getTime()) ? "A definir" : date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-  return <article className={styles.match} aria-label={`${jogo.mandante.nome} contra ${jogo.visitante.nome}`}>
-    <div className={styles.meta}><time dateTime={jogo.dataHoraUtc}>{time}</time><span title={jogo.competicao.nome}>{jogo.competicao.nomeCurto || jogo.competicao.nome}</span></div>
+  const content = <>
+    <div className={styles.meta}><time dateTime={jogo.dataHoraUtc}>{time}</time><span title={competitionName}>{competitionName}</span></div>
     {[jogo.mandante, jogo.visitante].map((team, index) => <div className={`${styles.team} ${leading === (index === 0 ? "mandante" : "visitante") ? shared.leadingTeam : ""}`} key={index}>
       <FutebolShield team={team} /><strong title={team.nome}>{team.nomeCurto || team.nome}</strong>
       {score && <b aria-label={`Placar do ${team.nome}`}>{index === 0 ? jogo.placar.mandante : jogo.placar.visitante}</b>}
     </div>)}
     <small className={jogo.status === "IN_PLAY" ? styles.live : styles.status}>{scheduled ? `Às ${time}` : label}</small>
-  </article>;
+  </>;
+  const labelText = `${jogo.mandante.nome} contra ${jogo.visitante.nome}`;
+  return href
+    ? <Link href={href} className={styles.match} aria-label={`Ver detalhes de ${labelText}`}>{content}</Link>
+    : <article className={styles.match} aria-label={labelText}>{content}</article>;
 }
 
 export function JogosHoje({ embedded = false }: { embedded?: boolean }) {
@@ -63,6 +67,6 @@ export function JogosHoje({ embedded = false }: { embedded?: boolean }) {
       : !hasGames ? <div className={styles.empty}><strong><span aria-hidden="true">⚽</span> Nenhum jogo programado para hoje</strong><p>Confira a agenda completa e os próximos jogos.</p><Link href="/jogos">Ver agenda <ArrowRight size={14} aria-hidden="true" /></Link></div>
       : <div className={styles.carousel} ref={carousel} id={carouselId} role="region" aria-label="Carrossel de jogos de hoje" aria-roledescription="carrossel" tabIndex={0} onScroll={updateArrows} onKeyDown={event => {
         if (event.target === event.currentTarget && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); move(event.key === "ArrowLeft" ? -1 : 1); }
-      }}>{data.jogos.map(jogo => <Match key={jogo.id} jogo={jogo} />)}</div>}
+      }}>{data.jogos.map(jogo => <DashboardMatchCard key={jogo.id} jogo={jogo} competitionName={jogo.competicao.nomeCurto || jogo.competicao.nome} />)}</div>}
   </section>;
 }
