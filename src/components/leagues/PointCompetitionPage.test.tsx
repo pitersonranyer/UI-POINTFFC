@@ -200,67 +200,38 @@ it("identifica time já inscrito e impede nova seleção", async () => {
   expect(screen.getByText("Já inscrito")).toBeTruthy();
 });
 
-it("lista resultados sem seleção inicial e importa somente os times selecionados", async () => {
+it("Importar IDs seleciona somente times já vinculados pela fonte oficial", async () => {
   state.authenticated = true;
-  const importedTeams = [{ timeId: 456, nome: "Importado A", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Importado B", nomeCartoleiro: "Caio", escudoUrl: "" }];
+  const linkedTeam = { timeId: 456, nome: "Vinculado", nomeCartoleiro: "Bia", escudoUrl: "" };
   vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 4 } });
-  vi.mocked(teamService.buscarTimesPorIds).mockResolvedValue({ times: importedTeams, naoEncontrados: [], tentarNovamente: [] });
-  vi.mocked(teamService.buscarMeusTimes).mockResolvedValueOnce([]).mockResolvedValueOnce([importedTeams[0]]);
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([linkedTeam]);
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Importar times" }));
+  expect(await screen.findByRole("checkbox", { name: "Selecionar Vinculado" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Importar IDs" }));
   fireEvent.change(screen.getByLabelText("IDs dos times"), { target: { value: "Favoritos=>456;789" } });
-  fireEvent.click(screen.getByRole("button", { name: "Buscar times" }));
-  expect(await screen.findByText("2 encontrados • 0 selecionados")).toBeTruthy();
-  expect(screen.getByText("Importado A")).toBeTruthy(); expect(screen.getByText("Importado B")).toBeTruthy();
-  expect(teamService.buscarTimesPorIds).toHaveBeenCalledWith("456;789");
-  const first = screen.getByRole("checkbox", { name: "Selecionar Importado A para importar" }) as HTMLInputElement;
-  const second = screen.getByRole("checkbox", { name: "Selecionar Importado B para importar" }) as HTMLInputElement;
-  expect(first.checked).toBe(false); expect(second.checked).toBe(false);
-  expect((screen.getByRole("button", { name: "Importar times" }) as HTMLButtonElement).disabled).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "Selecionar todos" }));
-  expect(screen.getByText("2 encontrados • 2 selecionados")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Importar 2 times" })).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Desmarcar todos" }));
-  expect(screen.getByText("2 encontrados • 0 selecionados")).toBeTruthy();
-  expect((screen.getByRole("button", { name: "Importar times" }) as HTMLButtonElement).disabled).toBe(true);
-  fireEvent.click(first);
-  expect(screen.getByText("2 encontrados • 1 selecionado")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Importar 1 time" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar times da lista" }));
+  const selected = screen.getByRole("checkbox", { name: "Selecionar Vinculado" }) as HTMLInputElement;
+  expect(selected.checked).toBe(true);
+  expect(screen.queryByText("789")).toBeNull();
+  expect(screen.getByText("1 time selecionado. 1 não encontrado(s) ou indisponível(is) nesta competição.")).toBeTruthy();
+  expect(teamService.buscarTimesPorIds).not.toHaveBeenCalled();
+  expect(teamService.importarMeusTimes).not.toHaveBeenCalled();
   expect(pointLeagueService.enroll).not.toHaveBeenCalled();
-  expect(screen.queryByText(/titularidade|titular dos times|comprovação/i)).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Importar 1 time" }));
-  await waitFor(() => expect(teamService.importarMeusTimes).toHaveBeenCalledWith([importedTeams[0]]));
-  expect(pointLeagueService.enroll).not.toHaveBeenCalled();
-  const imported = await screen.findByRole("checkbox", { name: "Selecionar Importado A" }) as HTMLInputElement;
-  expect(imported.checked).toBe(false);
-  expect(screen.queryByText(/R\$|por time|Total|carteira|PIX/i)).toBeNull();
-  expect(screen.queryByText(/titularidade|titular dos times|comprovação/i)).toBeNull();
 });
 
-it("nova busca limpa a seleção e preserva não encontrados e tentar novamente", async () => {
+it("ID de time não vinculado não entra na lista nem pode ser inscrito", async () => {
   state.authenticated = true;
-  const firstResult = [{ timeId: 456, nome: "Primeiro", nomeCartoleiro: "Bia", escudoUrl: "" }];
-  const secondResult = [{ timeId: 789, nome: "Segundo", nomeCartoleiro: "Caio", escudoUrl: "" }];
   vi.mocked(pointLeagueService.summary).mockResolvedValue(member);
-  vi.mocked(teamService.buscarTimesPorIds)
-    .mockResolvedValueOnce({ times: firstResult, naoEncontrados: [], tentarNovamente: [] })
-    .mockResolvedValueOnce({ times: secondResult, naoEncontrados: [999], tentarNovamente: [888] });
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([]);
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Importar times" }));
-  fireEvent.change(screen.getByLabelText("IDs dos times"), { target: { value: "456" } });
-  fireEvent.click(screen.getByRole("button", { name: "Buscar times" }));
-  const first = await screen.findByRole("checkbox", { name: "Selecionar Primeiro para importar" });
-  fireEvent.click(first);
-  expect(screen.getByText("1 encontrado • 1 selecionado")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "← Meus times" }));
-  fireEvent.click(screen.getByRole("button", { name: "Importar times" }));
-  fireEvent.change(screen.getByLabelText("IDs dos times"), { target: { value: "789;999;888" } });
-  fireEvent.click(screen.getByRole("button", { name: "Buscar times" }));
-  const second = await screen.findByRole("checkbox", { name: "Selecionar Segundo para importar" }) as HTMLInputElement;
-  expect(second.checked).toBe(false);
-  expect(screen.getByText("1 encontrado • 0 selecionados")).toBeTruthy();
-  expect(screen.getByText("Não encontrados: 999")).toBeTruthy();
-  expect(screen.getByText("Tente novamente: 888")).toBeTruthy();
+  expect(screen.getByText("Nenhum time vinculado. Cadastre seus times em Meus Times para continuar.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Importar IDs" }));
+  fireEvent.change(screen.getByLabelText("IDs dos times"), { target: { value: "789" } });
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar times da lista" }));
+  expect(screen.getByText("0 times selecionados. 1 não encontrado(s) ou indisponível(is) nesta competição.")).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: /789/ })).toBeNull();
+  expect(pointLeagueService.enroll).not.toHaveBeenCalled();
+  expect(teamService.buscarTimesPorIds).not.toHaveBeenCalled();
   expect(teamService.importarMeusTimes).not.toHaveBeenCalled();
 });
 
