@@ -17,9 +17,9 @@ describe("POINT FFC API", () => {
     expect(fetchMock).toHaveBeenNthCalledWith(1, "/competicoes/5/resumo", { authenticated: false });
     expect(fetchMock).toHaveBeenNthCalledWith(2, "/competicoes/5/resumo", { authenticated: true });
   });
-  it("sends only the selected Cartola team ID when enrolling", async () => {
-    await pointLeagueService.enroll(5, 123);
-    expect(fetchMock).toHaveBeenCalledWith("/competicoes/5/inscricoes", { method: "POST", authenticated: true, body: '{"timeIdCartola":123}' });
+  it("sends all selected Cartola team IDs in one enrollment request", async () => {
+    await pointLeagueService.enroll(5, [123, 456]);
+    expect(fetchMock).toHaveBeenCalledWith("/competicoes/5/inscricoes", { method: "POST", authenticated: true, body: '{"timesCartolaIds":[123,456]}' });
   });
   it("loads user entries, participants and ranking through their endpoints", async () => {
     await pointLeagueService.myEntries(5); await pointLeagueService.participants(5); await pointLeagueService.ranking(5);

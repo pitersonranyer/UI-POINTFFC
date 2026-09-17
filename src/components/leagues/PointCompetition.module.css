@@ -166,6 +166,7 @@
 .aboutList strong{font-size:11px;text-align:right}
 .participationCta{margin-top:0}
 .skeletonHero{height:112px}
+.confirmation{text-align:center}.confirmation>svg{width:48px;height:48px;margin:4px auto 10px;color:#b08b36}.confirmation h3{margin:0;font-size:20px}.confirmation p{margin:8px 0 14px;color:#6f6f6f;font-size:12px;line-height:1.5}.confirmation ul{margin:0 0 18px;padding:12px 16px;border-radius:10px;background:#f6f4ee;list-style:none;text-align:left}.confirmation li{padding:5px 0;font-size:12px;font-weight:800}.confirmation>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}.confirmation button{min-height:43px;border-radius:9px;cursor:pointer;font-weight:800}
 @media(max-width:700px){
  .competitionHeader{padding-top:2px}.titleRow{gap:9px}.titleRow h1{font-size:27px}.titleRow p{font-size:11px}.competitionHeader .roundBadge{padding:5px 7px;font-size:8px}
  .headerMetrics{margin-top:13px}.headerMetrics>div{flex:1;min-width:0;padding:0 9px}.headerMetrics strong{font-size:14px}.headerMetrics small{font-size:8px}

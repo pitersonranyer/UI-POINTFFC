@@ -15,7 +15,7 @@ export const pointLeagueService = {
   participants: (id: number) => apiFetch<Entry[]>(`/competicoes/${id}/participantes`),
   ranking: (id: number) => apiFetch<{ ranking: RankingEntry[] }>(`/competicoes/${id}/ranking`),
   myEntries: (id: number) => apiFetch<Entry[]>(`/competicoes/${id}/inscricoes/minhas`, { authenticated: true }),
-  enroll: (id: number, timeIdCartola: number) => apiFetch<Entry>(`/competicoes/${id}/inscricoes`, { method: "POST", authenticated: true, body: JSON.stringify({ timeIdCartola }) }),
+  enroll: (id: number, timesCartolaIds: number[]) => apiFetch<Entry[]>(`/competicoes/${id}/inscricoes`, { method: "POST", authenticated: true, body: JSON.stringify({ timesCartolaIds }) }),
 };
 
 export const blockMessages: Record<string, string> = {

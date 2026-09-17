@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.mocked(pointLeagueService.myEntries).mockReset().mockResolvedValue([]);
   vi.mocked(pointLeagueService.participants).mockReset().mockResolvedValue([rival]);
   vi.mocked(pointLeagueService.ranking).mockReset().mockResolvedValue({ ranking });
-  vi.mocked(pointLeagueService.enroll).mockReset().mockResolvedValue(entry);
+  vi.mocked(pointLeagueService.enroll).mockReset().mockResolvedValue([entry]);
   vi.mocked(teamService.buscarMeusTimes).mockReset().mockResolvedValue([{ timeId: 123, nome: "Meu FC", nomeCartoleiro: "Ana", escudoUrl: "" }]);
   vi.mocked(teamService.buscarTimesPorIds).mockReset().mockResolvedValue({ times: [], naoEncontrados: [], tentarNovamente: [] });
   vi.mocked(teamService.importarMeusTimes).mockReset().mockResolvedValue({ adicionados: 0, jaExistentes: 0, naoEncontrados: [], tentarNovamente: [], naoProcessados: 0 });
@@ -74,12 +74,13 @@ it("abre modal, seleciona time vinculado, inscreve FREE e atualiza resumo", asyn
   const values = within(dialog).getByText("Valor por time").closest("dl")!;
   expect(within(values).getByText("Valor por time").nextElementSibling?.textContent).toMatch(/R\$\s*0,00/);
   expect(within(values).getByText("Total da inscrição").nextElementSibling?.textContent).toMatch(/R\$\s*0,00/);
-  expect((within(dialog).getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(true);
+  expect((within(dialog).getByRole("button", { name: /Inscrever 0 times.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(within(dialog).getByRole("checkbox", { name: "Selecionar Meu FC" }));
   expect(within(dialog).queryByText(/titularidade|titular dos times|comprovação/i)).toBeNull();
   expect(within(dialog).queryByRole("checkbox", { name: /Declaro/ })).toBeNull();
-  fireEvent.click(within(dialog).getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }));
-  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledWith(42, 123));
+  fireEvent.click(within(dialog).getByRole("button", { name: /Inscrever 1 time.*R\$\s*0,00/i }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar 1 time" }));
+  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledWith(42, [123]));
   await screen.findByText("1 time inscrito com sucesso.");
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.queryByText("Você ainda não está participando.")).toBeNull();
@@ -96,7 +97,7 @@ it("calcula o total com o valor real retornado pela competição", async () => {
   const values = dialog.getByText("Valor por time").closest("dl")!;
   expect(within(values).getByText("Valor por time").nextElementSibling?.textContent).toMatch(/R\$\s*10,00/);
   expect(within(values).getByText("Total da inscrição").nextElementSibling?.textContent).toMatch(/R\$\s*30,00/);
-  expect(dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*30,00/i })).toBeTruthy();
+  expect(dialog.getByRole("button", { name: /Inscrever 3 times.*R\$\s*30,00/i })).toBeTruthy();
 });
 it("respeita bloqueio por limite retornado pelo backend", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, podeInscrever: false, motivoBloqueio: "LIMITE_TIMES_USUARIO_ATINGIDO" } });
@@ -181,7 +182,7 @@ it("seleciona e desmarca vários times, atualiza contador e respeita o limite re
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" }));
   expect(dialog.getAllByText("2 times selecionados")).toHaveLength(2);
-  expect((dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(false);
+  expect((dialog.getByRole("button", { name: /Inscrever 2 times.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(false);
   expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).disabled).toBe(true);
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" }));
   expect(dialog.getAllByText("1 time selecionado")).toHaveLength(2);
@@ -201,11 +202,11 @@ it("busca, seleciona todos os resultados até o limite e desmarca todos", async 
   expect(dialog.queryByText("Outro Time")).toBeNull();
   fireEvent.click(dialog.getByRole("button", { name: "Selecionar todos" }));
   expect(dialog.getAllByText("2 times selecionados")).toHaveLength(2);
-  expect(dialog.getByText("0 vagas restantes")).toBeTruthy();
-  expect((dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(false);
+  expect(dialog.getByText("Limite: 2")).toBeTruthy();
+  expect((dialog.getByRole("button", { name: /Inscrever 2 times.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(false);
   fireEvent.click(dialog.getByRole("button", { name: "Desmarcar todos" }));
   expect(dialog.getAllByText("0 times selecionados")).toHaveLength(2);
-  expect((dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(true);
+  expect((dialog.getByRole("button", { name: /Inscrever 0 times.*R\$\s*0,00/i }) as HTMLButtonElement).disabled).toBe(true);
 });
 
 it("identifica time já inscrito e impede nova seleção", async () => {
@@ -254,42 +255,26 @@ it("ID de time não vinculado não entra na lista nem pode ser inscrito", async 
   expect(teamService.importarMeusTimes).not.toHaveBeenCalled();
 });
 
-it("inscreve sequencialmente, continua após falha, preserva somente retry e impede duplo envio", async () => {
+it("inscreve os times em lote, impede duplo envio e atualiza os dados", async () => {
   state.authenticated = true;
   const teams = [{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Time C", nomeCartoleiro: "Caio", escudoUrl: "" }];
   vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 4 } });
   vi.mocked(teamService.buscarMeusTimes).mockResolvedValue(teams);
-  let resolveFirst!: (value: Entry) => void; let rejectSecond!: (reason: Error) => void; let resolveThird!: (value: Entry) => void;
-  vi.mocked(pointLeagueService.enroll)
-    .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
-    .mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectSecond = reject; }))
-    .mockImplementationOnce(() => new Promise((resolve) => { resolveThird = resolve; }))
-    .mockResolvedValueOnce(entry);
+  let resolveEnrollment!: (value: Entry[]) => void;
+  vi.mocked(pointLeagueService.enroll).mockImplementationOnce(() => new Promise((resolve) => { resolveEnrollment = resolve; }));
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   const dialog = within(await screen.findByRole("dialog"));
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time C" }));
-  const confirm = dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }); fireEvent.click(confirm); fireEvent.click(confirm);
+  fireEvent.click(dialog.getByRole("button", { name: /Inscrever 3 times.*R\$\s*0,00/i }));
+  const confirm = dialog.getByRole("button", { name: "Confirmar 3 times" }); fireEvent.click(confirm); fireEvent.click(confirm);
   expect(pointLeagueService.enroll).toHaveBeenCalledTimes(1);
-  expect(dialog.getByRole("button", { name: "Inscrevendo 1 de 3..." })).toBeTruthy();
-  resolveFirst(entry);
-  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledTimes(2));
-  expect(pointLeagueService.enroll).toHaveBeenNthCalledWith(2, 42, 456);
-  rejectSecond(new ApiError(500, "Internal server error"));
-  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledTimes(3));
-  expect(pointLeagueService.enroll).toHaveBeenNthCalledWith(3, 42, 789);
-  resolveThird(entry);
-  expect(await screen.findByText("2 de 3 times inscritos. 1 não pôde ser inscrito.")).toBeTruthy();
-  expect(screen.getByText("Não foi possível concluir a inscrição").closest("li")?.textContent).toContain("Time B");
-  expect(screen.queryByText("Internal server error")).toBeNull();
-  expect(screen.getByRole("dialog")).toBeTruthy();
-  expect((dialog.getByRole("checkbox", { name: "Selecionar Time A" }) as HTMLInputElement).checked).toBe(false);
-  expect((dialog.getByRole("checkbox", { name: "Selecionar Time B" }) as HTMLInputElement).checked).toBe(true);
-  expect((dialog.getByRole("checkbox", { name: "Selecionar Time C" }) as HTMLInputElement).checked).toBe(false);
-  fireEvent.click(dialog.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }));
-  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledTimes(4));
-  expect(pointLeagueService.enroll).toHaveBeenNthCalledWith(4, 42, 456);
-  expect(await screen.findByText("1 time inscrito com sucesso.")).toBeTruthy();
+  expect(pointLeagueService.enroll).toHaveBeenCalledWith(42, [123, 456, 789]);
+  expect(dialog.getByRole("button", { name: "Inscrevendo..." })).toBeTruthy();
+  resolveEnrollment([entry]);
+  expect(await screen.findByText("3 times inscritos com sucesso.")).toBeTruthy();
   expect(screen.queryByRole("dialog")).toBeNull();
+  expect(pointLeagueService.summary).toHaveBeenCalledTimes(2);
+  expect(pointLeagueService.myEntries).toHaveBeenCalledWith(42);
 });
 
 it.each(["resumo", "times"])("preserva o sucesso quando falha o refresh de %s", async (target) => {
@@ -301,7 +286,8 @@ it.each(["resumo", "times"])("preserva o sucesso quando falha o refresh de %s", 
   else vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([team]);
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   fireEvent.click(await screen.findByRole("checkbox", { name: "Selecionar Time A" }));
-  fireEvent.click(screen.getByRole("button", { name: /Confirmar inscrição.*R\$\s*0,00/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Inscrever 1 time.*R\$\s*0,00/i }));
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar 1 time" }));
   expect(await screen.findByText("1 time inscrito com sucesso.")).toBeTruthy();
   expect(screen.getByText("Inscrições concluídas, mas não foi possível atualizar os dados da tela.")).toBeTruthy();
   expect(screen.queryByText("Internal server error")).toBeNull();
