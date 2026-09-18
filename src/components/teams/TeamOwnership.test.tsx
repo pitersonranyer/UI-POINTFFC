@@ -3,11 +3,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MyTeamsManager } from "./MyTeamsManager";
 import { teamService } from "@/services/teamService";
-import { partialScoreService } from "@/services/partialScoreService";
 import type { AddTeamResult, ImportResult } from "@/types/team";
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: true, isLoading: false }) }));
-vi.mock("./PartialScore", () => ({ PartialScore: () => null }));
-vi.mock("@/services/partialScoreService", () => ({ partialScoreService: { buscarParciais: vi.fn().mockResolvedValue([]) } }));
 vi.mock("@/services/teamService", () => ({ teamService: {
   buscarMeusTimes: vi.fn(), buscarTimesPorNome: vi.fn(), adicionarMeuTime: vi.fn(),
   buscarTimesPorIds: vi.fn(), importarMeusTimes: vi.fn(),
@@ -21,7 +18,6 @@ const declarations = [
   "Declaro que sou o titular dos times informados e estou ciente da necessidade de comprovação para receber premiações.",
 ];
 beforeEach(() => {
-  vi.mocked(partialScoreService.buscarParciais).mockReset().mockResolvedValue([]);
   vi.mocked(teamService.buscarMeusTimes).mockReset().mockResolvedValue([]);
   vi.mocked(teamService.buscarTimesPorNome).mockReset().mockResolvedValue([team]);
   vi.mocked(teamService.adicionarMeuTime).mockReset().mockResolvedValue({ time: team });
@@ -29,6 +25,17 @@ beforeEach(() => {
   vi.mocked(teamService.importarMeusTimes).mockReset().mockResolvedValue(imported);
 });
 afterEach(cleanup);
+it("exibe cards compactos sem informações de pontuação", async () => {
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([team]);
+  render(<MyTeamsManager />);
+  expect(await screen.findByRole("heading", { name: "Time Teste" })).toBeTruthy();
+  expect(screen.getByText("Pessoa")).toBeTruthy();
+  expect(screen.getByText("ID 123")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Copiar ID 123" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Remover" })).toBeTruthy();
+  expect(screen.queryByText(/pts/i)).toBeNull();
+  expect(screen.queryByText(/parcial/i)).toBeNull();
+});
 async function open(action = "Adicionar time") {
   render(<MyTeamsManager />);
   await screen.findByText("Você ainda não adicionou times.");
