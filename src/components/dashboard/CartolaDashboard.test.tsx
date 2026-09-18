@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CartolaDashboard } from "./CartolaDashboard";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { MagoDashboardCard } from "./MagoDashboardCard";
-import { magoRodada27 } from "@/data/mago/rodada27";
+import { magoRodada28 } from "@/data/mago/rodada28";
 import { buscarJogosHoje } from "@/services/futebolService";
 
 vi.mock("@/services/futebolService", () => ({ buscarJogosHoje: vi.fn().mockResolvedValue({ total: 0, jogos: [] }) }));
@@ -64,28 +64,29 @@ describe("Dashboard e resumo do Mago", () => {
     expect(screen.getByRole("heading", { name: "Melhores da Rodada 26" })).toBeTruthy();
     expect(screen.getByText("Ainda não há pontuações disponíveis.")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Estatísticas da rodada 26" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Ver mais" })).toBeNull();
     const headings = Array.from(container.querySelectorAll("h2")).map(node => node.textContent);
     expect(headings).not.toContain("Ligas disponíveis para jogar");
     expect(headings).not.toContain("Ligas em andamento");
     expect(screen.getByRole("region", { name: "Acompanhe os jogos" }).compareDocumentPosition(screen.getByRole("region", { name: "Mago do Point Fantasy" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("mostra quatro insights da R27, indicadores e link na mesma aba", () => {
-    render(<MagoDashboardCard data={magoRodada27} />);
+  it("mostra quatro insights da R28, indicadores e link na mesma aba", () => {
+    render(<MagoDashboardCard data={magoRodada28} />);
     const card = screen.getByRole("region", { name: "Mago do Point Fantasy" });
     expect(within(card).getByText("Inteligência para sua rodada")).toBeTruthy();
-    expect(within(card).getByText("Rodada 27")).toBeTruthy();
+    expect(within(card).getByText("Rodada 28")).toBeTruthy();
     const carousel = within(card).getByRole("region", { name: "Insights do Mago" });
     expect(carousel.getAttribute("aria-roledescription")).toBe("carrossel");
     expect(carousel.querySelectorAll("article")).toHaveLength(4);
-    expect(within(card).getAllByText("42,66%")).toHaveLength(2);
-    expect(card.textContent).toContain("Bahia41,59%");
-    expect(card.textContent).toContain("Palmeiras36,86%");
-    expect(card.textContent).toContain("Botafogo1,76 xG");
-    expect(card.textContent).toContain("Bahia1,73 xG");
-    expect(card.textContent).toContain("4 dos principais nomes");
-    expect(card.textContent).toContain("17,03% SG");
-    expect(card.textContent).toContain("1,76 xG projetado");
+    expect(within(card).getAllByText("37,79%")).toHaveLength(2);
+    expect(card.textContent).toContain("São Paulo37,31%");
+    expect(card.textContent).toContain("Corinthians40,10%");
+    expect(card.textContent).toContain("Atlético-MG1,77 xG");
+    expect(card.textContent).toContain("Athletico-PR1,75 xG");
+    expect(card.textContent).toContain("5 dos principais nomes");
+    expect(card.textContent).toContain("14,90% SG");
+    expect(card.textContent).toContain("1,89 xG projetado");
     const dots = within(card).getAllByRole("button", { name: /Ir para/ });
     expect(dots).toHaveLength(4);
     expect(dots[0].getAttribute("aria-current")).toBe("true");
@@ -107,16 +108,16 @@ describe("Dashboard e resumo do Mago", () => {
     expect(screen.getAllByText("Rodada 28").length).toBeGreaterThan(0);
     expect(screen.getByText("Fechado")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Melhores da Rodada 28" })).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "Mago do Point Fantasy" })).getByText("Rodada 27")).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Mago do Point Fantasy" })).getByText("Rodada 28")).toBeTruthy();
   });
 
   it("aceita outra análise sem números fixados no componente", () => {
-    render(<MagoDashboardCard data={{ ...magoRodada27, rodada: 28, topSg: [{ ...magoRodada27.topSg[0], clube: "Outro clube", sg: 50, xgAdversario: null }], ataques: [{ clube: "Outro ataque", xg: 2.5 }] }} />);
-    expect(screen.getByText("Rodada 28")).toBeTruthy();
+    render(<MagoDashboardCard data={{ ...magoRodada28, rodada: 29, topSg: [{ ...magoRodada28.topSg[0], clube: "Outro clube", sg: 50, xgAdversario: null }], ataques: [{ clube: "Outro ataque", xg: 2.5 }] }} />);
+    expect(screen.getByText("Rodada 29")).toBeTruthy();
     expect(screen.getAllByText("Outro clube")).toHaveLength(2);
     expect(screen.getAllByText("Outro ataque")).toHaveLength(2);
     expect(screen.getAllByText("2,50 xG")).toHaveLength(2);
-    expect(screen.queryByText(/42,66/)).toBeNull();
+    expect(screen.queryByText(/37,79/)).toBeNull();
   });
 
   it("preserva carregamento e erro", () => {

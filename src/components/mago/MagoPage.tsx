@@ -15,7 +15,7 @@ function Confidence({ value }: { value: string }) {
 }
 
 function TeamMetrics({ team }: { team: MagoTeam }) {
-  return <dl className={styles.metrics}><div><dt>Adversário</dt><dd>{team.adversario}</dd></div><div><dt>xG adversário</dt><dd>{team.xgAdversario === null ? "Não informado" : number.format(team.xgAdversario)}</dd></div></dl>;
+  return <dl className={styles.metrics}><div><dt>Adversário</dt><dd>{team.adversario}</dd></div><div><dt>xG adversário</dt><dd>{team.xgAdversario === null ? "Não informado" : number.format(team.xgAdversario)}</dd></div>{team.xga !== undefined && <div><dt>xGA</dt><dd>{number.format(team.xga)}</dd></div>}{team.golsSofridos !== undefined && <div><dt>Gols sofridos no recorte</dt><dd>{team.golsSofridos}</dd></div>}</dl>;
 }
 
 export function MagoHero({ rodada }: { rodada: number }) {
@@ -41,21 +41,23 @@ function SgCard({ team, position }: { team: MagoTeam; position?: number }) {
   return <article className={styles.sgCard}><header>{position && <span className={styles.position}>{String(position).padStart(2, "0")}</span>}<h3>{team.clube}</h3><ShieldCheck size={18} aria-hidden="true" /></header>
     <div className={styles.sgValue}>{number.format(team.sg)}<small>% <span>SG</span></small></div>
     <div className={styles.probabilityTrack} aria-hidden="true"><span style={{ width: `${team.sg}%` }} /></div>
-    <Confidence value={team.confianca} /><TeamMetrics team={team} />{team.pelotao && <span className={styles.pelotao}>{team.pelotao}</span>}<p className={styles.cardVerdict}>{team.veredito}</p>
+    <Confidence value={team.confianca} /><TeamMetrics team={team} />{team.pelotao && <span className={styles.pelotao}>{team.pelotao}</span>}{team.analise && <p>{team.analise}</p>}<p className={styles.cardVerdict}>{team.veredito}</p>
   </article>;
 }
 
 export function MagoSgRanking({ teams }: { teams: MagoTeam[] }) {
-  return <section aria-labelledby="top-sg" className={styles.section}><SectionTitle id="top-sg" icon={<ShieldCheck />} title="Top SG da rodada" subtitle="As cinco escolhas prioritárias do Mago, em ordem de recomendação." /><div className={styles.sgGrid}>{teams.map((team, index) => <SgCard key={team.clube} team={team} position={index + 1} />)}</div><p className={styles.note}>SG = não sofrer gols. xG = expectativa de gols. Campos não fornecidos para a R27 aparecem como não informados.</p></section>;
+  return <section aria-labelledby="top-sg" className={styles.section}><SectionTitle id="top-sg" icon={<ShieldCheck />} title="Top SG da rodada" subtitle="As cinco escolhas prioritárias do Mago, em ordem de recomendação." /><div className={styles.sgGrid}>{teams.map((team, index) => <SgCard key={team.clube} team={team} position={index + 1} />)}</div><p className={styles.note}>SG = não sofrer gols. xG = expectativa de gols. Campos não fornecidos aparecem como não informados.</p></section>;
 }
 
 export function MagoAlternatives({ teams }: { teams: MagoTeam[] }) {
   return <section aria-labelledby="alternativas" className={styles.section}><SectionTitle id="alternativas" icon={<ArrowUpRight />} title="Alternativas no radar" subtitle="Outros caminhos para compor sua defesa." /><div className={styles.alternatives}>{teams.map(team => <SgCard key={team.clube} team={team} />)}</div></section>;
 }
 
-export function MagoAlert({ team }: { team: MagoRound["alerta"] }) {
-  return <section className={styles.alert} aria-labelledby="alerta-mago"><div><p className={styles.eyebrow}><TriangleAlert size={18} aria-hidden="true" /> ALERTA DO MAGO</p><h2 id="alerta-mago">{team.clube}</h2><p>{team.texto}</p><strong className={styles.alertVerdict}>{team.veredito}</strong></div><div><span className={styles.metricLabel}>PROBABILIDADE DE SG</span><strong className={styles.alertNumber}>{number.format(team.sg)}%</strong><TeamMetrics team={team} /></div></section>;
+export function MagoAlert({ team, headingId = "alerta-mago" }: { team: MagoRound["alerta"]; headingId?: string }) {
+  return <section className={styles.alert} aria-labelledby={headingId}><div><p className={styles.eyebrow}><TriangleAlert size={18} aria-hidden="true" /> ALERTA DO MAGO</p><h2 id={headingId}>{team.clube}</h2><p>{team.texto}</p><strong className={styles.alertVerdict}>{team.veredito}</strong></div><div><span className={styles.metricLabel}>PROBABILIDADE DE SG</span><strong className={styles.alertNumber}>{number.format(team.sg)}%</strong><TeamMetrics team={team} /></div></section>;
 }
+
+function MagoAlerts({ data }: { data: MagoRound }) { return <>{(data.alertas?.length ? data.alertas : [data.alerta]).map((team, index) => <MagoAlert key={team.clube} team={team} headingId={`alerta-mago-${index}`} />)}</>; }
 
 export function MagoAttackRanking({ data }: { data: MagoRound }) {
   const best = data.ataques[0];
@@ -74,7 +76,7 @@ export function MagoSummary({ data }: { data: MagoRound }) {
 }
 
 export function MagoExpertGroups({ data }: { data: MagoRound }) {
-  const teams = [...data.topSg, ...data.alternativas, data.alerta];
+  const teams = [...data.topSg, ...data.alternativas, ...(data.alertas?.length ? data.alertas : [data.alerta])];
   return <section className={styles.section} aria-labelledby="pelotoes">
     <SectionTitle id="pelotoes" icon={<Target />} title="Pelotões dos Especialistas" subtitle="As equipes destacadas pelos especialistas antes do cruzamento do Mago." />
     <div className={styles.expertGroups}>{data.pelotoes.map((group, index) => <article key={group.nome} className={`${styles.expertGroup} ${index === 0 ? styles.primaryGroup : ""}`}>
@@ -98,5 +100,5 @@ export function MagoExpertGroups({ data }: { data: MagoRound }) {
 
 export function MagoPage({ data }: { data: MagoRound }) {
   const withGroup = (team: MagoTeam): MagoTeam => ({ ...team, pelotao: data.pelotoes.find(group => group.clubes.includes(team.clube))?.nome ?? team.pelotao });
-  return <div className={styles.page}><div className={styles.shell}><MagoHero rodada={data.rodada} /><p className={styles.preview}><Sparkles size={14} aria-hidden="true" /> Prévia editorial · Dados demonstrativos da rodada {data.rodada}</p><MagoTopPick data={data} /><MagoSgRanking teams={data.topSg.map(withGroup)} /><MagoAlternatives teams={data.alternativas.map(withGroup)} /><MagoAlert team={data.alerta} /><MagoExpertGroups data={data} /><MagoAttackRanking data={data} /><MagoPredictions data={data} /><MagoSummary data={data} /><footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer></div></div>;
+  return <div className={styles.page}><div className={styles.shell}><MagoHero rodada={data.rodada} /><p className={styles.preview}><Sparkles size={14} aria-hidden="true" /> Prévia editorial · Dados demonstrativos da rodada {data.rodada}</p><MagoTopPick data={data} /><MagoSgRanking teams={data.topSg.map(withGroup)} /><MagoAlternatives teams={data.alternativas.map(withGroup)} /><MagoAlerts data={data} /><MagoExpertGroups data={data} /><MagoAttackRanking data={data} /><MagoPredictions data={data} /><MagoSummary data={data} /><footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer></div></div>;
 }

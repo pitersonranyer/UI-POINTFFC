@@ -6,6 +6,9 @@ export interface MagoTeam {
   confianca: string;
   pelotao?: string;
   veredito: string;
+  xga?: number;
+  golsSofridos?: number;
+  analise?: string;
 }
 
 export interface MagoRound {
@@ -13,6 +16,7 @@ export interface MagoRound {
   topSg: MagoTeam[];
   alternativas: MagoTeam[];
   alerta: MagoTeam & { texto: string };
+  alertas?: (MagoTeam & { texto: string })[];
   escolhaTexto: string;
   ataques: { clube: string; xg: number }[];
   melhorCombinacao: string;

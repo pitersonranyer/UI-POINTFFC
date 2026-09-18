@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { MagoPage } from "@/components/mago/MagoPage";
-import { magoRodada27 } from "@/data/mago/rodada27";
+import { magoRodada28 } from "@/data/mago/rodada28";
 
 export const metadata: Metadata = {
   title: "Mago do Point Fantasy | Inteligência para a sua rodada",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <MagoPage data={magoRodada27} />;
+  return <MagoPage data={magoRodada28} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, RefreshCw, Trophy, Users } from "lucide-react";
-import { magoRodada27 } from "@/data/mago/rodada27";
+import { RefreshCw, Trophy, Users } from "lucide-react";
+import { magoRodada28 } from "@/data/mago/rodada28";
 import { MagoDashboardCard } from "./MagoDashboardCard";
 import { leagueService } from "@/services/leagueService";
 import { formatCurrency } from "@/lib/format";
@@ -21,8 +21,8 @@ export function CartolaDashboard(){
  {stale&&<p className={styles.staleNotice}>Dados temporariamente desatualizados.</p>}{error&&<p className={styles.refreshError}>Não foi possível buscar a atualização mais recente.</p>}
  <CartolaMarketStatus mercado={dashboard.mercado} aberto={dashboard.mercadoAberto} aoVivo={dashboard.bolaRolando} atualizar={atualizar}/>
  <DashboardGames />
- <MagoDashboardCard data={magoRodada27} />
+ <MagoDashboardCard data={magoRodada28} />
  <GeneralRanking season={dashboard.mercado.temporada ?? new Date().getFullYear()} round={rankingRound} marketOpen={dashboard.mercadoAberto}/>
  <TopAthletes data={athletes} round={dashboard.mercadoAberto?Math.max(1,round-1):round} live={!dashboard.mercadoAberto&&dashboard.bolaRolando} loading={athletesLoading} error={athletesError} firstRound={dashboard.mercadoAberto&&round===1}/>
- <section className={styles.statsSection}><div className={styles.sectionHead}><h2>Estatísticas da rodada {statsRound}</h2><Link href="/central-da-rodada">Ver mais <ArrowRight/></Link></div><div className={styles.stats}>{realRoundStatistics.map((x,i)=><article key={x.label}>{i===0?<Trophy/>:<Users/>}<div><strong>{x.value}</strong><small>{x.label}</small></div></article>)}</div></section></div>;
+ <section className={styles.statsSection}><div className={styles.sectionHead}><h2>Estatísticas da rodada {statsRound}</h2></div><div className={styles.stats}>{realRoundStatistics.map((x,i)=><article key={x.label}>{i===0?<Trophy/>:<Users/>}<div><strong>{x.value}</strong><small>{x.label}</small></div></article>)}</div></section></div>;
 }
