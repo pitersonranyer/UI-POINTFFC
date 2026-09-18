@@ -43,6 +43,17 @@ export interface AdminCompetitionPayload {
   status: AdminCompetitionStatus; visivelApp: boolean; destaque: boolean;
 }
 
+export interface DuplicateCompetitionPayload {
+  nome: string;
+  slug: string;
+  rodadaInicio: number;
+  rodadaFim: number;
+  inicioInscricao: string;
+  fimInscricao: string;
+  dataInicio: string;
+  dataFim: string;
+}
+
 export interface AdminCompetitionPage {
   itens: AdminCompetition[];
   paginacao: { pagina: number; limite: number; total: number; totalPaginas: number };
@@ -71,6 +82,7 @@ export const adminService = {
   getLeagueModalities: (leagueId: number) => apiFetch<AdminLeagueModality[]>(`/admin/ligas/${leagueId}/modalidades`, { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" }),
   createCompetition: (payload: AdminCompetitionPayload) => apiFetch<AdminCompetition>("/admin/competicoes", { method: "POST", authenticated: true, preserveSessionOnForbidden: true, body: JSON.stringify(payload) }),
   updateCompetition: (id: number, payload: Partial<AdminCompetitionPayload>) => apiFetch<AdminCompetition>(`/admin/competicoes/${id}`, { method: "PATCH", authenticated: true, preserveSessionOnForbidden: true, body: JSON.stringify(payload) }),
+  duplicateCompetition: (id: number, payload: DuplicateCompetitionPayload) => apiFetch<AdminCompetition>(`/admin/competicoes/${id}/duplicar`, { method: "POST", authenticated: true, preserveSessionOnForbidden: true, body: JSON.stringify(payload) }),
   getCompetitionAwards: (id: number) => apiFetch<AdminAward[]>(`/admin/competicoes/${id}/premiacoes`, { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" }),
   updateCompetitionAwards: (id: number, premiacoes: AdminAwardInput[]) => apiFetch<AdminAward[]>(`/admin/competicoes/${id}/premiacoes`, { method: "PUT", authenticated: true, preserveSessionOnForbidden: true, body: JSON.stringify({ premiacoes }) }),
 };

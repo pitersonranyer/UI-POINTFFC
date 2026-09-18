@@ -7,7 +7,7 @@ import { adminService, type AdminCompetition } from "@/services/adminService";
 
 const nav = vi.hoisted(() => ({ id: null as string | null, replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: nav.replace }), useSearchParams: () => new URLSearchParams(nav.id ? `id=${nav.id}` : "") }));
-vi.mock("@/services/adminService", async (original) => { const actual = await original<object>(); return { ...actual, adminService: { getLeagues: vi.fn(), getLeagueModalities: vi.fn(), getCompetition: vi.fn(), createCompetition: vi.fn(), updateCompetition: vi.fn() } }; });
+vi.mock("@/services/adminService", async (original) => { const actual = await original<object>(); return { ...actual, adminService: { getLeagues: vi.fn(), getLeagueModalities: vi.fn(), getCompetition: vi.fn(), createCompetition: vi.fn(), updateCompetition: vi.fn(), duplicateCompetition: vi.fn() } }; });
 
 const leagues = [{ id: 1, nome: "POINT FFC", slug: "point-ffc", tipo: "OFICIAL", status: "ATIVA", visivelApp: true, imagemUrl: null }];
 const modalities = [{ ligaModalidadeId: 10, modalidadeId: 1, codigo: "RODADA", nome: "Rodada", ativa: true, ordem: 1 }, { ligaModalidadeId: 11, modalidadeId: 2, codigo: "CAMPEONATO", nome: "Campeonato antigo", ativa: false, ordem: 2 }];
@@ -82,6 +82,7 @@ it("edição carrega dados reais, preserva modalidade atual inativa e envia some
   await waitFor(() => expect(adminService.updateCompetition).toHaveBeenCalledWith(7, { nome: "Copa Editada" }));
   expect(await screen.findByText("Alterações salvas com sucesso.")).toBeTruthy();
   expect(screen.getByRole("link", { name: "Configurar premiações" }).getAttribute("href")).toBe("/admin/competicoes/premiacoes?id=7");
+  expect(screen.getByRole("button", { name: "Duplicar" })).toBeTruthy();
 });
 
 it("humaniza conflito por inscrições e slug duplicado", async () => {

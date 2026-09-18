@@ -30,3 +30,9 @@ it("consulta e substitui a grade completa de premiações em um único PUT", asy
   expect(apiFetch).toHaveBeenNthCalledWith(1, "/admin/competicoes/7/premiacoes", { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" });
   expect(apiFetch).toHaveBeenNthCalledWith(2, "/admin/competicoes/7/premiacoes", { method: "PUT", authenticated: true, preserveSessionOnForbidden: true, body: JSON.stringify({ premiacoes: awards }) });
 });
+
+it("duplica competição com POST autenticado e somente os oito campos do contrato", async () => {
+  const payload = { nome: "POINT FFC - Rodada 28", slug: "point-ffc-rodada-28", rodadaInicio: 28, rodadaFim: 28, inicioInscricao: "2026-09-20T12:00:00.000Z", fimInscricao: "2026-09-22T12:00:00.000Z", dataInicio: "2026-09-23T12:00:00.000Z", dataFim: "2026-09-24T12:00:00.000Z" };
+  await adminService.duplicateCompetition(7, payload);
+  expect(apiFetch).toHaveBeenCalledWith("/admin/competicoes/7/duplicar", { method: "POST", authenticated: true, preserveSessionOnForbidden: true, body: JSON.stringify(payload) });
+});
