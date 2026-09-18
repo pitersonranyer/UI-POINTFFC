@@ -9,9 +9,9 @@ import { adminService, type AdminCompetition, type AdminCompetitionPage } from "
 const state = vi.hoisted(() => ({ user: null as null | { tipoUsuario: string; status: string; nome: string }, loading: false, replace: vi.fn() }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: state.user, isLoading: state.loading }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: state.replace }) }));
-vi.mock("@/services/adminService", async (original) => { const actual = await original<object>(); return { ...actual, adminService: { listCompetitions: vi.fn(), getCompetition: vi.fn() } }; });
+vi.mock("@/services/adminService", async (original) => { const actual = await original<object>(); return { ...actual, adminService: { listCompetitions: vi.fn(), getCompetition: vi.fn(), getLeagues: vi.fn(), getLeagueModalities: vi.fn(), createCompetition: vi.fn(), updateCompetition: vi.fn() } }; });
 
-const competition: AdminCompetition = { id: 1, nome: "Copa POINT", slug: "copa-point", tipoAcesso: "FREE", valorInscricao: 0, rodadaInicio: 30, rodadaFim: 30, dataInicio: null, dataFim: null, status: "INSCRICOES_ABERTAS", visivelApp: true, destaque: false, atualizadoEm: "2026-09-18T12:00:00.000Z", liga: { id: 1, nome: "POINT FFC", slug: "point-ffc" }, modalidade: { id: 1, codigo: "RODADA", nome: "Rodada" } };
+const competition: AdminCompetition = { id: 1, ligaModalidadeId: 10, nome: "Copa POINT", slug: "copa-point", descricao: null, tipoAcesso: "FREE", valorInscricao: 0, tipoTaxaPlataforma: null, valorTaxaPlataforma: null, rodadaInicio: 30, rodadaFim: 30, dataInicio: null, dataFim: null, inicioInscricao: null, fimInscricao: null, limiteTimesUsuario: null, limiteParticipantes: null, status: "INSCRICOES_ABERTAS", visivelApp: true, destaque: false, atualizadoEm: "2026-09-18T12:00:00.000Z", liga: { id: 1, nome: "POINT FFC", slug: "point-ffc" }, modalidade: { id: 1, codigo: "RODADA", nome: "Rodada" } };
 const page = (change: Partial<AdminCompetitionPage> = {}): AdminCompetitionPage => ({ itens: [competition], paginacao: { pagina: 1, limite: 20, total: 1, totalPaginas: 1 }, ...change });
 beforeEach(() => { vi.stubGlobal("React", React); state.user = { tipoUsuario: "PLATFORM_ADMIN", status: "ATIVO", nome: "Admin POINT" }; state.loading = false; state.replace.mockReset(); vi.mocked(adminService.listCompetitions).mockReset().mockResolvedValue(page()); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -68,4 +68,6 @@ it("estrutura a competição como lista responsiva sem tabela com overflow", asy
   expect(item.textContent).toContain("Rodada 30");
   expect(item.textContent).toContain("Visível");
   expect(document.querySelector("table")).toBeNull();
+  expect(screen.getByRole("link", { name: "Nova competição" }).getAttribute("href")).toBe("/admin/competicoes/nova");
+  expect(screen.getByRole("link", { name: "Editar" }).getAttribute("href")).toBe("/admin/competicoes/editar?id=1");
 });

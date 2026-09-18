@@ -1,11 +1,12 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Search, Trophy } from "lucide-react";
+import Link from "next/link";
 import type { AdminCompetition } from "@/services/adminService";
 import { accessLabel, competitionPeriod, statusLabel } from "./adminFormat";
 import styles from "./Admin.module.css";
 
-export function CompetitionRows({ items }: { items: AdminCompetition[] }) {
+export function CompetitionRows({ items, editable = false }: { items: AdminCompetition[]; editable?: boolean }) {
   return <div className={styles.competitionList} role="list">{items.map((item) => <article className={styles.competitionRow} role="listitem" key={item.id}>
     <div className={styles.competitionName}><strong>{item.nome}</strong><small>{item.liga.nome} · {item.modalidade.nome}</small></div>
     <span className={styles.access}>{accessLabel(item.tipoAcesso)}</span>
@@ -13,6 +14,7 @@ export function CompetitionRows({ items }: { items: AdminCompetition[] }) {
     <span className={styles.period}>{competitionPeriod(item)}</span>
     <span className={styles.flag}><i className={item.visivelApp ? styles.yes : ""} />{item.visivelApp ? "Visível" : "Oculta"}</span>
     <span className={styles.flag}><i className={item.destaque ? styles.gold : ""} />{item.destaque ? "Destaque" : "Normal"}</span>
+    {editable && <Link className={styles.editLink} href={`/admin/competicoes/editar?id=${item.id}`}>Editar</Link>}
   </article>)}</div>;
 }
 
