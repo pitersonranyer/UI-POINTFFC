@@ -79,11 +79,33 @@
 .score{margin-left:auto;font-weight:900;white-space:nowrap}
 .own{border-color:#c6a657;background:#fffaf0}
 .own .position{background:#dfbc60;color:#1f1f1f}
-.prizeList{display:grid;gap:7px}
-.prizeList p{margin:0;padding:10px;border-radius:7px;background:#f8f7f4}
 .prizeEmpty{display:flex;align-items:center;gap:12px;padding:15px;border:1px dashed #e2d8be;border-radius:9px;background:#fcfaf5}
 .prizeEmpty svg{width:32px;height:32px;color:#c3af80}
 .prizeEmpty p{margin:0}
+.prizePanel{overflow:hidden;padding:0}
+.prizePanel>.panelTitle{margin:18px 20px 12px}
+.prizePanel>.prizeEmpty{margin:0 20px 20px}
+.prizeIntro{padding:18px 20px 12px}
+.prizeIntro .panelTitle{margin-bottom:10px}
+.prizeIntro h3{margin:0 0 4px;font-size:18px}
+.prizeIntro p{margin:0}
+.prizeTotal{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 20px 14px;padding:13px 15px;border:1px solid #ddc77f;border-radius:11px;background:linear-gradient(120deg,#191919,#302b21);color:#fff;box-shadow:0 5px 14px #15151518}
+.prizeTotal span{color:#d8bd70;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.prizeTotal strong{font-size:20px;white-space:nowrap}
+.prizePodium{display:grid;gap:7px;padding:0 20px 12px}
+.prizeRow,.prizeListRow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.prizeRow{min-height:48px;padding:8px 12px;border:1px solid #e7e1d2;border-radius:10px;background:#faf9f6}
+.prizeTier1{border-color:#d5b34e;background:linear-gradient(100deg,#fff8dc,#fffdf7);box-shadow:inset 3px 0 #d4af37}
+.prizeTier2{border-color:#d6d7d8;background:linear-gradient(100deg,#f4f5f5,#fcfcfb);box-shadow:inset 3px 0 #aeb2b5}
+.prizeTier3{border-color:#dec0a2;background:linear-gradient(100deg,#fbf0e6,#fffaf6);box-shadow:inset 3px 0 #b67a45}
+.prizePlace{display:flex;align-items:center;gap:8px;min-width:0;color:#292929;font-size:12px}
+.prizePlace>span{font-size:18px;line-height:1}
+.prizeValue{margin-left:auto;color:#181818;font-size:14px;white-space:nowrap}
+.prizeCompactList{margin:0 20px;border-top:1px solid #ebe8e1}
+.prizeListRow{min-height:39px;padding:6px 4px;border-bottom:1px solid #ebe8e1}
+.prizeListRow .prizePlace{padding-left:4px}
+.prizeListRow .prizeValue{font-size:13px}
+.prizeNote{margin:12px 20px 18px!important;color:#777!important;font-size:10px!important;text-align:center}
 .success{padding:11px;border-radius:8px;background:#e8f7ec;color:#146c3b}
 .refreshWarning{padding:10px;border-radius:8px;background:#fff8e7;color:#705619;font-size:12px}.batchFeedback{margin:12px 0 0!important;padding:10px;border-radius:8px;background:#e8f7ec;color:#146c3b!important;font-weight:700}.enrollmentFailures{display:grid;gap:5px;margin:8px 0 0;padding:0;list-style:none}.enrollmentFailures li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:7px;background:#fff4f2;font-size:11px}.enrollmentFailures strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.enrollmentFailures span{color:#8b3a2f;text-align:right}
 .notice{color:#8a6e34!important}
@@ -126,6 +148,7 @@
  .overview{display:block}
  .panel,.rankingPreview{margin-bottom:11px;padding:15px}
  .panelTitle{margin-bottom:10px}
+ .prizePanel{padding:0}.prizePanel>.panelTitle{margin:15px 15px 10px}.prizePanel>.prizeEmpty{margin:0 15px 15px}.prizeIntro{padding:15px 15px 10px}.prizeTotal{margin:0 15px 11px;padding:11px 12px}.prizeTotal strong{font-size:18px}.prizePodium{gap:6px;padding:0 15px 10px}.prizeRow{min-height:45px;padding:7px 10px}.prizeCompactList{margin:0 15px}.prizeNote{margin:10px 15px 15px!important}
  .aboutGrid{gap:8px}
  .aboutGrid>div{padding:8px}
  .heading{align-items:flex-start}

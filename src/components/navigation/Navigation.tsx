@@ -20,7 +20,7 @@ export function Navigation() {
   const { wallet, isLoading: walletLoading, error: walletError } = useWallet();
   const [signingOut, setSigningOut] = useState(false);
   const links = user ? [...publicLinks, { href: "/perfil", label: "Perfil", icon: UserRound }] : publicLinks;
-  if (
+  if (pathname.startsWith("/admin") ||
     [
       "/login",
       "/cadastro",

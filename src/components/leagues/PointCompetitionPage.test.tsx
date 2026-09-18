@@ -64,7 +64,26 @@ it("mostra resumo autenticado e estado vazio de premiação", async () => {
   expect(screen.queryByText("Ainda não inscrito")).toBeNull();
   expect(screen.queryByText("Você ainda não está participando.")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Premiações" }));
-  expect(screen.getByText("Premiação ainda não definida para esta competição.")).toBeTruthy();
+  expect(screen.getByText("Premiação ainda não definida.")).toBeTruthy();
+});
+it("apresenta premiações reais em moeda, destaca o Top 3 e mantém as demais compactas", async () => {
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, competicao: { ...summary.competicao, rodadaInicio: 31, rodadaFim: 31 }, premiacao: [
+    { posicaoInicio: 1, posicaoFim: 1, tipoPremiacao: "VALOR_FIXO", valor: 350, percentual: null, ordem: 1 },
+    { posicaoInicio: 2, posicaoFim: 2, tipoPremiacao: "VALOR_FIXO", valor: 200, percentual: null, ordem: 2 },
+    { posicaoInicio: 3, posicaoFim: 3, tipoPremiacao: "VALOR_FIXO", valor: 150, percentual: null, ordem: 3 },
+    { posicaoInicio: 4, posicaoFim: 5, tipoPremiacao: "VALOR_FIXO", valor: 80, percentual: null, ordem: 4 },
+    { posicaoInicio: 6, posicaoFim: 6, tipoPremiacao: "PERCENTUAL", valor: null, percentual: 10, ordem: 5 },
+  ] });
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Premiações" }));
+  expect(screen.getByRole("heading", { name: "Premiação da Rodada 31" })).toBeTruthy();
+  expect(screen.queryByText("Rodada 27")).toBeNull();
+  expect(screen.queryByText(/VALOR_FIXO|PERCENTUAL/)).toBeNull();
+  expect(screen.getByText("R$ 860,00")).toBeTruthy();
+  expect(screen.getByText("R$ 350,00").closest('[data-prize-tier="1"]')).toBeTruthy();
+  expect(screen.getByText("R$ 200,00").closest('[data-prize-tier="2"]')).toBeTruthy();
+  expect(screen.getByText("R$ 150,00").closest('[data-prize-tier="3"]')).toBeTruthy();
+  expect(screen.getByText("R$ 80,00").closest('[data-prize-tier="standard"]')).toBeTruthy();
+  expect(screen.getByText("10% do prêmio")).toBeTruthy();
 });
 it("abre modal, seleciona time vinculado, inscreve FREE e atualiza resumo", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValueOnce(member).mockResolvedValue({ ...member, inscritos: { quantidade: 2 }, usuario: { ...member.usuario!, quantidadeTimesInscritos: 1 }, minhasInscricoes: [entry] });

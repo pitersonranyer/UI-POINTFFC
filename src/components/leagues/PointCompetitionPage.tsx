@@ -11,7 +11,7 @@ import { normalizeImportIds } from "@/components/teams/teamImport";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { teamService } from "@/services/teamService";
 import type { CartolaTeam } from "@/types/team";
-import { blockMessages, pointLeagueService, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
+import { blockMessages, pointLeagueService, type CompetitionSummary, type Entry, type Prize, type RankingEntry } from "@/services/pointLeagueService";
 import styles from "./PointCompetition.module.css";
 
 type Tab = "Visão geral" | "Meus times" | "Ranking" | "Premiações";
@@ -23,6 +23,34 @@ const date = (value: string | null) => value ? new Date(value).toLocaleString("p
 const score = (value: number | null) => value === null ? "Sem pontuação" : value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const position = (value: number | null) => value === null ? "—" : `${value}º`;
 const message = (error: unknown) => error instanceof Error ? error.message : "Não foi possível carregar os dados.";
+const prizePosition = (prize: Prize) => prize.posicaoInicio === prize.posicaoFim ? `${prize.posicaoInicio}º lugar` : `${prize.posicaoInicio}º ao ${prize.posicaoFim}º lugar`;
+const prizeValue = (prize: Prize) => {
+  if (prize.tipoPremiacao === "VALOR_FIXO" && prize.valor !== null) return money(prize.valor);
+  if (prize.tipoPremiacao === "PERCENTUAL" && prize.percentual !== null) return `${prize.percentual.toLocaleString("pt-BR")}% do prêmio`;
+  return "Prêmio definido";
+};
+const prizeTier = (prize: Prize) => prize.posicaoInicio <= 3 && prize.posicaoFim >= prize.posicaoInicio ? prize.posicaoInicio : null;
+function Prizes({ prizes, roundLabel }: { prizes: Prize[]; roundLabel: number | string | null | undefined }) {
+  if (!prizes.length) return <section className={`${styles.panel} ${styles.prizePanel}`}><div className={styles.panelTitle}><Gift aria-hidden="true" /><h2>Premiações</h2></div><div className={styles.prizeEmpty}><Gift aria-hidden="true" /><p>Premiação ainda não definida.</p></div></section>;
+  const total = prizes.reduce((sum, prize) => prize.tipoPremiacao === "VALOR_FIXO" && prize.valor !== null && Number.isFinite(prize.valor) ? sum + prize.valor * Math.max(1, prize.posicaoFim - prize.posicaoInicio + 1) : sum, 0);
+  const top = prizes.filter((prize) => prizeTier(prize) !== null);
+  const remaining = prizes.filter((prize) => prizeTier(prize) === null);
+  const row = (prize: Prize, featured: boolean) => {
+    const tier = prizeTier(prize);
+    const medal = tier === 1 ? "🥇" : tier === 2 ? "🥈" : tier === 3 ? "🥉" : null;
+    return <div className={featured ? `${styles.prizeRow} ${styles[`prizeTier${tier}`]}` : styles.prizeListRow} data-prize-tier={tier ?? "standard"} key={prize.ordem}>
+      <span className={styles.prizePlace}>{medal && <span aria-hidden="true">{medal}</span>}<strong>{prizePosition(prize)}</strong></span>
+      <strong className={styles.prizeValue}>{prizeValue(prize)}</strong>
+    </div>;
+  };
+  return <section className={`${styles.panel} ${styles.prizePanel}`}>
+    <div className={styles.prizeIntro}><div className={styles.panelTitle}><Gift aria-hidden="true" /><h2>Premiações</h2></div><h3>{roundLabel !== null && roundLabel !== undefined ? `Premiação da Rodada ${roundLabel}` : "Premiação da competição"}</h3><p>Os melhores colocados recebem os prêmios definidos para esta competição.</p></div>
+    <div className={styles.prizeTotal}><span>Total em prêmios</span><strong>{money(total)}</strong></div>
+    {top.length > 0 && <div className={styles.prizePodium}>{top.map((prize) => row(prize, true))}</div>}
+    {remaining.length > 0 && <div className={styles.prizeCompactList}>{remaining.map((prize) => row(prize, false))}</div>}
+    <p className={styles.prizeNote}>A premiação é distribuída conforme a posição final na competição.</p>
+  </section>;
+}
 function Entries({ entries, ownIds = new Set<number>(), ranking = false }: { entries: (Entry | RankingEntry)[]; ownIds?: Set<number>; ranking?: boolean }) {
   if (!entries.length) return <p className={styles.empty}>{ranking ? "Nenhum time inscrito nesta competição." : "Nenhum time encontrado."}</p>;
   return <div className={styles.entries}>{entries.map((entry) => { const own = ownIds.has(entry.id) || ("inscricaoId" in entry && ownIds.has(entry.inscricaoId)); return <article className={`${styles.entry} ${own ? styles.own : ""}`} key={entry.id ?? (entry as RankingEntry).inscricaoId}><strong className={styles.position}>{position(entry.posicao)}</strong>{entry.escudoUrl ? <img src={entry.escudoUrl} alt="" /> : <span className={styles.shieldPlaceholder}><Shield size={19} aria-hidden="true" /></span>}<div className={styles.teamName}><strong>{entry.nomeTime}{own && <span className={styles.ownBadge}>Seu time</span>}</strong>{ranking && "capitao" in entry && entry.capitao && <span className={styles.captain}><b>C</b>{entry.capitao.apelido}</span>}<small>{entry.nomeCartoleiro ?? "Cartoleiro não informado"}</small></div><span className={styles.score}>{entry.pontuacao === null ? ranking ? "—" : "Sem pontuação" : `${score(entry.pontuacao)} pts`}</span></article>; })}</div>;
@@ -93,7 +121,7 @@ export function PointCompetitionPage({ id }: { id: number }) {
             </div>
           </section>
         </div>}
-        {tab === "Premiações" && <section className={styles.panel}><div className={styles.panelTitle}><Gift aria-hidden="true" /><h2>Premiações</h2></div>{summary.premiacao.length ? <div className={styles.prizeList}>{summary.premiacao.map((prize) => <p key={prize.ordem}>{prize.posicaoInicio}º{prize.posicaoFim !== prize.posicaoInicio && ` a ${prize.posicaoFim}º`} · {prize.tipoPremiacao}{prize.valor !== null && ` · ${prize.valor.toLocaleString("pt-BR")}`}{prize.percentual !== null && ` · ${prize.percentual}%`}</p>)}</div> : <div className={styles.prizeEmpty}><Gift aria-hidden="true" /><p>Premiação ainda não definida para esta competição.</p></div>}</section>}
+        {tab === "Premiações" && <Prizes prizes={summary.premiacao} roundLabel={roundLabel} />}
         {tab === "Meus times" && !isAuthenticated ? <section className={styles.panel}><p>Entre para acompanhar seus times inscritos.</p><Link href="/login">Fazer login</Link></section> : null}
         {sectionError && <p role="alert" className={styles.error}>{sectionError}</p>}
         {sectionLoading && ["Meus times", "Ranking"].includes(tab) ? <p role="status" className={styles.sectionLoading}>Carregando...</p> : tab === "Meus times" && isAuthenticated ? <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Meus times</h2></div>{entries.length ? <Entries entries={entries} /> : <p className={styles.empty}>Você ainda não inscreveu times nesta competição.</p>}</section> : tab === "Ranking" ? <section className={styles.panel}><div className={styles.heading}><div><h2>Ranking</h2>{roundLabel !== null && roundLabel !== undefined && <p>Rodada {roundLabel}</p>}</div><button type="button" onClick={() => void loadTab("Ranking")}><RefreshCw size={15} aria-hidden="true" />Atualizar</button></div><Entries entries={ranking} ownIds={ownIds} ranking /></section> : null}
