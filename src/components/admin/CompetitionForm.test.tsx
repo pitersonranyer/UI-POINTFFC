@@ -25,6 +25,101 @@ async function prepareCreate() {
   fireEvent.change(screen.getByLabelText("Modalidade"), { target: { value: "10" } });
 }
 
+const historical: AdminCompetition = { ...competition, status: "EM_ANDAMENTO", dataInicio: "2026-09-20T12:00:00.000Z", dataFim: "2026-09-25T12:00:00.000Z", inicioInscricao: "2026-09-18T12:00:00.000Z", fimInscricao: "2026-09-21T12:00:00.000Z" };
+async function prepareHistorical() {
+  nav.id = "7";
+  vi.mocked(adminService.getCompetition).mockResolvedValue(historical);
+  vi.mocked(adminService.updateCompetition).mockResolvedValue({ ...historical, status: "ENCERRADA" });
+  render(<CompetitionForm mode="edit" />);
+  await screen.findByDisplayValue("Copa Atual");
+}
+const changeField = (label: string | RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
+const saveEdit = () => fireEvent.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+it("permite encerrar competição com datas históricas inconsistentes enviando somente status", async () => {
+  await prepareHistorical();
+  changeField("Status", "ENCERRADA");
+  saveEdit();
+  await waitFor(() => expect(vi.mocked(adminService.updateCompetition).mock.calls).toEqual([[7, { status: "ENCERRADA" }]]));
+  expect(await screen.findByText("Alterações salvas com sucesso.")).toBeTruthy();
+});
+
+it.each([
+  ["Data de início", "2026-09-20T13:00"],
+  ["Data de fim", "2026-09-26T12:00"],
+  ["Início das inscrições", "2026-09-17T12:00"],
+  [/^Fim das inscrições/, "2026-09-22T12:00"],
+])("revalida todas as datas ao alterar %s na edição", async (label, value) => {
+  await prepareHistorical();
+  changeField(label, value as string);
+  saveEdit();
+  expect(screen.getByRole("alert").textContent).toBe("As inscrições devem terminar antes do início da competição.");
+  expect(adminService.updateCompetition).not.toHaveBeenCalled();
+});
+
+it("permite corrigir as datas e envia apenas a data alterada", async () => {
+  await prepareHistorical();
+  const value = "2026-09-19T12:00";
+  vi.mocked(adminService.updateCompetition).mockResolvedValue({ ...historical, fimInscricao: new Date(value).toISOString() });
+  changeField(/^Fim das inscrições/, value);
+  saveEdit();
+  await waitFor(() => expect(vi.mocked(adminService.updateCompetition).mock.calls).toEqual([[7, { fimInscricao: new Date(value).toISOString() }]]));
+  expect(await screen.findByText("Alterações salvas com sucesso.")).toBeTruthy();
+});
+
+it("data alterada e revertida não entra no PATCH nem bloqueia status", async () => {
+  await prepareHistorical();
+  changeField("Data de fim", "2026-09-26T12:00");
+  changeField("Data de fim", "2026-09-25T12:00");
+  changeField("Status", "ENCERRADA");
+  saveEdit();
+  await waitFor(() => expect(vi.mocked(adminService.updateCompetition).mock.calls).toEqual([[7, { status: "ENCERRADA" }]]));
+});
+
+it.each(["create", "edit"] as const)("preserva as três regras temporais no modo %s", async (mode) => {
+  if (mode === "create") await prepareCreate(); else await prepareHistorical();
+  const submit = () => fireEvent.click(screen.getByRole("button", { name: mode === "create" ? "Criar competição" : "Salvar alterações" }));
+  changeField("Data de início", "2026-09-20T12:00");
+  changeField("Data de fim", "2026-09-19T12:00");
+  submit();
+  expect(screen.getByRole("alert").textContent).toBe("A data final não pode ser anterior à data inicial.");
+  changeField("Data de fim", "2026-09-26T12:00");
+  changeField("Início das inscrições", "2026-09-18T12:00");
+  changeField(/^Fim das inscrições/, "2026-09-17T12:00");
+  submit();
+  expect(screen.getByRole("alert").textContent).toBe("O fim das inscrições não pode ser anterior ao início.");
+  changeField(/^Fim das inscrições/, "2026-09-21T12:00");
+  submit();
+  expect(screen.getByRole("alert").textContent).toBe("As inscrições devem terminar antes do início da competição.");
+  expect(adminService.createCompetition).not.toHaveBeenCalled();
+  expect(adminService.updateCompetition).not.toHaveBeenCalled();
+});
+
+it.each([
+  ["Nome", "", "Preencha nome, slug, liga e modalidade."],
+  [/^Slug/, "INVALIDO", "Use apenas letras minúsculas, números e hífens no slug."],
+  ["Valor da inscrição", "0,00", "Informe um valor de inscrição maior que zero para competições pagas."],
+  ["Valor da taxa", "-1,00", "Informe um valor válido para a taxa da plataforma."],
+  [/^Limite de participantes/, "-1", "Rodadas e limites devem ser números inteiros positivos."],
+  ["Rodada final", "29", "A rodada final não pode ser anterior à rodada inicial."],
+])("edição sem mudança temporal mantém validação de %s", async (label, value, message) => {
+  await prepareHistorical();
+  changeField("Status", "ENCERRADA");
+  changeField(label, value as string);
+  saveEdit();
+  expect(screen.getByRole("alert").textContent).toBe(message);
+  expect(adminService.updateCompetition).not.toHaveBeenCalled();
+});
+
+it("edição sem mudança temporal mantém limite de taxa percentual", async () => {
+  await prepareHistorical();
+  changeField("Taxa da plataforma", "PERCENTUAL");
+  changeField("Valor da taxa", "101,00");
+  saveEdit();
+  expect(screen.getByRole("alert").textContent).toBe("A taxa percentual deve estar entre 0 e 100.");
+  expect(adminService.updateCompetition).not.toHaveBeenCalled();
+});
+
 it("carrega ligas, busca modalidades por liga e não oferece vínculo inativo na criação", async () => {
   await prepareCreate();
   expect(adminService.getLeagues).toHaveBeenCalled();
