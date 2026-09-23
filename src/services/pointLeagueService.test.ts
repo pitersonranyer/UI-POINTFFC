@@ -21,6 +21,12 @@ describe("POINT FFC API", () => {
     await pointLeagueService.enroll(5, [123, 456]);
     expect(fetchMock).toHaveBeenCalledWith("/competicoes/5/inscricoes", { method: "POST", authenticated: true, body: '{"timesCartolaIds":[123,456]}' });
   });
+  it.each(["0.00", "10.50"])("envia lote com preço %s e Idempotency-Key", async (valorUnitarioEsperado) => {
+    const input = { timesCartolaIds: [123, 456], valorUnitarioEsperado };
+    await pointLeagueService.enrollBatch(5, input, "enrollment-key-123456");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith("/competicoes/5/inscricoes/lote", { method: "POST", authenticated: true, headers: { "Idempotency-Key": "enrollment-key-123456" }, body: JSON.stringify(input) });
+  });
   it("loads user entries, participants and ranking through their endpoints", async () => {
     await pointLeagueService.myEntries(5); await pointLeagueService.participants(5); await pointLeagueService.ranking(5);
     expect(fetchMock).toHaveBeenNthCalledWith(1, "/competicoes/5/inscricoes/minhas", { authenticated: true });

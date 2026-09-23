@@ -7,7 +7,15 @@ export interface Entry { id: number; timeIdCartola?: number; nomeTime: string; n
 export interface RankingEntry extends Entry { inscricaoId: number; timeIdCartola: number; capitao?: { atletaId?: number; apelido: string; fotoUrl?: string | null } | null }
 export interface CompetitionSummary { competicao: Competition; liga: Pick<PointLeague, "id" | "nome" | "slug" | "imagemUrl">; inscritos: { quantidade: number }; premiacao: Prize[]; usuario?: { quantidadeTimesInscritos: number; limiteTimesUsuario: number | null; podeInscrever: boolean; motivoBloqueio: string | null; melhorPosicaoUsuario: number | null; melhorPontuacaoUsuario: number | null }; minhasInscricoes?: Entry[] }
 
+export interface EnrollmentBatchInput { timesCartolaIds: number[]; valorUnitarioEsperado: string }
+export interface EnrollmentBatchResult {
+  loteId: number; competicaoId: number; quantidade: number; tipoAcesso: "FREE" | "PAGO"; moeda: "BRL";
+  valorUnitario: string; valorTotal: string; movimentacaoDebitoId: number | null; saldoDisponivelAposOperacao: string | null;
+  inscricoes: Array<{ id: number; timeIdCartola: number; statusInscricao: string }>;
+}
+
 export const pointLeagueService = {
+  enrollBatch: (id: number, input: EnrollmentBatchInput, key: string) => apiFetch<EnrollmentBatchResult>(`/competicoes/${id}/inscricoes/lote`, { method: "POST", authenticated: true, headers: { "Idempotency-Key": key }, body: JSON.stringify(input) }),
   league: () => apiFetch<PointLeague>("/ligas/point-ffc"),
   competitions: () => apiFetch<Competition[]>("/ligas/point-ffc/competicoes?modalidade=RODADA"),
   competition: (id: number) => apiFetch<Competition>(`/competicoes/${id}`),
@@ -19,6 +27,10 @@ export const pointLeagueService = {
 };
 
 export const blockMessages: Record<string, string> = {
+  TIME_JA_INSCRITO: "Um dos times já está inscrito nesta competição. Confira suas inscrições.",
+  CARTEIRA_BLOQUEADA: "Sua carteira está bloqueada para inscrições.",
+  INSCRICAO_CONCORRENTE: "Outra inscrição está em processamento. Tente novamente com esta mesma tentativa.",
+  CONFLITO_INSCRICAO: "Não foi possível concluir o lote. Tente novamente com esta mesma tentativa.",
   LIMITE_TIMES_USUARIO_ATINGIDO: "Você já atingiu o limite de times desta competição.",
   LIMITE_PARTICIPANTES_ATINGIDO: "Esta competição atingiu o limite de participantes.",
   INSCRICOES_FECHADAS: "As inscrições estão encerradas.",

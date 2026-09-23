@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarDays, Clock3, Download, Gift, Home, Loader2, Plus, RefreshCw, Search, Shield, Trophy, Users } from "lucide-react";
+import { useWallet } from "@/contexts/WalletContext";
+import { AddBalanceModal } from "@/components/wallet/AddBalanceModal";
+import { ApiError } from "@/services/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { CartolaMarketStatus } from "@/components/dashboard/CartolaMarketStatus";
 import { Dialog } from "@/components/ui/Dialog";
@@ -11,7 +14,7 @@ import { normalizeImportIds } from "@/components/teams/teamImport";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { teamService } from "@/services/teamService";
 import type { CartolaTeam } from "@/types/team";
-import { blockMessages, pointLeagueService, type CompetitionSummary, type Entry, type Prize, type RankingEntry } from "@/services/pointLeagueService";
+import { blockMessages, pointLeagueService, type EnrollmentBatchInput, type CompetitionSummary, type Entry, type Prize, type RankingEntry } from "@/services/pointLeagueService";
 import styles from "./PointCompetition.module.css";
 
 type Tab = "Visão geral" | "Meus times" | "Ranking" | "Premiações";
@@ -57,6 +60,13 @@ function Entries({ entries, ownIds = new Set<number>(), ranking = false }: { ent
 }
 export function PointCompetitionPage({ id }: { id: number }) {
   const router = useRouter();
+  const { wallet, isLoading: walletLoading, error: walletError, refreshWallet } = useWallet();
+  const [pixOpen, setPixOpen] = useState(false);
+  const [price, setPrice] = useState<number | null>(null);
+  const [balanceFailure, setBalanceFailure] = useState<{ available: number; needed: number; missing: number } | null>(null);
+  const [enrollmentError, setEnrollmentError] = useState("");
+  const [keyConflict, setKeyConflict] = useState(false);
+  const attempt = useRef<{ key: string; input: EnrollmentBatchInput } | null>(null);
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { dashboard, loading: marketLoading, error: marketError, atualizar: refreshMarket } = useCartolaDashboard();
   const [summary, setSummary] = useState<CompetitionSummary | null>(null), [tab, setTab] = useState<Tab>("Visão geral");
@@ -72,23 +82,76 @@ export function PointCompetitionPage({ id }: { id: number }) {
   useEffect(() => { if (!summary) return; void loadTab(tab); }, [tab, summary, loadTab]);
   const resetEnrollmentModal = () => { setSelected(new Set()); setTeamQuery(""); setImporting(false); setConfirming(false); setImportText(""); setImportFeedback(""); };
   const competition = summary?.competicao;
-  const entryValue = competition?.valorInscricao ?? 0;
-  const enrollmentTotal = selected.size * entryValue;
+  const entryValue = price ?? (competition?.tipoAcesso === "FREE" ? 0 : competition?.valorInscricao ?? 0);
+  const enrollmentTotal = selected.size * Math.round(entryValue * 100) / 100;
+  const paid = competition?.tipoAcesso === "PAGO" || entryValue > 0;
+  const availableBalance = balanceFailure?.available ?? (wallet ? Number(wallet.saldoDisponivel) : null);
+  const insufficient = balanceFailure ?? (paid && availableBalance !== null && availableBalance < enrollmentTotal ? { available: availableBalance, needed: enrollmentTotal, missing: Math.round((enrollmentTotal - availableBalance) * 100) / 100 } : null);
   const refreshTeams = async () => setTeams(await teamService.buscarMeusTimes());
-  const openModal = async () => { if (!isAuthenticated) { router.push(`/login?next=${encodeURIComponent(`/competicoes?id=${id}`)}`); return; } if (!summary?.usuario?.podeInscrever) return; resetEnrollmentModal(); setFeedback(""); setRefreshWarning(""); setModal(true); setSectionError(""); try { await refreshTeams(); } catch (e) { setSectionError(message(e)); } };
+  const openModal = async () => { if (!isAuthenticated) { router.push(`/login?next=${encodeURIComponent(`/competicoes?id=${id}`)}`); return; } if (!summary?.usuario?.podeInscrever && !attempt.current) return; if (attempt.current) { setSelected(new Set(attempt.current.input.timesCartolaIds)); setConfirming(true); } else { resetEnrollmentModal(); setEnrollmentError(""); setBalanceFailure(null); setKeyConflict(false); } if (paid) void refreshWallet(); setFeedback(""); setRefreshWarning(""); setModal(true); setSectionError(""); try { await refreshTeams(); } catch (e) { setSectionError(message(e)); } };
   const registeredIds = new Set(summary?.minhasInscricoes?.map((entry) => entry.timeIdCartola).filter((value): value is number => value !== undefined) ?? []);
   const userLimit = summary?.usuario?.limiteTimesUsuario ?? competition?.limiteTimesUsuario ?? null;
-  const remaining = userLimit === null ? Number.POSITIVE_INFINITY : Math.max(0, userLimit - (summary?.usuario?.quantidadeTimesInscritos ?? 0));
+  const remaining = Math.min(50, userLimit === null ? Number.POSITIVE_INFINITY : Math.max(0, userLimit - (summary?.usuario?.quantidadeTimesInscritos ?? 0)));
   const normalizedQuery = teamQuery.trim().toLocaleLowerCase("pt-BR");
   const filteredTeams = teams.filter((team) => team.nome.toLocaleLowerCase("pt-BR").includes(normalizedQuery));
   const toggleTeam = (timeId: number) => setSelected((current) => { const next = new Set(current); if (next.has(timeId)) next.delete(timeId); else if (next.size < remaining && !registeredIds.has(timeId)) next.add(timeId); return next; });
   const selectAllTeams = () => setSelected((current) => { const next = new Set(current); for (const team of filteredTeams) { if (next.size >= remaining) break; if (!registeredIds.has(team.timeId)) next.add(team.timeId); } return next; });
   const selectImportedIds = () => { const ids = normalizeImportIds(importText).split(";").filter(Boolean).map(Number); if (!ids.length) { setImportFeedback("Informe ao menos um ID válido."); return; } const availableIds = new Set(teams.filter((team) => !registeredIds.has(team.timeId)).map((team) => team.timeId)); const matched = [...new Set(ids)].filter((timeId) => availableIds.has(timeId)); const selectedIds = matched.slice(0, Number.isFinite(remaining) ? remaining : matched.length); const unavailable = ids.filter((timeId) => !availableIds.has(timeId)).length; setSelected(new Set(selectedIds)); setImportFeedback(`${selectedIds.length} ${selectedIds.length === 1 ? "time selecionado" : "times selecionados"}${unavailable ? `. ${unavailable} não encontrado(s) ou indisponível(is) nesta competição.` : ""}${matched.length > selectedIds.length ? ` Limite de ${remaining} aplicado.` : ""}`); if (selectedIds.length) { setTeamQuery(""); setImporting(false); } };
-  const enroll = async () => { const eligibleIds = new Set(teams.map((team) => team.timeId)); const ids = [...selected].filter((timeId) => eligibleIds.has(timeId) && !registeredIds.has(timeId)); if (running.current || busy || !ids.length || ids.length !== selected.size || ids.length > remaining || !summary?.usuario?.podeInscrever) return; running.current = true; setBusy(true); setSectionError(""); setRefreshWarning(""); try { await pointLeagueService.enroll(id, ids); setFeedback(`${ids.length} ${ids.length === 1 ? "time inscrito" : "times inscritos"} com sucesso.`); setModal(false); resetEnrollmentModal(); let refreshFailed = false; try { await loadSummary(); } catch { refreshFailed = true; } try { await refreshTeams(); } catch { refreshFailed = true; } try { setEntries(await pointLeagueService.myEntries(id)); } catch { refreshFailed = true; } if (tab === "Ranking") { try { await loadTab("Ranking"); } catch { refreshFailed = true; } } if (refreshFailed) setRefreshWarning("Inscrições concluídas, mas não foi possível atualizar os dados da tela."); } catch (cause) { setSectionError(message(cause)); } finally { running.current = false; setBusy(false); } };
+  const enroll = async () => {
+    if (running.current || busy || keyConflict) return;
+    const eligibleIds = new Set(teams.map((team) => team.timeId));
+    const ids = [...selected].filter((timeId) => eligibleIds.has(timeId) && !registeredIds.has(timeId));
+    // Retries replay the frozen request, even if availability changed after a timeout.
+    if (!attempt.current && (!ids.length || ids.length !== selected.size || ids.length > remaining || !summary?.usuario?.podeInscrever)) return;
+    running.current = true; setBusy(true); setEnrollmentError(""); setRefreshWarning("");
+    try {
+      attempt.current ??= { key: crypto.randomUUID(), input: { timesCartolaIds: ids, valorUnitarioEsperado: entryValue.toFixed(2) } };
+      const result = await pointLeagueService.enrollBatch(id, attempt.current.input, attempt.current.key);
+      attempt.current = null;
+      setFeedback(`${result.quantidade} ${result.quantidade === 1 ? "time inscrito" : "times inscritos"} com sucesso.`);
+      setModal(false); resetEnrollmentModal(); setBalanceFailure(null); setPrice(null);
+      const refreshes = await Promise.allSettled([
+        loadSummary(), refreshTeams(), pointLeagueService.myEntries(id).then(setEntries),
+        ...(paid ? [refreshWallet()] : []),
+        ...(tab === "Ranking" ? [pointLeagueService.ranking(id).then((data) => setRanking(data.ranking))] : []),
+      ]);
+      if (refreshes.some((result) => result.status === "rejected" || result.value === false))
+        setRefreshWarning("Inscrições concluídas, mas não foi possível atualizar os dados da tela.");
+    } catch (cause) {
+      const details = cause instanceof ApiError ? cause.details : {};
+      const code = typeof details.code === "string" ? details.code : "";
+      if (code === "SALDO_INSUFICIENTE") {
+        setBalanceFailure({ available: Number(details.saldoDisponivel), needed: Number(details.valorNecessario), missing: Number(details.valorFaltante) });
+        setEnrollmentError("Saldo insuficiente");
+      } else if (code === "PRECO_INSCRICAO_ALTERADO") {
+        setPrice(Number(details.valorAtual)); setBalanceFailure(null);
+        attempt.current = null;
+        setEnrollmentError("O valor da inscrição foi atualizado. Confira o novo total e confirme novamente.");
+      } else if (code === "IDEMPOTENCY_KEY_REUTILIZADA") {
+        setKeyConflict(true);
+        setEnrollmentError("Esta tentativa já foi utilizada com outros dados. Confira suas inscrições antes de iniciar outra compra.");
+      } else {
+        setEnrollmentError(blockMessages[code] ?? (cause instanceof ApiError && cause.status === 404
+          ? "Competição ou time não encontrado. Atualize a página e tente novamente."
+          : cause instanceof ApiError && cause.status === 409 ? "Não foi possível confirmar a inscrição. Confira a disponibilidade da competição e dos times."
+            : "Não foi possível confirmar a inscrição. Tente novamente para consultar a mesma tentativa."));
+      }
+    } finally { running.current = false; setBusy(false); }
+  };
+  const paymentSummary = <section className={styles.paymentSummary} aria-label="Resumo da inscrição">
+    <dl className={styles.enrollmentValue}>
+      <div><dt>Times selecionados</dt><dd>{selected.size}</dd></div>
+      <div><dt>Valor por time</dt><dd>{money(entryValue)}</dd></div>
+      <div className={styles.paymentTotal}><dt>Total da inscrição</dt><dd>{money(enrollmentTotal)}</dd></div>
+      {paid && <div><dt>Saldo disponível</dt><dd>{availableBalance !== null ? money(availableBalance) : walletLoading ? "Carregando..." : "Indisponível"}</dd></div>}
+    </dl>
+    {paid && walletError && !balanceFailure && <p role="status">Não foi possível atualizar seu saldo. <button type="button" disabled={busy} onClick={() => void refreshWallet()}>Atualizar saldo</button></p>}
+    {insufficient && <aside className={styles.insufficient} role="status"><strong>Saldo insuficiente</strong><span>Saldo disponível: {money(insufficient.available)}</span><span>Necessário: {money(insufficient.needed)}</span><span>Faltam: {money(insufficient.missing)}</span><button type="button" disabled={busy} onClick={() => { if (!running.current) setPixOpen(true); }}>ADICIONAR SALDO VIA PIX</button></aside>}
+  </section>;
   const ownIds = new Set(summary?.minhasInscricoes?.map((item) => item.id) ?? []);
   const roundLabel = competition?.rodadaInicio === null ? null : competition?.rodadaFim && competition.rodadaFim !== competition.rodadaInicio ? `${competition.rodadaInicio}–${competition.rodadaFim}` : competition?.rodadaInicio;
   const heroName = competition && roundLabel !== null && roundLabel !== undefined && competition.nome === `${summary?.liga.nome} - Rodada ${roundLabel}` ? summary!.liga.nome : competition?.nome;
-  const canEnroll = !isAuthenticated || Boolean(summary?.usuario?.podeInscrever);
+  const canEnroll = !isAuthenticated || !!attempt.current || Boolean(summary?.usuario?.podeInscrever);
   const blockReason = summary?.usuario && !summary.usuario.podeInscrever ? blockMessages[summary.usuario.motivoBloqueio ?? ""] ?? "Inscrição indisponível no momento." : null;
   const retry = async () => { setLoading(true); setError(""); try { await loadSummary(); } catch (cause) { setError(message(cause)); } finally { setLoading(false); } };
   return <main className={`page-shell ${styles.shell}`}>
@@ -108,7 +171,7 @@ export function PointCompetitionPage({ id }: { id: number }) {
             {dashboard ? <CartolaMarketStatus mercado={dashboard.mercado} aberto={dashboard.mercadoAberto} aoVivo={dashboard.bolaRolando} atualizar={refreshMarket} />
               : marketLoading ? <div className={styles.marketPlaceholder} role="status">Carregando mercado...</div>
                 : <div className={styles.marketPlaceholder} role="alert">{marketError || "Não foi possível carregar o mercado."}</div>}
-            <button className={styles.enrollmentCta} type="button" onClick={() => void openModal()} disabled={!canEnroll}><Plus size={18} aria-hidden="true" />Inscreva seu time<ArrowRight size={18} aria-hidden="true" /></button>
+            <button className={styles.enrollmentCta} type="button" onClick={() => void openModal()} disabled={!canEnroll || busy}><Plus size={18} aria-hidden="true" />Inscreva seu time<ArrowRight size={18} aria-hidden="true" /></button>
             {blockReason && <p className={styles.notice}>{blockReason}</p>}
           </section>
           <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Sobre a competição</h2></div>
@@ -125,11 +188,14 @@ export function PointCompetitionPage({ id }: { id: number }) {
         {tab === "Meus times" && !isAuthenticated ? <section className={styles.panel}><p>Entre para acompanhar seus times inscritos.</p><Link href="/login">Fazer login</Link></section> : null}
         {sectionError && <p role="alert" className={styles.error}>{sectionError}</p>}
         {sectionLoading && ["Meus times", "Ranking"].includes(tab) ? <p role="status" className={styles.sectionLoading}>Carregando...</p> : tab === "Meus times" && isAuthenticated ? <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Meus times</h2></div>{entries.length ? <Entries entries={entries} /> : <p className={styles.empty}>Você ainda não inscreveu times nesta competição.</p>}</section> : tab === "Ranking" ? <section className={styles.panel}><div className={styles.heading}><div><h2>Ranking</h2>{roundLabel !== null && roundLabel !== undefined && <p>Rodada {roundLabel}</p>}</div><button type="button" onClick={() => void loadTab("Ranking")}><RefreshCw size={15} aria-hidden="true" />Atualizar</button></div><Entries entries={ranking} ownIds={ownIds} ranking /></section> : null}
-        {modal && <Dialog title="Inscrever times" close={() => { if (!busy) { setModal(false); resetEnrollmentModal(); } }} wide busy={busy}>
+        {modal && !pixOpen && <Dialog title="Inscrever times" close={() => { if (!running.current) { setModal(false); if (!attempt.current) resetEnrollmentModal(); } }} wide busy={busy}>
           {confirming ? <div className={styles.confirmation}>
             <Shield aria-hidden="true" /><h3>Confirmar inscrição</h3><p>Você está prestes a inscrever {selected.size} {selected.size === 1 ? "time" : "times"} nesta competição.</p>
             <ul>{teams.filter((team) => selected.has(team.timeId)).map((team) => <li key={team.timeId}>{team.nome}</li>)}</ul>
-            <div><button type="button" className={styles.backToTeams} onClick={() => setConfirming(false)} disabled={busy}>Voltar</button><button type="button" className={styles.primary} onClick={() => void enroll()} disabled={busy}>{busy ? <><Loader2 className={styles.spin} />Inscrevendo...</> : `Confirmar ${selected.size} ${selected.size === 1 ? "time" : "times"}`}</button></div>
+            {paymentSummary}
+            {enrollmentError && <p role="alert" className={styles.inlineError}>{enrollmentError}</p>}
+            {attempt.current && enrollmentError && !keyConflict && <p>Confirmar novamente repete a mesma tentativa, sem criar outra compra.</p>}
+            <div><button type="button" className={styles.backToTeams} onClick={() => { attempt.current = null; setConfirming(false); setBalanceFailure(null); setEnrollmentError(""); setKeyConflict(false); }} disabled={busy || (!!attempt.current && !balanceFailure && !keyConflict)}>Voltar</button><button type="button" className={styles.primary} onClick={() => void enroll()} disabled={busy || keyConflict}>{busy ? <><Loader2 className={styles.spin} />Confirmando inscrição...</> : `CONFIRMAR INSCRIÇÃO • ${money(enrollmentTotal)}`}</button></div>
           </div> : importing ? <>
             <p className={styles.modalHelper}>Informe IDs para selecionar somente times que já estão vinculados à sua conta.</p>
             <textarea aria-label="IDs dos times" className={styles.importInput} value={importText} disabled={busy} onChange={(event) => { setImportText(event.target.value); setImportFeedback(""); }} placeholder="44566162;30157334;13933388" />
@@ -144,9 +210,10 @@ export function PointCompetitionPage({ id }: { id: number }) {
             {teams.length ? <div className={styles.choices}>{filteredTeams.map((team) => { const registered = registeredIds.has(team.timeId); const limitReached = !selected.has(team.timeId) && selected.size >= remaining; return <label key={team.timeId} className={`${registered ? styles.registered : ""} ${selected.has(team.timeId) ? styles.choiceSelected : ""}`}><input type="checkbox" checked={selected.has(team.timeId)} onChange={() => toggleTeam(team.timeId)} disabled={busy || registered || limitReached} aria-label={registered ? `${team.nome}: Já inscrito` : `Selecionar ${team.nome}`} />{team.escudoUrl ? <img src={team.escudoUrl} alt="" /> : <span className={styles.choiceShield}>{team.nome.slice(0, 2).toUpperCase()}</span>}<span><strong>{team.nome}</strong><small>{registered ? "Já inscrito" : team.nomeCartoleiro}</small></span></label>; })}{!filteredTeams.length && <p className={styles.noTeams}>Nenhum time encontrado.</p>}</div> : <p>Nenhum time vinculado. Cadastre seus times em Meus Times para continuar.</p>}
             {feedback && <p role="status" className={styles.batchFeedback}>{feedback}</p>}
             {sectionError && <p role="alert" className={styles.inlineError}>{sectionError}</p>}
-            <div className={styles.enrollmentFooter}><div className={styles.enrollmentSummary}><strong>{selected.size} {selected.size === 1 ? "time selecionado" : "times selecionados"}</strong><small>{Number.isFinite(remaining) ? `Limite: ${userLimit}` : "Sem limite de vagas"}</small></div><dl className={styles.enrollmentValue}><div><dt>Valor por time</dt><dd>{money(entryValue)}</dd></div><div><dt>Total da inscrição</dt><dd>{money(enrollmentTotal)}</dd></div></dl><button type="button" className={styles.primary} disabled={busy || !selected.size || selected.size > remaining} onClick={() => setConfirming(true)}>Inscrever {selected.size} {selected.size === 1 ? "time" : "times"} <span aria-hidden="true">•</span> {money(enrollmentTotal)}</button></div>
+            <div className={styles.enrollmentFooter}><div className={styles.enrollmentSummary}><strong>{selected.size} {selected.size === 1 ? "time selecionado" : "times selecionados"}</strong><small>{userLimit !== null ? `Limite: ${userLimit}` : "Até 50 times por inscrição"}</small></div>{paymentSummary}<button type="button" className={styles.primary} disabled={busy || !selected.size || selected.size > remaining} onClick={() => setConfirming(true)}>Inscrever {selected.size} {selected.size === 1 ? "time" : "times"} <span aria-hidden="true">•</span> {money(enrollmentTotal)}</button></div>
           </>}
         </Dialog>}
+        {pixOpen && <AddBalanceModal close={() => { setPixOpen(false); setBalanceFailure(null); void refreshWallet(); }} />}
       </>}
   </main>;
 }

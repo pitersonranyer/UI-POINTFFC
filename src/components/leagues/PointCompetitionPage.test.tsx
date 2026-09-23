@@ -3,34 +3,152 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PointCompetitionPage } from "./PointCompetitionPage";
 import { ApiError } from "@/services/apiClient";
-import { pointLeagueService, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
+import { pointLeagueService, type EnrollmentBatchResult, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
 import { teamService } from "@/services/teamService";
 
-const state = vi.hoisted(() => ({ authenticated: false, push: vi.fn(), refreshMarket: vi.fn() }));
+const state = vi.hoisted(() => ({ authenticated: false, push: vi.fn(), refreshWallet: vi.fn(), wallet: { saldoDisponivel: "100.00", saldoBloqueado: "0.00", status: "ATIVA" }, refreshMarket: vi.fn() }));
+vi.mock("@/contexts/WalletContext", () => ({ useWallet: () => ({ wallet: state.wallet, isLoading: false, error: null, refreshWallet: state.refreshWallet }) }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: state.authenticated, isLoading: false }) }));
 vi.mock("@/hooks/useCartolaDashboard", () => ({ useCartolaDashboard: () => ({ dashboard: { mercado: { rodada_atual: 27, status_mercado: 1, bola_rolando: false, fechamento: { timestamp: Math.floor(Date.now() / 1000) + 172800 } }, rodada: 27, mercadoAberto: true, bolaRolando: false, partidas: [], clubes: {} }, loading: false, error: null, atualizar: state.refreshMarket }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: state.push }) }));
-vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { summary: vi.fn(), myEntries: vi.fn(), participants: vi.fn(), ranking: vi.fn(), enroll: vi.fn() }, blockMessages: { LIMITE_TIMES_USUARIO_ATINGIDO: "Você já atingiu o limite de times desta competição." } }));
+vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { summary: vi.fn(), myEntries: vi.fn(), participants: vi.fn(), ranking: vi.fn(), enrollBatch: vi.fn() }, blockMessages: { LIMITE_TIMES_USUARIO_ATINGIDO: "Você já atingiu o limite de times desta competição." } }));
 vi.mock("@/services/teamService", () => ({ teamService: { buscarMeusTimes: vi.fn(), buscarTimesPorIds: vi.fn(), importarMeusTimes: vi.fn() } }));
 const entry: Entry = { id: 7, timeIdCartola: 123, nomeTime: "Meu FC", nomeCartoleiro: "Ana", escudoUrl: null, pontuacao: null, posicao: null, posicaoAnterior: null };
 const rival: Entry = { id: 8, nomeTime: "Rival FC", nomeCartoleiro: "Bia", escudoUrl: null, pontuacao: 88.5, posicao: 1, posicaoAnterior: 2 };
 const ranking: RankingEntry[] = [{ ...rival, inscricaoId: 8, timeIdCartola: 456, capitao: { atletaId: 99, apelido: "Arrascaeta" } }, { ...entry, inscricaoId: 7, timeIdCartola: 123, capitao: null }];
 const summary: CompetitionSummary = { competicao: { id: 42, nome: "Disputa 42", slug: "disputa-42", descricao: "Rodada de teste", tipoAcesso: "FREE", valorInscricao: 0, rodadaInicio: 27, rodadaFim: 27, inicioInscricao: null, fimInscricao: null, limiteTimesUsuario: 2, limiteParticipantes: null, status: "INSCRICOES_ABERTAS" }, liga: { id: 1, nome: "POINT FFC", slug: "point-ffc", imagemUrl: null }, inscritos: { quantidade: 1 }, premiacao: [] };
 const member: CompetitionSummary = { ...summary, usuario: { quantidadeTimesInscritos: 0, limiteTimesUsuario: 2, podeInscrever: true, motivoBloqueio: null, melhorPosicaoUsuario: null, melhorPontuacaoUsuario: null }, minhasInscricoes: [] };
+const batch: EnrollmentBatchResult = { loteId: 1, competicaoId: 42, quantidade: 1, tipoAcesso: "FREE", moeda: "BRL", valorUnitario: "0.00", valorTotal: "0.00", movimentacaoDebitoId: null, saldoDisponivelAposOperacao: null, inscricoes: [{ id: 7, timeIdCartola: 123, statusInscricao: "ATIVA" }] };
 beforeEach(() => {
   vi.stubGlobal("React", React);
+  state.wallet.saldoDisponivel = "100.00"; state.refreshWallet.mockReset().mockResolvedValue(true);
   state.authenticated = false; state.push.mockReset(); state.refreshMarket.mockReset();
   vi.mocked(pointLeagueService.summary).mockReset().mockResolvedValue(summary);
   vi.mocked(pointLeagueService.myEntries).mockReset().mockResolvedValue([]);
   vi.mocked(pointLeagueService.participants).mockReset().mockResolvedValue([rival]);
   vi.mocked(pointLeagueService.ranking).mockReset().mockResolvedValue({ ranking });
-  vi.mocked(pointLeagueService.enroll).mockReset().mockResolvedValue([entry]);
+  vi.mocked(pointLeagueService.enrollBatch).mockReset().mockResolvedValue(batch);
   vi.mocked(teamService.buscarMeusTimes).mockReset().mockResolvedValue([{ timeId: 123, nome: "Meu FC", nomeCartoleiro: "Ana", escudoUrl: "" }]);
   vi.mocked(teamService.buscarTimesPorIds).mockReset().mockResolvedValue({ times: [], naoEncontrados: [], tentarNovamente: [] });
   vi.mocked(teamService.importarMeusTimes).mockReset().mockResolvedValue({ adicionados: 0, jaExistentes: 0, naoEncontrados: [], tentarNovamente: [], naoProcessados: 0 });
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const open = async () => { render(<PointCompetitionPage id={42} />); return screen.findByRole("heading", { name: "Disputa 42" }); };
+async function preparePaid() {
+  state.authenticated = true;
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, competicao: { ...member.competicao, tipoAcesso: "PAGO", valorInscricao: 10 } });
+  vi.mocked(teamService.buscarMeusTimes).mockResolvedValue([{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }]);
+  vi.mocked(pointLeagueService.enrollBatch).mockResolvedValue({ ...batch, quantidade: 2, tipoAcesso: "PAGO", valorUnitario: "10.00", valorTotal: "20.00", movimentacaoDebitoId: 10, saldoDisponivelAposOperacao: "80.00" });
+  await open();
+  fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
+  await screen.findByRole("checkbox", { name: "Selecionar Time A" });
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar todos" }));
+  fireEvent.click(screen.getByRole("button", { name: /Inscrever 2 times/ }));
+}
+const confirmBatch = () => fireEvent.click(screen.getByRole("button", { name: /CONFIRMAR INSCRIÇÃO/ }));
+
+it("PAGO mostra saldo real e envia uma compra para todos os times", async () => {
+  await preparePaid();
+  const dialog = within(screen.getByRole("dialog"));
+  expect(dialog.getByText("Saldo disponível").nextElementSibling?.textContent).toMatch(/R\$\s*100,00/);
+  expect(dialog.getByText("Times selecionados").nextElementSibling?.textContent).toBe("2");
+  expect(dialog.getByText("Total da inscrição").nextElementSibling?.textContent).toMatch(/R\$\s*20,00/);
+  confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+  expect(pointLeagueService.enrollBatch).toHaveBeenCalledTimes(1);
+  expect(pointLeagueService.enrollBatch).toHaveBeenCalledWith(42, { timesCartolaIds: [123, 456], valorUnitarioEsperado: "10.00" }, expect.stringMatching(/^[\w-]{16,128}$/));
+  expect(state.refreshWallet).toHaveBeenCalledTimes(2);
+});
+
+it("saldo local insuficiente oferece PIX existente e não impede validação definitiva no backend", async () => {
+  state.wallet.saldoDisponivel = "5.00";
+  await preparePaid();
+  expect(screen.getByText(/Faltam: R\$\s*15,00/)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "ADICIONAR SALDO VIA PIX" }));
+  expect(screen.getByRole("dialog", { name: "Adicionar saldo" })).toBeTruthy();
+  expect(screen.getByLabelText("Valor da recarga")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+  expect(screen.getByRole("dialog", { name: "Inscrever times" })).toBeTruthy();
+  confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+});
+
+it("SALDO_INSUFICIENTE mantém modal e usa saldo, necessário e faltante do backend", async () => {
+  await preparePaid();
+  vi.mocked(pointLeagueService.enrollBatch).mockRejectedValueOnce(new ApiError(409, "Saldo", { code: "SALDO_INSUFICIENTE", saldoDisponivel: "3.00", valorNecessario: "20.00", valorFaltante: "17.00", moeda: "BRL" }));
+  confirmBatch();
+  await screen.findByText(/Faltam: R\$\s*17,00/);
+  expect(screen.getByText(/Saldo disponível: R\$\s*3,00/)).toBeTruthy();
+  expect(screen.getByText(/Necessário: R\$\s*20,00/)).toBeTruthy();
+  expect(screen.getByRole("button", { name: "ADICIONAR SALDO VIA PIX" })).toBeTruthy();
+  const first = vi.mocked(pointLeagueService.enrollBatch).mock.calls[0];
+  confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+  expect(vi.mocked(pointLeagueService.enrollBatch).mock.calls[1]).toEqual(first);
+});
+
+it("retry após erro de rede preserva chave e pedido mesmo fechando e reabrindo o modal", async () => {
+  await preparePaid();
+  vi.mocked(pointLeagueService.enrollBatch).mockRejectedValueOnce(new ApiError(0, "offline"));
+  confirmBatch();
+  await screen.findByText(/Tente novamente para consultar a mesma tentativa/);
+  const first = vi.mocked(pointLeagueService.enrollBatch).mock.calls[0];
+  expect((screen.getByRole("button", { name: "Voltar" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+  fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
+  confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+  expect(vi.mocked(pointLeagueService.enrollBatch).mock.calls[1]).toEqual(first);
+});
+
+it("preço alterado exige confirmação explícita e gera outra chave somente nesse clique", async () => {
+  await preparePaid();
+  vi.mocked(pointLeagueService.enrollBatch).mockRejectedValueOnce(new ApiError(409, "Preço", { code: "PRECO_INSCRICAO_ALTERADO", valorEsperado: "10.00", valorAtual: "12.50", quantidade: 2, valorTotalAtual: "25.00" }));
+  confirmBatch();
+  await screen.findByText(/O valor da inscrição foi atualizado/);
+  expect(pointLeagueService.enrollBatch).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole("button", { name: /CONFIRMAR INSCRIÇÃO.*R\$\s*25,00/ })).toBeTruthy();
+  const first = vi.mocked(pointLeagueService.enrollBatch).mock.calls[0];
+  confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+  const second = vi.mocked(pointLeagueService.enrollBatch).mock.calls[1];
+  expect(second[1]).toEqual({ timesCartolaIds: [123, 456], valorUnitarioEsperado: "12.50" });
+  expect(second[2]).not.toBe(first[2]);
+});
+
+it("chave reutilizada não causa reenvio automático nem nova chave", async () => {
+  await preparePaid();
+  vi.mocked(pointLeagueService.enrollBatch).mockRejectedValueOnce(new ApiError(409, "Conflito", { code: "IDEMPOTENCY_KEY_REUTILIZADA" }));
+  confirmBatch();
+  await screen.findByText(/Esta tentativa já foi utilizada com outros dados/);
+  confirmBatch();
+  expect(pointLeagueService.enrollBatch).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole("dialog")).toBeTruthy();
+});
+
+it("compra posterior ao sucesso recebe uma nova chave", async () => {
+  await preparePaid(); confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+  await waitFor(() => expect(state.refreshWallet).toHaveBeenCalledTimes(2));
+  fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
+  await screen.findByRole("checkbox", { name: "Selecionar Time A" });
+  fireEvent.click(screen.getByRole("button", { name: "Selecionar todos" }));
+  fireEvent.click(screen.getByRole("button", { name: /Inscrever 2 times/ }));
+  confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+  const calls = vi.mocked(pointLeagueService.enrollBatch).mock.calls;
+  expect(calls).toHaveLength(2);
+  expect(calls[1][2]).not.toBe(calls[0][2]);
+});
+
+it("falha ao atualizar carteira após pagamento mantém sucesso", async () => {
+  await preparePaid();
+  state.refreshWallet.mockResolvedValueOnce(false);
+  confirmBatch();
+  await screen.findByText("2 times inscritos com sucesso.");
+  expect(await screen.findByText("Inscrições concluídas, mas não foi possível atualizar os dados da tela.")).toBeTruthy();
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
 it("abre resumo público com cabeçalho clean, contador do mercado e CTA de inscrição", async () => {
   render(<PointCompetitionPage id={42} />);
   expect(screen.getByRole("status", { name: "Carregando competição" })).toBeTruthy();
@@ -55,7 +173,7 @@ it("abre resumo público com cabeçalho clean, contador do mercado e CTA de insc
 it("envia visitante ao login ao tentar inscrever", async () => {
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   expect(state.push).toHaveBeenCalledWith("/login?next=%2Fcompeticoes%3Fid%3D42");
-  expect(pointLeagueService.enroll).not.toHaveBeenCalled();
+  expect(pointLeagueService.enrollBatch).not.toHaveBeenCalled();
 });
 it("mostra resumo autenticado e estado vazio de premiação", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValue(member);
@@ -98,8 +216,8 @@ it("abre modal, seleciona time vinculado, inscreve FREE e atualiza resumo", asyn
   expect(within(dialog).queryByText(/titularidade|titular dos times|comprovação/i)).toBeNull();
   expect(within(dialog).queryByRole("checkbox", { name: /Declaro/ })).toBeNull();
   fireEvent.click(within(dialog).getByRole("button", { name: /Inscrever 1 time.*R\$\s*0,00/i }));
-  fireEvent.click(within(dialog).getByRole("button", { name: "Confirmar 1 time" }));
-  await waitFor(() => expect(pointLeagueService.enroll).toHaveBeenCalledWith(42, [123]));
+  fireEvent.click(within(dialog).getByRole("button", { name: /CONFIRMAR INSCRIÇÃO/ }));
+  await waitFor(() => expect(pointLeagueService.enrollBatch).toHaveBeenCalledWith(42, { timesCartolaIds: [123], valorUnitarioEsperado: "0.00" }, expect.any(String)));
   await screen.findByText("1 time inscrito com sucesso.");
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.queryByText("Você ainda não está participando.")).toBeNull();
@@ -255,7 +373,7 @@ it("Selecionar por IDs seleciona somente times já vinculados pela fonte oficial
   expect(screen.getByText("1 time selecionado. 1 não encontrado(s) ou indisponível(is) nesta competição.")).toBeTruthy();
   expect(teamService.buscarTimesPorIds).not.toHaveBeenCalled();
   expect(teamService.importarMeusTimes).not.toHaveBeenCalled();
-  expect(pointLeagueService.enroll).not.toHaveBeenCalled();
+  expect(pointLeagueService.enrollBatch).not.toHaveBeenCalled();
 });
 
 it("ID de time não vinculado não entra na lista nem pode ser inscrito", async () => {
@@ -269,7 +387,7 @@ it("ID de time não vinculado não entra na lista nem pode ser inscrito", async 
   fireEvent.click(screen.getByRole("button", { name: "Selecionar times" }));
   expect(screen.getByText("0 times selecionados. 1 não encontrado(s) ou indisponível(is) nesta competição.")).toBeTruthy();
   expect(screen.queryByRole("checkbox", { name: /789/ })).toBeNull();
-  expect(pointLeagueService.enroll).not.toHaveBeenCalled();
+  expect(pointLeagueService.enrollBatch).not.toHaveBeenCalled();
   expect(teamService.buscarTimesPorIds).not.toHaveBeenCalled();
   expect(teamService.importarMeusTimes).not.toHaveBeenCalled();
 });
@@ -279,17 +397,21 @@ it("inscreve os times em lote, impede duplo envio e atualiza os dados", async ()
   const teams = [{ timeId: 123, nome: "Time A", nomeCartoleiro: "Ana", escudoUrl: "" }, { timeId: 456, nome: "Time B", nomeCartoleiro: "Bia", escudoUrl: "" }, { timeId: 789, nome: "Time C", nomeCartoleiro: "Caio", escudoUrl: "" }];
   vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, usuario: { ...member.usuario!, limiteTimesUsuario: 4 } });
   vi.mocked(teamService.buscarMeusTimes).mockResolvedValue(teams);
-  let resolveEnrollment!: (value: Entry[]) => void;
-  vi.mocked(pointLeagueService.enroll).mockImplementationOnce(() => new Promise((resolve) => { resolveEnrollment = resolve; }));
+  let resolveEnrollment!: (value: EnrollmentBatchResult) => void;
+  vi.mocked(pointLeagueService.enrollBatch).mockImplementationOnce(() => new Promise((resolve) => { resolveEnrollment = resolve; }));
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   const dialog = within(await screen.findByRole("dialog"));
   fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time A" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time B" })); fireEvent.click(dialog.getByRole("checkbox", { name: "Selecionar Time C" }));
   fireEvent.click(dialog.getByRole("button", { name: /Inscrever 3 times.*R\$\s*0,00/i }));
-  const confirm = dialog.getByRole("button", { name: "Confirmar 3 times" }); fireEvent.click(confirm); fireEvent.click(confirm);
-  expect(pointLeagueService.enroll).toHaveBeenCalledTimes(1);
-  expect(pointLeagueService.enroll).toHaveBeenCalledWith(42, [123, 456, 789]);
-  expect(dialog.getByRole("button", { name: "Inscrevendo..." })).toBeTruthy();
-  resolveEnrollment([entry]);
+  const confirm = dialog.getByRole("button", { name: /CONFIRMAR INSCRIÇÃO/ }); fireEvent.click(confirm); fireEvent.click(confirm);
+  expect(pointLeagueService.enrollBatch).toHaveBeenCalledTimes(1);
+  expect(pointLeagueService.enrollBatch).toHaveBeenCalledWith(42, { timesCartolaIds: [123, 456, 789], valorUnitarioEsperado: "0.00" }, expect.any(String));
+  expect(dialog.getByRole("button", { name: "Confirmando inscrição..." })).toBeTruthy();
+  expect((dialog.getByRole("button", { name: "Fechar" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.keyDown(document, { key: "Escape" });
+  fireEvent.mouseDown(screen.getByRole("dialog").parentElement!);
+  expect(screen.getByRole("dialog")).toBeTruthy();
+  resolveEnrollment({ ...batch, quantidade: 3 });
   expect(await screen.findByText("3 times inscritos com sucesso.")).toBeTruthy();
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(pointLeagueService.summary).toHaveBeenCalledTimes(2);
@@ -306,12 +428,12 @@ it.each(["resumo", "times"])("preserva o sucesso quando falha o refresh de %s", 
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));
   fireEvent.click(await screen.findByRole("checkbox", { name: "Selecionar Time A" }));
   fireEvent.click(screen.getByRole("button", { name: /Inscrever 1 time.*R\$\s*0,00/i }));
-  fireEvent.click(screen.getByRole("button", { name: "Confirmar 1 time" }));
+  fireEvent.click(screen.getByRole("button", { name: /CONFIRMAR INSCRIÇÃO/ }));
   expect(await screen.findByText("1 time inscrito com sucesso.")).toBeTruthy();
   expect(screen.getByText("Inscrições concluídas, mas não foi possível atualizar os dados da tela.")).toBeTruthy();
   expect(screen.queryByText("Internal server error")).toBeNull();
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(pointLeagueService.enroll).toHaveBeenCalledTimes(1);
+  expect(pointLeagueService.enrollBatch).toHaveBeenCalledTimes(1);
 });
 it("mostra erro do resumo", async () => {
   vi.mocked(pointLeagueService.summary).mockRejectedValue(new Error("API offline"));
