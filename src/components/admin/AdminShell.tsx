@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Menu, Trophy, X } from "lucide-react";
+import { LayoutDashboard, Menu, Trophy, Wallet, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminGuard } from "./AdminGuard";
 import styles from "./Admin.module.css";
 
-const links = [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }, { href: "/admin/competicoes", label: "Competições", icon: Trophy }];
+const links = [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }, { href: "/admin/competicoes", label: "Competições", icon: Trophy }, { href: "/admin/financeiro", label: "Financeiro", icon: Wallet }];
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();

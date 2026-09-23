@@ -5,6 +5,15 @@ import { adminService } from "./adminService";
 vi.mock("./apiClient", () => ({ apiFetch: vi.fn() }));
 beforeEach(() => vi.mocked(apiFetch).mockReset());
 
+it("consulta financeiro autenticado com filtros combinados e sem parâmetros opcionais ausentes", async () => {
+  await adminService.getFinancialDashboard({ ligaId: 1, competicaoId: 2, rodada: 27, pagina: 3, limite: 20 });
+  expect(apiFetch).toHaveBeenLastCalledWith("/admin/dashboard-financeiro?ligaId=1&competicaoId=2&rodada=27&pagina=3&limite=20", { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" });
+  await adminService.getFinancialDashboard({ ligaId: undefined, pagina: 1, limite: 20 });
+  expect(apiFetch).toHaveBeenLastCalledWith("/admin/dashboard-financeiro?pagina=1&limite=20", { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" });
+  await adminService.getFinancialDashboard();
+  expect(apiFetch).toHaveBeenLastCalledWith("/admin/dashboard-financeiro", { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" });
+});
+
 it("lista competições administrativas com autenticação e filtros reais", async () => {
   await adminService.listCompetitions({ pagina: 2, limite: 20, busca: "Copa POINT", status: "RASCUNHO" });
   expect(apiFetch).toHaveBeenCalledWith("/admin/competicoes?pagina=2&limite=20&busca=Copa+POINT&status=RASCUNHO", { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" });

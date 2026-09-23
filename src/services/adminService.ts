@@ -66,6 +66,54 @@ export interface AdminCompetitionFilters {
   status?: AdminCompetitionStatus | "";
 }
 
+export interface AdminFinancialFilters {
+  ligaId?: number;
+  competicaoId?: number;
+  rodada?: number;
+  pagina?: number;
+  limite?: number;
+}
+
+export interface AdminFinancialValues {
+  valorInscricoes: string;
+  receitaPointPrevista: string;
+  basePremiacao: string;
+  premiacaoCalculada: string;
+  saldoAposPremiacao: string;
+}
+
+export interface AdminFinancialItem {
+  competicaoId: number;
+  nome: string;
+  liga: { id: number; nome: string };
+  modalidade: { id: number; nome: string; codigo: string };
+  rodadaInicio: number | null;
+  rodadaFim: number | null;
+  status: AdminCompetitionStatus;
+  tipoAcesso: "FREE" | "PAGO";
+  valorInscricao: string;
+  inscritos: { ativos: number; finalizados: number; cancelados: number; totalConsiderado: number };
+  taxaPlataforma: { tipo: "PERCENTUAL" | "VALOR_FIXO" | null; valor: string | null };
+  financeiro: AdminFinancialValues;
+  premiacoes: Array<{ posicaoInicio: number; posicaoFim: number; tipoPremiacao: AdminAwardType; valor: string | null; percentual: string | null; ordem: number; valorCalculado: string }>;
+}
+
+export interface AdminFinancialDashboard {
+  natureza: "PREVISTO_NOMINAL";
+  totalizadores: AdminFinancialValues & { quantidadeCompeticoes: number; totalInscritos: number; inscricoesCanceladas: number };
+  itens: AdminFinancialItem[];
+  paginacao: AdminCompetitionPage["paginacao"];
+}
+
+function financialQueryString(filters: AdminFinancialFilters) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 function queryString(filters: AdminCompetitionFilters) {
   const params = new URLSearchParams();
   params.set("pagina", String(filters.pagina ?? 1));
@@ -76,6 +124,7 @@ function queryString(filters: AdminCompetitionFilters) {
 }
 
 export const adminService = {
+  getFinancialDashboard: (filters: AdminFinancialFilters = {}) => apiFetch<AdminFinancialDashboard>(`/admin/dashboard-financeiro${financialQueryString(filters)}`, { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" }),
   listCompetitions: (filters: AdminCompetitionFilters = {}) => apiFetch<AdminCompetitionPage>(`/admin/competicoes?${queryString(filters)}`, { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" }),
   getCompetition: (id: number) => apiFetch<AdminCompetition>(`/admin/competicoes/${id}`, { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" }),
   getLeagues: () => apiFetch<AdminLeague[]>("/admin/ligas", { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" }),
