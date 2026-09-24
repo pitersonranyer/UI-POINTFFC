@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronRight, CircleDot, Crown, Gift, Trophy, UserRound, Users } from "lucide-react";
+import Image from "next/image";
+import { ChevronRight, CircleDot, Crown, Trophy } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { pointLeagueService, type Competition, type CompetitionSummary, type PointLeague } from "@/services/pointLeagueService";
+import { pointLeagueService, type Competition, type CompetitionCard, type CompetitionSummary, type PointLeague } from "@/services/pointLeagueService";
 import styles from "./PointLeague.module.css";
 
 const statusLabels: Record<string, string> = {
   RASCUNHO: "Rascunho", INSCRICOES_ABERTAS: "Inscrições abertas",
-  INSCRICOES_ENCERRADAS: "Inscrições encerradas", EM_ANDAMENTO: "Em andamento",
+  INSCRICOES_ENCERRADAS: "Em andamento", EM_ANDAMENTO: "Em andamento",
   ENCERRADA: "Encerrada", CANCELADA: "Cancelada",
 };
 export const competitionDisplayName = (item: Competition) => {
@@ -26,11 +27,12 @@ const deadline = (value: string | null) => {
   return { date: parsed.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), time: parsed.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) };
 };
 const round = (item: Competition) => item.rodadaInicio === null ? null : item.rodadaFim && item.rodadaFim !== item.rodadaInicio ? `${item.rodadaInicio}–${item.rodadaFim}` : String(item.rodadaInicio);
+const money = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function PointLeaguePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [league, setLeague] = useState<PointLeague | null>(null);
-  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitions, setCompetitions] = useState<CompetitionCard[]>([]);
   const [summaries, setSummaries] = useState<Record<number, CompetitionSummary>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,6 +51,23 @@ export function PointLeaguePage() {
     } finally { setLoading(false); }
   }, [isAuthenticated]);
   useEffect(() => { if (!authLoading) void load(); }, [authLoading, load]);
+  useEffect(() => {
+    if (loading || error || authLoading) return;
+    let active = true, refreshing = false;
+    const refresh = async () => {
+      if (document.visibilityState === "hidden" || refreshing) return;
+      refreshing = true;
+      try {
+        const list = await pointLeagueService.competitions();
+        if (active) setCompetitions(list);
+      } catch { /* Mantem os ultimos dados confirmados; tenta novamente no proximo ciclo. */ }
+      finally { refreshing = false; }
+    };
+    const timer = window.setInterval(() => void refresh(), 30_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [loading, error, authLoading]);
 
   const rounds = [...new Set(competitions.map(round).filter((value): value is string => value !== null))];
   const currentRound = rounds.length === 1 ? rounds[0] : null;
@@ -68,15 +87,32 @@ export function PointLeaguePage() {
           {competitions.length ? <div className={styles.grid}>{competitions.map((item) => {
             const summary = summaries[item.id];
             const isOpen = item.status === "INSCRICOES_ABERTAS";
-            const limit = summary?.usuario?.limiteTimesUsuario ?? item.limiteTimesUsuario;
+            const isLive = item.status === "INSCRICOES_ENCERRADAS" || item.status === "EM_ANDAMENTO";
+            const action = isLive ? "Ver parciais" : item.status === "ENCERRADA" ? "Ver resultado" : null;
+            const limit = summary?.usuario ? summary.usuario.limiteTimesUsuario : item.limiteTimesUsuario;
+            const prize = item.premiacaoEmDisputa == null ? null : Number(item.premiacaoEmDisputa);
+            const showPrize = prize !== null && Number.isFinite(prize) && (item.tipoAcesso === "PAGO" || prize > 0);
+            const name = competitionDisplayName(item);
             const registrationDeadline = deadline(item.fimInscricao);
-            return <Link href={`/competicoes?id=${item.id}`} className={styles.card} aria-label={`Abrir competição ${competitionDisplayName(item)}`} key={item.id}>
-              <div className={styles.cardHeading}><span className={styles.cardIcon}><Trophy aria-hidden="true" /></span><div className={styles.cardIdentity}><h3>{competitionDisplayName(item)}</h3><p>{item.descricao || "Competição oficial da rodada"}</p></div><span className={`${styles.status} ${isOpen ? styles.open : ""}`}><i />{competitionStatusLabel(item.status)}</span><ChevronRight className={styles.chevron} aria-hidden="true" /></div>
+            return <Link href={`/competicoes?id=${item.id}${action ? "&aba=ranking" : ""}`} className={styles.card} aria-label={`${action ?? "Abrir competição"} ${name}`} key={item.id}>
+              <div className={styles.cardHeading}>
+                <div className={styles.cardIdentity}>
+                  <Image src="/brand/pointffc-logo.png" alt="POINT FFC" width={2172} height={724} unoptimized className={styles.cardLogo} />
+                  {name.toUpperCase() !== "POINT FFC" && <h3>{name}</h3>}
+                  <p>Competição oficial da rodada</p>
+                </div>
+                <span className={`${styles.status} ${isOpen ? styles.open : isLive ? styles.live : ""}`}>
+                  <span className={styles.statusLabel}><i aria-hidden="true" />{competitionStatusLabel(item.status)}</span>
+                  {action && <><span className={styles.statusSeparator} aria-hidden="true">|</span><span className={styles.statusAction}>{action}</span></>}
+                </span>
+                <ChevronRight className={styles.chevron} aria-hidden="true" />
+              </div>
+              {showPrize && <div className={styles.prizeBand}><span>Premiação em disputa</span><strong>{money(prize!)}</strong></div>}
               <div className={styles.metrics}>
-                <div><Gift aria-hidden="true" /><span><small>Entrada</small><strong>{item.tipoAcesso === "FREE" ? "GRÁTIS" : item.valorInscricao.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>{item.tipoAcesso === "PAGO" && <em>por time</em>}</span></div>
-                <div><Users aria-hidden="true" /><span><small>Inscritos</small><strong>{summary?.inscritos.quantidade ?? item.quantidadeInscritos ?? "—"}</strong></span></div>
-                <div><CalendarDays aria-hidden="true" /><span><small>Inscrições até</small><strong>{registrationDeadline ? `Até ${registrationDeadline.date}` : "Não informado"}</strong>{registrationDeadline && <em>{registrationDeadline.time}</em>}</span></div>
-                <div><UserRound aria-hidden="true" /><span><small>Limite</small><strong>{limit == null ? "Sem limite" : `Até ${limit}`}</strong><em>times por usuário</em></span></div>
+                <div><span><small>Entrada</small><strong>{item.tipoAcesso === "FREE" ? "GRÁTIS" : money(item.valorInscricao)}</strong>{item.tipoAcesso === "PAGO" && <em>por time</em>}</span></div>
+                <div><span><small>Inscritos</small><strong>{item.quantidadeInscritos ?? summary?.inscritos.quantidade ?? "—"}</strong></span></div>
+                <div><span><small>Inscrições até</small><strong>{registrationDeadline ? `Até ${registrationDeadline.date}` : "Não informado"}</strong>{registrationDeadline && <em>{registrationDeadline.time}</em>}</span></div>
+                <div><span><small>Limite</small><strong>{limit == null ? "Sem limite" : `${limit} ${limit === 1 ? "time" : "times"}`}</strong><em>por usuário</em></span></div>
               </div>
             </Link>;
           })}</div> : <div className={styles.empty}><Trophy aria-hidden="true" /><div><h3>Nenhuma competição disponível nesta rodada.</h3><p>Assim que uma nova disputa for aberta, ela aparecerá aqui.</p></div></div>}

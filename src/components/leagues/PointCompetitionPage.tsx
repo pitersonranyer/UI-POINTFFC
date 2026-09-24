@@ -58,7 +58,7 @@ function Entries({ entries, ownIds = new Set<number>(), ranking = false }: { ent
   if (!entries.length) return <p className={styles.empty}>{ranking ? "Nenhum time inscrito nesta competição." : "Nenhum time encontrado."}</p>;
   return <div className={styles.entries}>{entries.map((entry) => { const own = ownIds.has(entry.id) || ("inscricaoId" in entry && ownIds.has(entry.inscricaoId)); return <article className={`${styles.entry} ${own ? styles.own : ""}`} key={entry.id ?? (entry as RankingEntry).inscricaoId}><strong className={styles.position}>{position(entry.posicao)}</strong>{entry.escudoUrl ? <img src={entry.escudoUrl} alt="" /> : <span className={styles.shieldPlaceholder}><Shield size={19} aria-hidden="true" /></span>}<div className={styles.teamName}><strong>{entry.nomeTime}{own && <span className={styles.ownBadge}>Seu time</span>}</strong>{ranking && "capitao" in entry && entry.capitao && <span className={styles.captain}><b>C</b>{entry.capitao.apelido}</span>}<small>{entry.nomeCartoleiro ?? "Cartoleiro não informado"}</small></div><span className={styles.score}>{entry.pontuacao === null ? ranking ? "—" : "Sem pontuação" : `${score(entry.pontuacao)} pts`}</span></article>; })}</div>;
 }
-export function PointCompetitionPage({ id }: { id: number }) {
+export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: number; initialTab?: "Visão geral" | "Ranking" }) {
   const router = useRouter();
   const { wallet, isLoading: walletLoading, error: walletError, refreshWallet } = useWallet();
   const [pixOpen, setPixOpen] = useState(false);
@@ -69,7 +69,7 @@ export function PointCompetitionPage({ id }: { id: number }) {
   const attempt = useRef<{ key: string; input: EnrollmentBatchInput } | null>(null);
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { dashboard, loading: marketLoading, error: marketError, atualizar: refreshMarket } = useCartolaDashboard();
-  const [summary, setSummary] = useState<CompetitionSummary | null>(null), [tab, setTab] = useState<Tab>("Visão geral");
+  const [summary, setSummary] = useState<CompetitionSummary | null>(null), [tab, setTab] = useState<Tab>(initialTab);
   const [entries, setEntries] = useState<Entry[]>([]), [ranking, setRanking] = useState<RankingEntry[]>([]), [teams, setTeams] = useState<CartolaTeam[]>([]);
   const [loading, setLoading] = useState(true), [sectionLoading, setSectionLoading] = useState(false), [modal, setModal] = useState(false), [busy, setBusy] = useState(false);
   const [error, setError] = useState(""), [sectionError, setSectionError] = useState(""), [feedback, setFeedback] = useState(""), [selected, setSelected] = useState<Set<number>>(new Set()), [teamQuery, setTeamQuery] = useState("");

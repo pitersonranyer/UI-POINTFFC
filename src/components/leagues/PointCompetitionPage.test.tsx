@@ -2,6 +2,7 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PointCompetitionPage } from "./PointCompetitionPage";
+import CompetitionRoute from "@/app/competicoes/page";
 import { ApiError } from "@/services/apiClient";
 import { pointLeagueService, type EnrollmentBatchResult, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
 import { teamService } from "@/services/teamService";
@@ -10,7 +11,7 @@ const state = vi.hoisted(() => ({ authenticated: false, push: vi.fn(), refreshWa
 vi.mock("@/contexts/WalletContext", () => ({ useWallet: () => ({ wallet: state.wallet, isLoading: false, error: null, refreshWallet: state.refreshWallet }) }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: state.authenticated, isLoading: false }) }));
 vi.mock("@/hooks/useCartolaDashboard", () => ({ useCartolaDashboard: () => ({ dashboard: { mercado: { rodada_atual: 27, status_mercado: 1, bola_rolando: false, fechamento: { timestamp: Math.floor(Date.now() / 1000) + 172800 } }, rodada: 27, mercadoAberto: true, bolaRolando: false, partidas: [], clubes: {} }, loading: false, error: null, atualizar: state.refreshMarket }) }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: state.push }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: state.push }), useSearchParams: () => new URLSearchParams("id=42&aba=ranking") }));
 vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { summary: vi.fn(), myEntries: vi.fn(), participants: vi.fn(), ranking: vi.fn(), enrollBatch: vi.fn() }, blockMessages: { LIMITE_TIMES_USUARIO_ATINGIDO: "Você já atingiu o limite de times desta competição." } }));
 vi.mock("@/services/teamService", () => ({ teamService: { buscarMeusTimes: vi.fn(), buscarTimesPorIds: vi.fn(), importarMeusTimes: vi.fn() } }));
 const entry: Entry = { id: 7, timeIdCartola: 123, nomeTime: "Meu FC", nomeCartoleiro: "Ana", escudoUrl: null, pontuacao: null, posicao: null, posicaoAnterior: null };
@@ -46,6 +47,15 @@ async function preparePaid() {
   fireEvent.click(screen.getByRole("button", { name: /Inscrever 2 times/ }));
 }
 const confirmBatch = () => fireEvent.click(screen.getByRole("button", { name: /CONFIRMAR INSCRIÇÃO/ }));
+
+it.each(["INSCRICOES_ENCERRADAS", "ENCERRADA"])("abre ranking existente a partir do card %s", async (status) => {
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, competicao: { ...summary.competicao, status } });
+  render(<CompetitionRoute />);
+  expect(await screen.findByText("Rival FC")).toBeTruthy();
+  expect(pointLeagueService.ranking).toHaveBeenCalledWith(42);
+  expect(screen.getByRole("heading", { name: "Ranking" })).toBeTruthy();
+  expect(pointLeagueService.enrollBatch).not.toHaveBeenCalled();
+});
 
 it("PAGO mostra saldo real e envia uma compra para todos os times", async () => {
   await preparePaid();

@@ -10,7 +10,7 @@ describe("POINT FFC API", () => {
     fetchMock.mockResolvedValueOnce({ nome: "POINT FFC" }).mockResolvedValueOnce([]);
     await pointLeagueService.league(); await pointLeagueService.competitions();
     expect(fetchMock).toHaveBeenNthCalledWith(1, "/ligas/point-ffc");
-    expect(fetchMock).toHaveBeenNthCalledWith(2, "/ligas/point-ffc/competicoes?modalidade=RODADA");
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/ligas/point-ffc/competicoes?modalidade=RODADA", { cache: "no-store" });
   });
   it("loads public and authenticated summaries separately", async () => {
     await pointLeagueService.summary(5, false); await pointLeagueService.summary(5, true);
