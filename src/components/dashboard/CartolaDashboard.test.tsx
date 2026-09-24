@@ -8,6 +8,7 @@ import { magoRodada28 } from "@/data/mago/rodada28";
 import { buscarJogosHoje } from "@/services/futebolService";
 
 vi.mock("@/services/futebolService", () => ({ buscarJogosHoje: vi.fn().mockResolvedValue({ total: 0, jogos: [] }) }));
+vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { competitions: vi.fn().mockResolvedValue([]) } }));
 
 vi.mock("@/hooks/useCartolaDashboard");
 vi.mock("@/components/matches/FutebolMatches", () => ({ FutebolMatches: () => <section>Partidas da API</section> }));
