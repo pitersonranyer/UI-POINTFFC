@@ -21,7 +21,8 @@ it("renderiza o card compacto com dados reais e abre a competição escolhida", 
   expect(await screen.findByText("12")).toBeTruthy();
   expect(screen.getByText("Rodada 27")).toBeTruthy();
   expect(screen.getByText("Inscrições abertas")).toBeTruthy();
-  expect(screen.getByText("Grátis")).toBeTruthy();
+  expect(screen.getByText("GRÁTIS")).toBeTruthy();
+  expect(screen.queryByText("por time")).toBeNull();
   expect(screen.getByText("Até 30/09")).toBeTruthy();
   expect(screen.getByText("20:59")).toBeTruthy();
   expect(screen.getByText("Até 30")).toBeTruthy();
@@ -36,6 +37,18 @@ it("mostra lista vazia sem criar competições fictícias", async () => {
   render(<PointLeaguePage />);
   expect(await screen.findByText("Nenhuma competição disponível nesta rodada.")).toBeTruthy();
   expect(pointLeagueService.summary).not.toHaveBeenCalled();
+});
+
+it.each([[10, "R$ 10,00"], [1234.56, "R$ 1.234,56"], [0, "R$ 0,00"]])("exibe entrada paga com valor real %s em pt-BR e indicação por time", async (valorInscricao, formatted) => {
+  vi.mocked(pointLeagueService.competitions).mockResolvedValue([{ ...competition, tipoAcesso: "PAGO", valorInscricao }]);
+  render(<PointLeaguePage />);
+  expect(await screen.findByText(formatted)).toBeTruthy();
+  expect(screen.getByText("por time")).toBeTruthy();
+  expect(screen.queryByText("PAGO")).toBeNull();
+  expect(screen.queryByText("GRÁTIS")).toBeNull();
+  expect(await screen.findByText("12")).toBeTruthy();
+  expect(screen.getByText("Até 30/09")).toBeTruthy();
+  expect(screen.getByText("Até 30")).toBeTruthy();
 });
 it("mostra erro da API e permite tentar novamente", async () => {
   vi.mocked(pointLeagueService.league).mockRejectedValueOnce(new Error("Liga offline"));

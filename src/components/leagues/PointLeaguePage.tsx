@@ -73,7 +73,7 @@ export function PointLeaguePage() {
             return <Link href={`/competicoes?id=${item.id}`} className={styles.card} aria-label={`Abrir competição ${competitionDisplayName(item)}`} key={item.id}>
               <div className={styles.cardHeading}><span className={styles.cardIcon}><Trophy aria-hidden="true" /></span><div className={styles.cardIdentity}><h3>{competitionDisplayName(item)}</h3><p>{item.descricao || "Competição oficial da rodada"}</p></div><span className={`${styles.status} ${isOpen ? styles.open : ""}`}><i />{competitionStatusLabel(item.status)}</span><ChevronRight className={styles.chevron} aria-hidden="true" /></div>
               <div className={styles.metrics}>
-                <div><Gift aria-hidden="true" /><span><small>Entrada</small><strong>{item.tipoAcesso === "FREE" ? "Grátis" : item.tipoAcesso}</strong></span></div>
+                <div><Gift aria-hidden="true" /><span><small>Entrada</small><strong>{item.tipoAcesso === "FREE" ? "GRÁTIS" : item.valorInscricao.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>{item.tipoAcesso === "PAGO" && <em>por time</em>}</span></div>
                 <div><Users aria-hidden="true" /><span><small>Inscritos</small><strong>{summary?.inscritos.quantidade ?? item.quantidadeInscritos ?? "—"}</strong></span></div>
                 <div><CalendarDays aria-hidden="true" /><span><small>Inscrições até</small><strong>{registrationDeadline ? `Até ${registrationDeadline.date}` : "Não informado"}</strong>{registrationDeadline && <em>{registrationDeadline.time}</em>}</span></div>
                 <div><UserRound aria-hidden="true" /><span><small>Limite</small><strong>{limit == null ? "Sem limite" : `Até ${limit}`}</strong><em>times por usuário</em></span></div>
