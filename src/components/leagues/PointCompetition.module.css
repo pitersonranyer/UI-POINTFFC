@@ -89,18 +89,20 @@
 .prizeIntro .panelTitle{margin-bottom:10px}
 .prizeIntro h3{margin:0 0 4px;font-size:18px}
 .prizeIntro p{margin:0}
-.prizeTotal{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 20px 14px;padding:13px 15px;border:1px solid #ddc77f;border-radius:11px;background:linear-gradient(120deg,#191919,#302b21);color:#fff;box-shadow:0 5px 14px #15151518}
-.prizeTotal span{color:#d8bd70;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.prizeTotal{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin:0 20px 14px;padding:13px 15px;border:1px solid #ddc77f;border-radius:8px;background:linear-gradient(120deg,#191919,#302b21);color:#fff;box-shadow:0 5px 14px #15151518}
+.prizeTotal span{color:#d8bd70;font-size:9px;font-weight:900;letter-spacing:0;text-transform:uppercase}
 .prizeTotal strong{font-size:20px;white-space:nowrap}
 .prizePodium{display:grid;gap:7px;padding:0 20px 12px}
 .prizeRow,.prizeListRow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
-.prizeRow{min-height:48px;padding:8px 12px;border:1px solid #e7e1d2;border-radius:10px;background:#faf9f6}
+.prizeRow{min-height:48px;padding:8px 12px;border:1px solid #e7e1d2;border-radius:8px;background:#faf9f6}
 .prizeTier1{border-color:#d5b34e;background:linear-gradient(100deg,#fff8dc,#fffdf7);box-shadow:inset 3px 0 #d4af37}
 .prizeTier2{border-color:#d6d7d8;background:linear-gradient(100deg,#f4f5f5,#fcfcfb);box-shadow:inset 3px 0 #aeb2b5}
 .prizeTier3{border-color:#dec0a2;background:linear-gradient(100deg,#fbf0e6,#fffaf6);box-shadow:inset 3px 0 #b67a45}
 .prizePlace{display:flex;align-items:center;gap:8px;min-width:0;color:#292929;font-size:12px}
 .prizePlace>span{font-size:18px;line-height:1}
 .prizeValue{margin-left:auto;color:#181818;font-size:14px;white-space:nowrap}
+.prizeAmount{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:flex-end;gap:2px 8px;min-width:0;margin-left:auto}
+.prizePercent{color:#737373;font-size:10px;font-weight:400;white-space:nowrap}
 .prizeCompactList{margin:0 20px;border-top:1px solid #ebe8e1}
 .prizeListRow{min-height:39px;padding:6px 4px;border-bottom:1px solid #ebe8e1}
 .prizeListRow .prizePlace{padding-left:4px}

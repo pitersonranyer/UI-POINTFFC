@@ -28,30 +28,30 @@ const position = (value: number | null) => value === null ? "—" : `${value}º`
 const message = (error: unknown) => error instanceof Error ? error.message : "Não foi possível carregar os dados.";
 const prizePosition = (prize: Prize) => prize.posicaoInicio === prize.posicaoFim ? `${prize.posicaoInicio}º lugar` : `${prize.posicaoInicio}º ao ${prize.posicaoFim}º lugar`;
 const prizeValue = (prize: Prize) => {
+  if (prize.valorCalculado != null) return money(Number(prize.valorCalculado));
   if (prize.tipoPremiacao === "VALOR_FIXO" && prize.valor !== null) return money(prize.valor);
-  if (prize.tipoPremiacao === "PERCENTUAL" && prize.percentual !== null) return `${prize.percentual.toLocaleString("pt-BR")}% do prêmio`;
-  return "Prêmio definido";
+  return "—";
 };
 const prizeTier = (prize: Prize) => prize.posicaoInicio <= 3 && prize.posicaoFim >= prize.posicaoInicio ? prize.posicaoInicio : null;
-function Prizes({ prizes, roundLabel }: { prizes: Prize[]; roundLabel: number | string | null | undefined }) {
+function Prizes({ prizes, total, roundLabel }: { prizes: Prize[]; total: string | null | undefined; roundLabel: number | string | null | undefined }) {
   if (!prizes.length) return <section className={`${styles.panel} ${styles.prizePanel}`}><div className={styles.panelTitle}><Gift aria-hidden="true" /><h2>Premiações</h2></div><div className={styles.prizeEmpty}><Gift aria-hidden="true" /><p>Premiação ainda não definida.</p></div></section>;
-  const total = prizes.reduce((sum, prize) => prize.tipoPremiacao === "VALOR_FIXO" && prize.valor !== null && Number.isFinite(prize.valor) ? sum + prize.valor * Math.max(1, prize.posicaoFim - prize.posicaoInicio + 1) : sum, 0);
-  const top = prizes.filter((prize) => prizeTier(prize) !== null);
-  const remaining = prizes.filter((prize) => prizeTier(prize) === null);
+  const positions = prizes.flatMap((prize) => Array.from({ length: Math.max(0, prize.posicaoFim - prize.posicaoInicio + 1) }, (_, index) => ({ ...prize, posicaoInicio: prize.posicaoInicio + index, posicaoFim: prize.posicaoInicio + index })));
+  const top = positions.filter((prize) => prizeTier(prize) !== null);
+  const remaining = positions.filter((prize) => prizeTier(prize) === null);
   const row = (prize: Prize, featured: boolean) => {
     const tier = prizeTier(prize);
     const medal = tier === 1 ? "🥇" : tier === 2 ? "🥈" : tier === 3 ? "🥉" : null;
-    return <div className={featured ? `${styles.prizeRow} ${styles[`prizeTier${tier}`]}` : styles.prizeListRow} data-prize-tier={tier ?? "standard"} key={prize.ordem}>
+    return <div className={featured ? `${styles.prizeRow} ${styles[`prizeTier${tier}`]}` : styles.prizeListRow} data-prize-tier={tier ?? "standard"} key={`${prize.ordem}-${prize.posicaoInicio}`}>
       <span className={styles.prizePlace}>{medal && <span aria-hidden="true">{medal}</span>}<strong>{prizePosition(prize)}</strong></span>
-      <strong className={styles.prizeValue}>{prizeValue(prize)}</strong>
+      <span className={styles.prizeAmount}><strong className={styles.prizeValue}>{prizeValue(prize)}</strong>{prize.tipoPremiacao === "PERCENTUAL" && prize.percentual !== null && <small className={styles.prizePercent}>{prize.percentual.toLocaleString("pt-BR")}%</small>}</span>
     </div>;
   };
   return <section className={`${styles.panel} ${styles.prizePanel}`}>
     <div className={styles.prizeIntro}><div className={styles.panelTitle}><Gift aria-hidden="true" /><h2>Premiações</h2></div><h3>{roundLabel !== null && roundLabel !== undefined ? `Premiação da Rodada ${roundLabel}` : "Premiação da competição"}</h3><p>Os melhores colocados recebem os prêmios definidos para esta competição.</p></div>
-    <div className={styles.prizeTotal}><span>Total em prêmios</span><strong>{money(total)}</strong></div>
+    <div className={styles.prizeTotal}><span>Premiação em disputa</span><strong>{total == null ? "—" : money(Number(total))}</strong></div>
     {top.length > 0 && <div className={styles.prizePodium}>{top.map((prize) => row(prize, true))}</div>}
     {remaining.length > 0 && <div className={styles.prizeCompactList}>{remaining.map((prize) => row(prize, false))}</div>}
-    <p className={styles.prizeNote}>A premiação é distribuída conforme a posição final na competição.</p>
+    <p className={styles.prizeNote}>Valores atualizados conforme o número de times inscritos.</p>
   </section>;
 }
 function Entries({ entries, ownIds = new Set<number>(), ranking = false }: { entries: (Entry | RankingEntry)[]; ownIds?: Set<number>; ranking?: boolean }) {
@@ -80,6 +80,25 @@ export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: 
   useEffect(() => { if (authLoading) return; let active = true; setLoading(true); setError(""); pointLeagueService.summary(id, isAuthenticated).then((data) => { if (active) setSummary(data); }).catch((e) => { if (active) setError(message(e)); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [id, isAuthenticated, authLoading]);
   const loadTab = useCallback(async (current: Tab) => { setSectionLoading(true); setSectionError(""); try { if (current === "Meus times" && isAuthenticated) setEntries(await pointLeagueService.myEntries(id)); if (current === "Ranking") setRanking((await pointLeagueService.ranking(id)).ranking); } catch (e) { setSectionError(message(e)); } finally { setSectionLoading(false); } }, [id, isAuthenticated]);
   useEffect(() => { if (!summary) return; void loadTab(tab); }, [tab, summary, loadTab]);
+  useEffect(() => {
+    if (tab !== "Premiações" || authLoading) return;
+    let active = true;
+    let pending = false;
+    const refresh = async () => {
+      if (pending || document.visibilityState === "hidden") return;
+      pending = true;
+      try {
+        const data = await pointLeagueService.summary(id, isAuthenticated);
+        if (active) { setSummary(data); setRefreshWarning(""); }
+      } catch {
+        if (active) setRefreshWarning("Não foi possível atualizar a premiação. Os valores exibidos podem estar desatualizados.");
+      } finally { pending = false; }
+    };
+    void refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { active = false; window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [tab, id, isAuthenticated, authLoading]);
   const resetEnrollmentModal = () => { setSelected(new Set()); setTeamQuery(""); setImporting(false); setConfirming(false); setImportText(""); setImportFeedback(""); };
   const competition = summary?.competicao;
   const entryValue = price ?? (competition?.tipoAcesso === "FREE" ? 0 : competition?.valorInscricao ?? 0);
@@ -184,7 +203,7 @@ export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: 
             </div>
           </section>
         </div>}
-        {tab === "Premiações" && <Prizes prizes={summary.premiacao} roundLabel={roundLabel} />}
+        {tab === "Premiações" && <Prizes prizes={summary.premiacao} total={summary.premiacaoEmDisputa} roundLabel={roundLabel} />}
         {tab === "Meus times" && !isAuthenticated ? <section className={styles.panel}><p>Entre para acompanhar seus times inscritos.</p><Link href="/login">Fazer login</Link></section> : null}
         {sectionError && <p role="alert" className={styles.error}>{sectionError}</p>}
         {sectionLoading && ["Meus times", "Ranking"].includes(tab) ? <p role="status" className={styles.sectionLoading}>Carregando...</p> : tab === "Meus times" && isAuthenticated ? <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Meus times</h2></div>{entries.length ? <Entries entries={entries} /> : <p className={styles.empty}>Você ainda não inscreveu times nesta competição.</p>}</section> : tab === "Ranking" ? <section className={styles.panel}><div className={styles.heading}><div><h2>Ranking</h2>{roundLabel !== null && roundLabel !== undefined && <p>Rodada {roundLabel}</p>}</div><button type="button" onClick={() => void loadTab("Ranking")}><RefreshCw size={15} aria-hidden="true" />Atualizar</button></div><Entries entries={ranking} ownIds={ownIds} ranking /></section> : null}

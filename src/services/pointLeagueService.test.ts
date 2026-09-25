@@ -14,8 +14,8 @@ describe("POINT FFC API", () => {
   });
   it("loads public and authenticated summaries separately", async () => {
     await pointLeagueService.summary(5, false); await pointLeagueService.summary(5, true);
-    expect(fetchMock).toHaveBeenNthCalledWith(1, "/competicoes/5/resumo", { authenticated: false });
-    expect(fetchMock).toHaveBeenNthCalledWith(2, "/competicoes/5/resumo", { authenticated: true });
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "/competicoes/5/resumo", { authenticated: false, cache: "no-store" });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/competicoes/5/resumo", { authenticated: true, cache: "no-store" });
   });
   it("sends all selected Cartola team IDs in one enrollment request", async () => {
     await pointLeagueService.enroll(5, [123, 456]);

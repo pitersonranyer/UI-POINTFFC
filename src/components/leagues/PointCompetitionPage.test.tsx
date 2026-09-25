@@ -1,4 +1,6 @@
 import React from "react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PointCompetitionPage } from "./PointCompetitionPage";
@@ -195,7 +197,7 @@ it("mostra resumo autenticado e estado vazio de premiação", async () => {
   expect(screen.getByText("Premiação ainda não definida.")).toBeTruthy();
 });
 it("apresenta premiações reais em moeda, destaca o Top 3 e mantém as demais compactas", async () => {
-  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, competicao: { ...summary.competicao, rodadaInicio: 31, rodadaFim: 31 }, premiacao: [
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, premiacaoEmDisputa: "860.00", competicao: { ...summary.competicao, rodadaInicio: 31, rodadaFim: 31 }, premiacao: [
     { posicaoInicio: 1, posicaoFim: 1, tipoPremiacao: "VALOR_FIXO", valor: 350, percentual: null, ordem: 1 },
     { posicaoInicio: 2, posicaoFim: 2, tipoPremiacao: "VALOR_FIXO", valor: 200, percentual: null, ordem: 2 },
     { posicaoInicio: 3, posicaoFim: 3, tipoPremiacao: "VALOR_FIXO", valor: 150, percentual: null, ordem: 3 },
@@ -210,9 +212,69 @@ it("apresenta premiações reais em moeda, destaca o Top 3 e mantém as demais c
   expect(screen.getByText("R$ 350,00").closest('[data-prize-tier="1"]')).toBeTruthy();
   expect(screen.getByText("R$ 200,00").closest('[data-prize-tier="2"]')).toBeTruthy();
   expect(screen.getByText("R$ 150,00").closest('[data-prize-tier="3"]')).toBeTruthy();
-  expect(screen.getByText("R$ 80,00").closest('[data-prize-tier="standard"]')).toBeTruthy();
-  expect(screen.getByText("10% do prêmio")).toBeTruthy();
+  expect(screen.getAllByText("R$ 80,00")).toHaveLength(2);
+  expect(screen.getByText("4º lugar").closest('[data-prize-tier="standard"]')).toBeTruthy();
+  expect(screen.getByText("5º lugar")).toBeTruthy();
+  expect(screen.getByText("10%")).toBeTruthy();
 });
+it.each([
+  ["160.00", ["48.00", "28.80", "19.20", "14.40", "11.20"], ["48,00", "28,80", "19,20", "14,40", "11,20"]],
+  ["1.60", ["0.48", "0.29", "0.19", "0.14", "0.11"], ["0,48", "0,29", "0,19", "0,14", "0,11"]],
+])("exibe valores do backend em pt-BR sobre base %s", async (base, calculados, exibidos) => {
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, premiacaoEmDisputa: base, premiacao:
+    [30, 18, 12, 9, 7].map((percentual, index) => ({ posicaoInicio: index + 1, posicaoFim: index + 1,
+      tipoPremiacao: "PERCENTUAL", valor: null, percentual, ordem: index, valorCalculado: calculados[index] })) });
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Premiações" }));
+  expect(screen.getByText("Premiação em disputa")).toBeTruthy();
+  exibidos.forEach((valor, index) => {
+    const row = screen.getByText(`${index + 1}º lugar`).closest("[data-prize-tier]")!;
+    expect(within(row as HTMLElement).getByText(`R$ ${valor}`).tagName).toBe("STRONG");
+    expect(row.getAttribute("data-prize-tier")).toBe(index < 3 ? String(index + 1) : "standard");
+  });
+  expect(screen.getByText("18%").tagName).toBe("SMALL");
+  expect(screen.queryByText(/% do prêmio|% da premiação|Total em prêmios/)).toBeNull();
+  expect(screen.getByText("Valores atualizados conforme o número de times inscritos.")).toBeTruthy();
+});
+
+it("atualiza ao abrir Premiações e retornar a janela, sem calcular valores localmente", async () => {
+  const prize = { posicaoInicio: 1, posicaoFim: 1, tipoPremiacao: "PERCENTUAL", valor: null, percentual: 30, ordem: 1, valorCalculado: "0.00" };
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, premiacaoEmDisputa: "0.00", premiacao: [prize] });
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Premiações" }));
+  await waitFor(() => expect(pointLeagueService.summary).toHaveBeenCalledTimes(2));
+  expect(screen.getAllByText("R$ 0,00")).toHaveLength(2);
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, inscritos: { quantidade: 2 }, premiacaoEmDisputa: "1234.56", premiacao: [{ ...prize, valorCalculado: "370.37" }] });
+  fireEvent.focus(window);
+  expect(await screen.findByText("R$ 370,37")).toBeTruthy();
+  expect(screen.getByText("R$ 1.234,56")).toBeTruthy();
+  expect(pointLeagueService.summary).toHaveBeenCalledTimes(3);
+});
+
+it("falha de atualizacao preserva valores e avisa que podem estar desatualizados", async () => {
+  vi.mocked(pointLeagueService.summary).mockResolvedValueOnce({ ...summary, premiacaoEmDisputa: "10.00", premiacao: [
+    { posicaoInicio: 1, posicaoFim: 1, tipoPremiacao: "VALOR_FIXO", valor: 10, percentual: null, ordem: 1, valorCalculado: "10.00" },
+  ] }).mockRejectedValue(new Error("offline"));
+  await open(); fireEvent.click(screen.getByRole("button", { name: "Premiações" }));
+  expect(await screen.findByText(/Os valores exibidos podem estar desatualizados/)).toBeTruthy();
+  expect(screen.getAllByText("R$ 10,00")).toHaveLength(2);
+});
+
+it("mantem estrutura responsiva: moeda inteira, percentual secundario e linhas compactas", () => {
+  const style = document.createElement("style");
+  style.textContent = readFileSync(resolve("src/components/leagues/PointCompetition.module.css"), "utf8");
+  document.head.append(style);
+  try {
+    const rules = Array.from(style.sheet!.cssRules).filter((rule): rule is CSSStyleRule => "selectorText" in rule);
+    const rule = (selector: string) => rules.find(item => item.selectorText === selector)!.style;
+    expect(rule(".prizeValue").getPropertyValue("white-space")).toBe("nowrap");
+    expect(rule(".prizeTotal").getPropertyValue("flex-wrap")).toBe("wrap");
+    expect(rule(".prizeAmount").getPropertyValue("flex-wrap")).toBe("wrap");
+    expect(rule(".prizeAmount").getPropertyValue("min-width")).toBe("0");
+    expect(parseFloat(rule(".prizePercent").getPropertyValue("font-size")))
+      .toBeLessThan(parseFloat(rule(".prizeValue").getPropertyValue("font-size")));
+    expect(parseFloat(rule(".prizeListRow").getPropertyValue("min-height"))).toBeLessThanOrEqual(40);
+  } finally { style.remove(); }
+});
+
 it("abre modal, seleciona time vinculado, inscreve FREE e atualiza resumo", async () => {
   state.authenticated = true; vi.mocked(pointLeagueService.summary).mockResolvedValueOnce(member).mockResolvedValue({ ...member, inscritos: { quantidade: 2 }, usuario: { ...member.usuario!, quantidadeTimesInscritos: 1 }, minhasInscricoes: [entry] });
   await open(); fireEvent.click(screen.getByRole("button", { name: "Inscreva seu time" }));

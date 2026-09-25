@@ -2,12 +2,12 @@ import { apiFetch } from "@/services/apiClient";
 
 export interface PointLeague { id: number; nome: string; slug: string; descricao: string | null; imagemUrl: string | null; modalidades: { codigo: string; nome: string }[] }
 export interface Competition { id: number; nome: string; slug: string; descricao: string | null; tipoAcesso: string; valorInscricao: number; rodadaInicio: number | null; rodadaFim: number | null; inicioInscricao: string | null; fimInscricao: string | null; limiteTimesUsuario: number | null; limiteParticipantes: number | null; status: string; quantidadeInscritos?: number; premiacao?: Prize[] }
-export interface Prize { posicaoInicio: number; posicaoFim: number; tipoPremiacao: string; valor: number | null; percentual: number | null; ordem: number }
+export interface Prize { posicaoInicio: number; posicaoFim: number; tipoPremiacao: string; valor: number | null; percentual: number | null; ordem: number; valorCalculado?: string | null }
 // Campo derivado da listagem; opcional durante a atualizacao do backend.
 export interface CompetitionCard extends Competition { premiacaoEmDisputa?: string | null }
 export interface Entry { id: number; timeIdCartola?: number; nomeTime: string; nomeCartoleiro: string | null; escudoUrl: string | null; pontuacao: number | null; posicao: number | null; posicaoAnterior: number | null }
 export interface RankingEntry extends Entry { inscricaoId: number; timeIdCartola: number; capitao?: { atletaId?: number; apelido: string; fotoUrl?: string | null } | null }
-export interface CompetitionSummary { competicao: Competition; liga: Pick<PointLeague, "id" | "nome" | "slug" | "imagemUrl">; inscritos: { quantidade: number }; premiacao: Prize[]; usuario?: { quantidadeTimesInscritos: number; limiteTimesUsuario: number | null; podeInscrever: boolean; motivoBloqueio: string | null; melhorPosicaoUsuario: number | null; melhorPontuacaoUsuario: number | null }; minhasInscricoes?: Entry[] }
+export interface CompetitionSummary { competicao: Competition; liga: Pick<PointLeague, "id" | "nome" | "slug" | "imagemUrl">; inscritos: { quantidade: number }; premiacaoEmDisputa?: string | null; premiacao: Prize[]; usuario?: { quantidadeTimesInscritos: number; limiteTimesUsuario: number | null; podeInscrever: boolean; motivoBloqueio: string | null; melhorPosicaoUsuario: number | null; melhorPontuacaoUsuario: number | null }; minhasInscricoes?: Entry[] }
 
 export interface EnrollmentBatchInput { timesCartolaIds: number[]; valorUnitarioEsperado: string }
 export interface EnrollmentBatchResult {
@@ -21,7 +21,7 @@ export const pointLeagueService = {
   league: () => apiFetch<PointLeague>("/ligas/point-ffc"),
   competitions: () => apiFetch<CompetitionCard[]>("/ligas/point-ffc/competicoes?modalidade=RODADA", { cache: "no-store" }),
   competition: (id: number) => apiFetch<Competition>(`/competicoes/${id}`),
-  summary: (id: number, authenticated: boolean) => apiFetch<CompetitionSummary>(`/competicoes/${id}/resumo`, { authenticated }),
+  summary: (id: number, authenticated: boolean) => apiFetch<CompetitionSummary>(`/competicoes/${id}/resumo`, { authenticated, cache: "no-store" }),
   participants: (id: number) => apiFetch<Entry[]>(`/competicoes/${id}/participantes`),
   ranking: (id: number) => apiFetch<{ ranking: RankingEntry[] }>(`/competicoes/${id}/ranking`),
   myEntries: (id: number) => apiFetch<Entry[]>(`/competicoes/${id}/inscricoes/minhas`, { authenticated: true }),
