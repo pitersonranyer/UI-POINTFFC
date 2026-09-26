@@ -9,10 +9,10 @@ import { ApiError } from "@/services/apiClient";
 import { pointLeagueService, type EnrollmentBatchResult, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
 import { teamService } from "@/services/teamService";
 
-const state = vi.hoisted(() => ({ authenticated: false, push: vi.fn(), refreshWallet: vi.fn(), wallet: { saldoDisponivel: "100.00", saldoBloqueado: "0.00", status: "ATIVA" }, refreshMarket: vi.fn() }));
+const state = vi.hoisted(() => ({ marketOpen: true, marketRound: 27, authenticated: false, push: vi.fn(), refreshWallet: vi.fn(), wallet: { saldoDisponivel: "100.00", saldoBloqueado: "0.00", status: "ATIVA" }, refreshMarket: vi.fn() }));
 vi.mock("@/contexts/WalletContext", () => ({ useWallet: () => ({ wallet: state.wallet, isLoading: false, error: null, refreshWallet: state.refreshWallet }) }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: state.authenticated, isLoading: false }) }));
-vi.mock("@/hooks/useCartolaDashboard", () => ({ useCartolaDashboard: () => ({ dashboard: { mercado: { rodada_atual: 27, status_mercado: 1, bola_rolando: false, fechamento: { timestamp: Math.floor(Date.now() / 1000) + 172800 } }, rodada: 27, mercadoAberto: true, bolaRolando: false, partidas: [], clubes: {} }, loading: false, error: null, atualizar: state.refreshMarket }) }));
+vi.mock("@/hooks/useCartolaDashboard", () => ({ useCartolaDashboard: () => ({ dashboard: { mercado: { rodada_atual: 27, status_mercado: 1, bola_rolando: false, fechamento: { timestamp: Math.floor(Date.now() / 1000) + 172800 } }, rodada: state.marketRound, mercadoAberto: state.marketOpen, bolaRolando: false, partidas: [], clubes: {} }, loading: false, error: null, atualizar: state.refreshMarket }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: state.push }), useSearchParams: () => new URLSearchParams("id=42&aba=ranking") }));
 vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { summary: vi.fn(), myEntries: vi.fn(), participants: vi.fn(), ranking: vi.fn(), enrollBatch: vi.fn() }, blockMessages: { LIMITE_TIMES_USUARIO_ATINGIDO: "Você já atingiu o limite de times desta competição." } }));
 vi.mock("@/services/teamService", () => ({ teamService: { buscarMeusTimes: vi.fn(), buscarTimesPorIds: vi.fn(), importarMeusTimes: vi.fn() } }));
@@ -23,6 +23,7 @@ const summary: CompetitionSummary = { competicao: { id: 42, nome: "Disputa 42", 
 const member: CompetitionSummary = { ...summary, usuario: { quantidadeTimesInscritos: 0, limiteTimesUsuario: 2, podeInscrever: true, motivoBloqueio: null, melhorPosicaoUsuario: null, melhorPontuacaoUsuario: null }, minhasInscricoes: [] };
 const batch: EnrollmentBatchResult = { loteId: 1, competicaoId: 42, quantidade: 1, tipoAcesso: "FREE", moeda: "BRL", valorUnitario: "0.00", valorTotal: "0.00", movimentacaoDebitoId: null, saldoDisponivelAposOperacao: null, inscricoes: [{ id: 7, timeIdCartola: 123, statusInscricao: "ATIVA" }] };
 beforeEach(() => {
+  state.marketOpen = true; state.marketRound = 27;
   vi.stubGlobal("React", React);
   state.wallet.saldoDisponivel = "100.00"; state.refreshWallet.mockReset().mockResolvedValue(true);
   state.authenticated = false; state.push.mockReset(); state.refreshMarket.mockReset();
@@ -37,6 +38,43 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const open = async () => { render(<PointCompetitionPage id={42} />); return screen.findByRole("heading", { name: "Disputa 42" }); };
+
+it.each([
+  ["INSCRICOES_ABERTAS", 27, true, false],
+  ["INSCRICOES_ABERTAS", 28, false, false],
+  ["INSCRICOES_ENCERRADAS", 27, true, false],
+  ["INSCRICOES_ENCERRADAS", 27, false, true],
+  ["EM_ANDAMENTO", 27, false, true],
+  ["ENCERRADA", 28, true, true],
+  ["ENCERRADA", 26, false, false],
+  ["CANCELADA", 28, false, false],
+])("liberação para %s, rodada atual %s, mercado aberto %s", async (status, marketRound, marketOpen, revealed) => {
+  state.marketRound = marketRound; state.marketOpen = marketOpen;
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, competicao: { ...summary.competicao, status } });
+  render(<PointCompetitionPage id={42} initialTab="Ranking" />);
+  await screen.findByText("Rival FC");
+  const link = screen.queryByRole("link", { name: "Escalação de Rival FC" });
+  expect(Boolean(link)).toBe(revealed);
+  expect(Boolean(screen.queryByText("Capitão: Arrascaeta"))).toBe(revealed);
+  if (revealed) {
+    expect(link?.getAttribute("href")).toBe("/time?timeId=456&rodada=27");
+    expect(link?.textContent).toMatch(/Rival FC.*Bia.*Capitão: Arrascaeta.*88,50 pts/);
+    expect(link?.querySelectorAll("img")).toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Escalação de Meu FC" }).getAttribute("href")).toBe("/time?timeId=123&rodada=27");
+    expect(within(screen.getByRole("link", { name: "Escalação de Meu FC" })).queryByText(/Capitão:/)).toBeNull();
+  }
+  expect(screen.queryByText(/Ver escalação|Abrir escalação/)).toBeNull();
+  expect(pointLeagueService.ranking).toHaveBeenCalledTimes(1);
+});
+
+it.each([null, 28])("não escolhe rodada arbitrária quando rodadaFim é %s", async (rodadaFim) => {
+  state.marketOpen = false;
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, competicao: { ...summary.competicao, status: "EM_ANDAMENTO", rodadaFim } });
+  render(<PointCompetitionPage id={42} initialTab="Ranking" />);
+  await screen.findByText("Rival FC");
+  expect(screen.queryByRole("link", { name: "Escalação de Rival FC" })).toBeNull();
+  expect(screen.queryByText(/Capitão:/)).toBeNull();
+});
 async function preparePaid() {
   state.authenticated = true;
   vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...member, competicao: { ...member.competicao, tipoAcesso: "PAGO", valorInscricao: 10 } });
@@ -338,8 +376,8 @@ it("mostra ranking na ordem da API, posição, cartoleiro, pontuação, destaque
   expect(await screen.findByText("Rival FC")).toBeTruthy();
   expect(screen.getByText("1º")).toBeTruthy();
   expect(screen.getByText("Bia")).toBeTruthy();
-  expect(within(screen.getByText("Rival FC").closest("article")!).getByText("Arrascaeta")).toBeTruthy();
-  expect(within(screen.getByText("Rival FC").closest("article")!).getByText("C")).toBeTruthy();
+  expect(screen.queryByText(/Arrascaeta/)).toBeNull();
+  expect(screen.queryByRole("link", { name: "Escalação de Rival FC" })).toBeNull();
   expect(within(screen.getByText("Meu FC").closest("article")!).queryByText("C")).toBeNull();
   expect(screen.getByText("88,50 pts")).toBeTruthy();
   expect(screen.getByText("Seu time").closest("article")?.className).toContain("own");

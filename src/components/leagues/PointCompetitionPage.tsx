@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarDays, Clock3, Download, Gift, Home, Loader2, Plus, RefreshCw, Search, Shield, Trophy, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, ChevronRight, Clock3, Download, Gift, Home, Loader2, Plus, RefreshCw, Search, Shield, Trophy, Users } from "lucide-react";
 import { useWallet } from "@/contexts/WalletContext";
 import { AddBalanceModal } from "@/components/wallet/AddBalanceModal";
 import { ApiError } from "@/services/apiClient";
@@ -54,9 +54,28 @@ function Prizes({ prizes, total, roundLabel }: { prizes: Prize[]; total: string 
     <p className={styles.prizeNote}>Valores atualizados conforme o número de times inscritos.</p>
   </section>;
 }
-function Entries({ entries, ownIds = new Set<number>(), ranking = false }: { entries: (Entry | RankingEntry)[]; ownIds?: Set<number>; ranking?: boolean }) {
+function Entries({ entries, ownIds = new Set<number>(), ranking = false, lineupRound }: { entries: (Entry | RankingEntry)[]; ownIds?: Set<number>; ranking?: boolean; lineupRound?: number }) {
   if (!entries.length) return <p className={styles.empty}>{ranking ? "Nenhum time inscrito nesta competição." : "Nenhum time encontrado."}</p>;
-  return <div className={styles.entries}>{entries.map((entry) => { const own = ownIds.has(entry.id) || ("inscricaoId" in entry && ownIds.has(entry.inscricaoId)); return <article className={`${styles.entry} ${own ? styles.own : ""}`} key={entry.id ?? (entry as RankingEntry).inscricaoId}><strong className={styles.position}>{position(entry.posicao)}</strong>{entry.escudoUrl ? <img src={entry.escudoUrl} alt="" /> : <span className={styles.shieldPlaceholder}><Shield size={19} aria-hidden="true" /></span>}<div className={styles.teamName}><strong>{entry.nomeTime}{own && <span className={styles.ownBadge}>Seu time</span>}</strong>{ranking && "capitao" in entry && entry.capitao && <span className={styles.captain}><b>C</b>{entry.capitao.apelido}</span>}<small>{entry.nomeCartoleiro ?? "Cartoleiro não informado"}</small></div><span className={styles.score}>{entry.pontuacao === null ? ranking ? "—" : "Sem pontuação" : `${score(entry.pontuacao)} pts`}</span></article>; })}</div>;
+  return <div className={styles.entries}>{entries.map((entry) => {
+    const own = ownIds.has(entry.id) || ("inscricaoId" in entry && ownIds.has(entry.inscricaoId));
+    const linked = ranking && lineupRound !== undefined && Number.isSafeInteger(entry.timeIdCartola) && entry.timeIdCartola! > 0;
+    const className = `${styles.entry} ${own ? styles.own : ""}`;
+    const content = <>
+      <strong className={styles.position}>{position(entry.posicao)}</strong>
+      {entry.escudoUrl ? <img src={entry.escudoUrl} alt="" /> : <span className={styles.shieldPlaceholder}><Shield size={19} aria-hidden="true" /></span>}
+      <div className={styles.teamName}>
+        <strong>{entry.nomeTime}{own && <span className={styles.ownBadge}>Seu time</span>}</strong>
+        <small>{entry.nomeCartoleiro ?? "Cartoleiro não informado"}</small>
+        {ranking && lineupRound !== undefined && "capitao" in entry && entry.capitao && <span className={styles.captain}><span aria-hidden="true">👑</span><span>Capitão: {entry.capitao.apelido}</span></span>}
+      </div>
+      <span className={styles.score}>{entry.pontuacao === null ? ranking ? "—" : "Sem pontuação" : `${score(entry.pontuacao)} pts`}</span>
+      {linked && <ChevronRight className={styles.entryChevron} size={14} aria-hidden="true" />}
+    </>;
+    const key = entry.id ?? (entry as RankingEntry).inscricaoId;
+    return linked
+      ? <Link key={key} className={`${className} ${styles.entryLink}`} data-position={entry.posicao} href={`/time?timeId=${entry.timeIdCartola}&rodada=${lineupRound}`} aria-label={`Escalação de ${entry.nomeTime}`}>{content}</Link>
+      : <article key={key} className={className}>{content}</article>;
+  })}</div>;
 }
 export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: number; initialTab?: "Visão geral" | "Ranking" }) {
   const router = useRouter();
@@ -101,6 +120,12 @@ export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: 
   }, [tab, id, isAuthenticated, authLoading]);
   const resetEnrollmentModal = () => { setSelected(new Set()); setTeamQuery(""); setImporting(false); setConfirming(false); setImportText(""); setImportFeedback(""); };
   const competition = summary?.competicao;
+  const competitionRound = competition?.rodadaInicio;
+  const lineupRound = competitionRound != null && Number.isInteger(competitionRound) && competitionRound >= 1 && competitionRound <= 38
+    && competitionRound === competition?.rodadaFim
+    && ["INSCRICOES_ENCERRADAS", "EM_ANDAMENTO", "ENCERRADA"].includes(competition.status)
+    && dashboard && (competitionRound < dashboard.rodada || (competitionRound === dashboard.rodada && !dashboard.mercadoAberto))
+    ? competitionRound : undefined;
   const entryValue = price ?? (competition?.tipoAcesso === "FREE" ? 0 : competition?.valorInscricao ?? 0);
   const enrollmentTotal = selected.size * Math.round(entryValue * 100) / 100;
   const paid = competition?.tipoAcesso === "PAGO" || entryValue > 0;
@@ -206,7 +231,7 @@ export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: 
         {tab === "Premiações" && <Prizes prizes={summary.premiacao} total={summary.premiacaoEmDisputa} roundLabel={roundLabel} />}
         {tab === "Meus times" && !isAuthenticated ? <section className={styles.panel}><p>Entre para acompanhar seus times inscritos.</p><Link href="/login">Fazer login</Link></section> : null}
         {sectionError && <p role="alert" className={styles.error}>{sectionError}</p>}
-        {sectionLoading && ["Meus times", "Ranking"].includes(tab) ? <p role="status" className={styles.sectionLoading}>Carregando...</p> : tab === "Meus times" && isAuthenticated ? <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Meus times</h2></div>{entries.length ? <Entries entries={entries} /> : <p className={styles.empty}>Você ainda não inscreveu times nesta competição.</p>}</section> : tab === "Ranking" ? <section className={styles.panel}><div className={styles.heading}><div><h2>Ranking</h2>{roundLabel !== null && roundLabel !== undefined && <p>Rodada {roundLabel}</p>}</div><button type="button" onClick={() => void loadTab("Ranking")}><RefreshCw size={15} aria-hidden="true" />Atualizar</button></div><Entries entries={ranking} ownIds={ownIds} ranking /></section> : null}
+        {sectionLoading && ["Meus times", "Ranking"].includes(tab) ? <p role="status" className={styles.sectionLoading}>Carregando...</p> : tab === "Meus times" && isAuthenticated ? <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Meus times</h2></div>{entries.length ? <Entries entries={entries} /> : <p className={styles.empty}>Você ainda não inscreveu times nesta competição.</p>}</section> : tab === "Ranking" ? <section className={styles.panel}><div className={styles.heading}><div><h2>Ranking</h2>{roundLabel !== null && roundLabel !== undefined && <p>Rodada {roundLabel}</p>}</div><button type="button" onClick={() => void loadTab("Ranking")}><RefreshCw size={15} aria-hidden="true" />Atualizar</button></div><Entries entries={ranking} ownIds={ownIds} ranking lineupRound={lineupRound} /></section> : null}
         {modal && !pixOpen && <Dialog title="Inscrever times" close={() => { if (!running.current) { setModal(false); if (!attempt.current) resetEnrollmentModal(); } }} wide busy={busy}>
           {confirming ? <div className={styles.confirmation}>
             <Shield aria-hidden="true" /><h3>Confirmar inscrição</h3><p>Você está prestes a inscrever {selected.size} {selected.size === 1 ? "time" : "times"} nesta competição.</p>

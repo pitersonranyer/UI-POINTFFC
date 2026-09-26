@@ -79,6 +79,14 @@
 .score{margin-left:auto;font-weight:900;white-space:nowrap}
 .own{border-color:#c6a657;background:#fffaf0}
 .own .position{background:#dfbc60;color:#1f1f1f}
+.entryLink{color:inherit;text-decoration:none}
+.entryLink:hover{border-color:#c6a657}
+.entryLink:focus-visible{outline:2px solid #896b2d;outline-offset:3px}
+.entryChevron{flex:none;color:#896b2d}
+.entryLink[data-position="1"] .position{background:#f7e7b2;color:#806019}
+.entryLink[data-position="2"] .position{background:#e8ebef;color:#596575}
+.entryLink[data-position="3"] .position{background:#f2dfd0;color:#95603a}
+.captain>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prizeEmpty{display:flex;align-items:center;gap:12px;padding:15px;border:1px dashed #e2d8be;border-radius:9px;background:#fcfaf5}
 .prizeEmpty svg{width:32px;height:32px;color:#c3af80}
 .prizeEmpty p{margin:0}

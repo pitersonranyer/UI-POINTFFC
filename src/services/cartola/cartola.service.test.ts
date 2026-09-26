@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buscarPontuacaoEscalacao } from "./cartola.service";
+import { buscarEscalacaoTime, buscarPontuacaoEscalacao } from "./cartola.service";
 import type { CartolaTeamLineupResponse } from "@/types/cartola";
 
 const team: CartolaTeamLineupResponse = {
@@ -14,6 +14,27 @@ const team: CartolaTeamLineupResponse = {
 };
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("consulta da escalação por rodada", () => {
+  it.each([[undefined, "/cartola/times/10"], [27, "/cartola/times/10?rodada=27"]] as const)("monta URL para rodada %s", async (rodada, path) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(team)));
+    vi.stubGlobal("fetch", fetchMock);
+    await buscarEscalacaoTime(10, rodada);
+    expect(fetchMock.mock.calls[0][0].endsWith(path)).toBe(true);
+  });
+  it.each([0, 39, 1.5, NaN])("rejeita rodada inválida %s antes da consulta", async (rodada) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(buscarEscalacaoTime(10, rodada)).rejects.toThrow(RangeError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it.each([404, 503])("não busca outra rodada após HTTP %s", async (status) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(buscarEscalacaoTime(10, 27)).rejects.toThrow(`HTTP ${status}`);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe("pontuação da escalação", () => {
   it("busca a rodada exibida e associa pontos por ID para titulares, técnico e reservas", async () => {

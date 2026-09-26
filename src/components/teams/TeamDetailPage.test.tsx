@@ -28,6 +28,48 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("detalhe da escalação efetiva", () => {
+  it.each(["field", "list"])("respeita rodada explícita e preferência %s com mercado seguinte aberto", async (view) => {
+    api.dashboard.mockResolvedValue({ rodada: 28, mercadoAberto: true, mercado: { temporada: 2026 }, clubes: {} });
+    api.team.mockResolvedValue(snapshot());
+    localStorage.setItem("fantasypoint_team_view", view);
+    render(<TeamDetailPage timeId={1} rodada={25} />);
+    await screen.findByText("Time teste");
+    expect(api.team).toHaveBeenCalledWith(1, 25);
+    expect(screen.getByRole("heading", { name: "Escalação da rodada 25" })).toBeTruthy();
+    expect(screen.getByText("Exibindo a escalação da rodada 25.")).toBeTruthy();
+    expect(screen.queryByText(/rodada anterior/)).toBeNull();
+    expect(Boolean(screen.queryByRole("region", { name: "Escalação no campo" }))).toBe(view === "field");
+    expect(localStorage.getItem("fantasypoint_team_view")).toBe(view);
+  });
+
+  it.each([404, 503])("mostra erro sem fallback para outra rodada em HTTP %s", async (status) => {
+    api.team.mockRejectedValue(new Error(`HTTP ${status}`));
+    render(<TeamDetailPage timeId={1} rodada={25} />);
+    expect(await screen.findByText("Não foi possível carregar a escalação deste time.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeTruthy();
+    expect(api.team).toHaveBeenCalledTimes(1);
+    expect(api.team).toHaveBeenCalledWith(1, 25);
+    expect(api.scores).not.toHaveBeenCalled();
+  });
+
+  it("recusa uma escalação retornada de outra rodada", async () => {
+    api.team.mockResolvedValue(snapshot());
+    render(<TeamDetailPage timeId={1} rodada={24} />);
+    await screen.findByText("Não foi possível carregar a escalação deste time.");
+    expect(screen.queryByText("Time teste")).toBeNull();
+    expect(api.team).toHaveBeenCalledTimes(1);
+  });
+
+  it("usa rodada solicitada nas pontuações quando o payload não informa rodada", async () => {
+    const team = snapshot();
+    delete team.substituicoes;
+    delete team.time.rodada_time_id;
+    api.team.mockResolvedValue(team);
+    render(<TeamDetailPage timeId={1} rodada={24} />);
+    await screen.findByText("Time teste");
+    expect(api.scores).toHaveBeenCalledWith(team, 24);
+    expect(api.partial).toHaveBeenCalledWith(2026, 24, 1);
+  });
   it.each(["PARCIAL", "FINAL"] as const)("separa titulares sem cópias ou duplicações em %s", (status) => {
     const team = snapshot();
     team.status = status;
@@ -93,6 +135,7 @@ describe("detalhe da escalação efetiva", () => {
     expect(screen.getByText("3,00 pts")).toBeTruthy();
     expect(screen.getByText("99,00 pts")).toBeTruthy();
     expect(api.scores).toHaveBeenCalled();
+    expect(api.team).toHaveBeenCalledWith(1);
     expect(api.partial).toHaveBeenCalled();
     expect(screen.queryByText(/Entrou no lugar/)).toBeNull();
   });
