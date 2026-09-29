@@ -1,0 +1,130 @@
+import React from "react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { adminDesafioService as service, type AdminDesafio, type DesafioPartida } from "@/services/adminDesafioService";
+import { ApiError } from "@/services/apiClient";
+import { AdminDesafios } from "./AdminDesafios";
+import { DesafioEditor } from "./DesafioEditor";
+import { formPayload, fromDesafio } from "./desafioForm";
+
+const nav = vi.hoisted(() => ({ replace: vi.fn(), query: "id=7" }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: nav.replace }), useSearchParams: () => new URLSearchParams(nav.query) }));
+vi.mock("@/services/adminDesafioService", () => ({ adminDesafioService: { list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), publish: vi.fn(), cancel: vi.fn(), fixtures: vi.fn(), matches: vi.fn(), addMatch: vi.fn(), removeMatch: vi.fn(), reorder: vi.fn() } }));
+const desafio: AdminDesafio = { id: 7, nome: "Desafio POINT", descricao: null, tipoAcesso: "FREE", valorInscricao: "0.00", inicioInscricao: "2099-10-01T12:00:00.000Z", fimInscricao: "2099-10-02T12:00:00.000Z", dataInicio: "2099-10-03T12:00:00.000Z", dataFim: "2099-10-04T23:00:00.000Z", limiteParticipantes: null, status: "RASCUNHO", criadoPorId: 1, criadoPor: { idUsuario: 1, nome: "Admin" }, publicadoEm: null, criadoEm: "2026-09-29T12:00:00.000Z", atualizadoEm: "2026-09-29T12:00:00.000Z" };
+const first: DesafioPartida = { id: 14, desafioId: 7, fixtureIdApiFootball: 123456, leagueIdApiFootball: 2013, nomeCompeticao: "Brasileirão", nomeMandante: "Flamengo", nomeVisitante: "Palmeiras", logoMandanteUrl: null, logoVisitanteUrl: null, dataInicio: "2099-10-03T19:00:00.000Z", status: "AGENDADA", ordem: 1 };
+const second: DesafioPartida = { ...first, id: 11, fixtureIdApiFootball: 654321, nomeMandante: "Grêmio", nomeVisitante: "Corinthians", ordem: 2 };
+beforeEach(() => {
+  vi.stubGlobal("React", React); vi.resetAllMocks(); nav.query = "id=7";
+  vi.mocked(service.get).mockResolvedValue(desafio);
+  vi.mocked(service.matches).mockResolvedValue([first]);
+  vi.mocked(service.list).mockResolvedValue({ itens: [desafio], paginacao: { pagina: 1, limite: 20, total: 21, totalPaginas: 2 } });
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+});
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+const button = (name: string | RegExp) => screen.getByRole("button", { name }) as HTMLButtonElement;
+
+it("preserva fuso/precisão das datas, normaliza FREE e valida valor/datas/limites", () => {
+  const form = fromDesafio({ ...desafio, dataInicio: "2099-10-03T12:42:37.125Z" });
+  expect(formPayload(form).dataInicio).toBe("2099-10-03T12:42:37.125Z");
+  expect(formPayload({ ...form, valorInscricao: "99" }).valorInscricao).toBe("0.00");
+  expect(formPayload({ ...form, tipoAcesso: "PAGO", valorInscricao: "2,50" }).valorInscricao).toBe("2.50");
+  for (const value of ["0", "-1", "2.001", "NaN", "10000000000"]) expect(() => formPayload({ ...form, tipoAcesso: "PAGO", valorInscricao: value })).toThrow();
+  expect(() => formPayload({ ...form, dataFim: form.dataInicio })).toThrow();
+  expect(() => formPayload({ ...form, limiteParticipantes: "1.5" })).toThrow();
+});
+it("lista com filtros reais e paginação", async () => {
+  render(<AdminDesafios />);
+  await screen.findByText("Desafio POINT");
+  fireEvent.change(screen.getByLabelText("Status"), { target: { value: "ABERTO" } });
+  fireEvent.change(screen.getByLabelText("Acesso"), { target: { value: "PAGO" } });
+  fireEvent.click(button("Filtrar"));
+  await waitFor(() => expect(service.list).toHaveBeenLastCalledWith({ pagina: 1, limite: 20, status: "ABERTO", tipoAcesso: "PAGO" }));
+  await screen.findByText("Desafio POINT");
+  fireEvent.click(button("Próxima página"));
+  await waitFor(() => expect(service.list).toHaveBeenLastCalledWith({ pagina: 2, limite: 20, status: "ABERTO", tipoAcesso: "PAGO" }));
+});
+it("cria e encaminha à configuração das partidas", async () => {
+  vi.mocked(service.create).mockResolvedValue(desafio);
+  render(<DesafioEditor mode="create" />);
+  fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Desafio POINT" } });
+  for (const [label, value] of [["Início das inscrições", "2099-10-01T09:00"], ["Fim das inscrições", "2099-10-02T09:00"], ["Início do Desafio", "2099-10-03T09:00"], ["Fim do Desafio", "2099-10-04T20:00"]]) fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  fireEvent.click(button("Criar e selecionar partidas"));
+  await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/admin/desafios/editar?id=7&criado=1"));
+  expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ nome: "Desafio POINT", tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: null }));
+});
+it("busca, identifica duplicadas, adiciona, reordena e remove sem IDs inventados", async () => {
+  vi.mocked(service.fixtures).mockResolvedValue([first, second].map(item => ({ fixtureId: item.fixtureIdApiFootball, leagueId: 2013, leagueNome: item.nomeCompeticao, dataHoraInicio: item.dataInicio, mandanteId: 1, visitanteId: 2, mandanteNome: item.nomeMandante, visitanteNome: item.nomeVisitante, mandanteLogo: null, visitanteLogo: null, horarioConfirmado: true, statusInterno: "AGENDADA" })));
+  vi.mocked(service.addMatch).mockResolvedValue(second);
+  vi.mocked(service.reorder).mockResolvedValue([{ ...second, ordem: 1 }, { ...first, ordem: 2 }]);
+  vi.mocked(service.removeMatch).mockResolvedValue([{ ...first, ordem: 1 }]);
+  render(<DesafioEditor mode="edit" />);
+  await screen.findByText("Partidas do Desafio (1)");
+  fireEvent.click(button("Buscar"));
+  expect(await screen.findByRole("button", { name: "Já adicionada: Flamengo x Palmeiras" })).toHaveProperty("disabled", true);
+  expect(service.fixtures).toHaveBeenCalledWith({ date: "2099-10-03" });
+  fireEvent.click(button("Adicionar: Grêmio x Corinthians"));
+  await screen.findByText("Partidas do Desafio (2)");
+  expect(service.addMatch).toHaveBeenCalledWith(7, 654321);
+  fireEvent.click(button("Subir Grêmio x Corinthians"));
+  await waitFor(() => expect(service.reorder).toHaveBeenCalledWith(7, [11, 14]));
+  await waitFor(() => expect(within(screen.getByRole("list", { name: "Partidas selecionadas" })).getAllByRole("listitem")[0].textContent).toContain("Grêmio"));
+  fireEvent.click(button("Remover Grêmio x Corinthians"));
+  await screen.findByText("Partidas do Desafio (1)");
+  expect(service.removeMatch).toHaveBeenCalledWith(7, 11);
+});
+it("exige salvar antes de publicar, confirma e bloqueia edição após sucesso", async () => {
+  vi.mocked(service.update).mockResolvedValue({ ...desafio, nome: "Novo nome" });
+  vi.mocked(service.publish).mockResolvedValue({ ...desafio, nome: "Novo nome", status: "ABERTO" });
+  render(<DesafioEditor mode="edit" />);
+  await screen.findByDisplayValue("Desafio POINT");
+  fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Novo nome" } });
+  expect(button("Publicar Desafio").disabled).toBe(true);
+  fireEvent.click(button("Salvar alterações"));
+  await screen.findByText("Alterações salvas com sucesso.");
+  vi.mocked(window.confirm).mockReturnValueOnce(false);
+  fireEvent.click(button("Publicar Desafio"));
+  expect(service.publish).not.toHaveBeenCalled();
+  fireEvent.click(button("Publicar Desafio"));
+  await screen.findByText("Status: Aberto");
+  expect(service.publish).toHaveBeenCalledWith(7);
+  expect((screen.getByLabelText("Nome").closest("fieldset") as HTMLFieldSetElement).disabled).toBe(true);
+  expect(screen.queryByRole("button", { name: /Remover Flamengo/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Publicar Desafio" })).toBeNull();
+  expect(service.matches).toHaveBeenCalledTimes(2);
+});
+it("mantém rascunho em falha de publicação e reflete cancelamento", async () => {
+  vi.mocked(service.publish).mockRejectedValue(new ApiError(400, "Partida fora do período."));
+  vi.mocked(service.cancel).mockResolvedValue({ ...desafio, status: "CANCELADO" });
+  render(<DesafioEditor mode="edit" />);
+  await screen.findByText("Partidas do Desafio (1)");
+  fireEvent.click(button("Publicar Desafio"));
+  expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Partida fora do período.");
+  expect(screen.getByText("Status: Rascunho")).toBeTruthy();
+  fireEvent.click(button("Cancelar Desafio"));
+  await screen.findByText("Status: Cancelado");
+  expect(service.cancel).toHaveBeenCalledWith(7);
+  expect(screen.queryByRole("button", { name: "Cancelar Desafio" })).toBeNull();
+});
+it("reconcilia conflito com publicação em outra sessão", async () => {
+  vi.mocked(service.update).mockRejectedValue(new ApiError(409, "Operacao permitida somente em RASCUNHO."));
+  render(<DesafioEditor mode="edit" />);
+  await screen.findByDisplayValue("Desafio POINT");
+  vi.mocked(service.get).mockResolvedValue({ ...desafio, status: "ABERTO" });
+  fireEvent.click(button("Salvar alterações"));
+  await screen.findByText("Status: Aberto");
+  expect(screen.queryByRole("button", { name: "Salvar alterações" })).toBeNull();
+  expect(screen.getByRole("alert").textContent).toContain("RASCUNHO");
+});
+it.each([401, 403])("trata %s sem liberar formulário", async status => {
+  vi.mocked(service.get).mockRejectedValue(new ApiError(status));
+  render(<DesafioEditor mode="edit" />);
+  expect(await screen.findByRole("alert")).toHaveProperty("textContent", status === 401 ? "Sua sessão expirou. Entre novamente para continuar." : "Seu usuário não possui permissão para esta operação.");
+  expect(screen.queryByLabelText("Nome")).toBeNull();
+});
+it("mostra vazio e permite tentar novamente após erro", async () => {
+  vi.mocked(service.list).mockRejectedValueOnce(new ApiError(0)).mockResolvedValueOnce({ itens: [], paginacao: { pagina: 1, limite: 20, total: 0, totalPaginas: 0 } });
+  render(<AdminDesafios />);
+  await screen.findByRole("alert");
+  fireEvent.click(button("Tentar novamente"));
+  expect(await screen.findByText("Nenhum desafio encontrado.")).toBeTruthy();
+});
