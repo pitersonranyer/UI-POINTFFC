@@ -15,6 +15,6 @@ it("mantém os menus desktop e mobile sem acesso global ao Mago", () => {
   for (const nav of screen.getAllByRole("navigation")) {
     expect(within(nav).queryByRole("link", { name: "Mago" })).toBeNull();
     expect(nav.querySelector('a[href="/mago"]')).toBeNull();
-    for (const name of ["Dashboard", "Prováveis", "Ligas"]) expect(within(nav).getByRole("link", { name })).toBeTruthy();
+    for (const name of ["Dashboard", "Prováveis", "Ligas", "Desafios"]) expect(within(nav).getByRole("link", { name })).toBeTruthy();
   }
 });
