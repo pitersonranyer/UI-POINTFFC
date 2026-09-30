@@ -25,6 +25,22 @@ export interface DesafiosPagina {
   itens: DesafioResumo[];
   paginacao: { pagina: number; limite: number; total: number; totalPaginas: number };
 }
+export interface DesafioRankingItem {
+  posicao: number;
+  participante: { idUsuario: number; nome: string | null; fotoUrl: string | null };
+  pontos: number;
+  acertos: number;
+}
+export interface DesafioRanking {
+  desafioId: number;
+  status: DesafioResumo["status"];
+  totalPartidasValidas: number;
+  totalPartidasApuradas: number;
+  totalPartidasAnuladas: number;
+  pontuacaoMaxima: number;
+  ranking: DesafioRankingItem[];
+  paginacao: DesafiosPagina["paginacao"];
+}
 export interface PalpiteSalvo { desafioId: number; partidaId: number; palpite: Palpite; fechamentoEm: string; podeAlterarPalpite: boolean }
 export interface ParticipacaoConfirmada { inscricao: DesafioInscricao; tipoAcesso: "FREE" | "PAGO"; valorCobrado: string }
 export interface SaldoInsuficiente { saldoDisponivel: string; valorNecessario: string; valorFaltante: string }
@@ -35,6 +51,7 @@ export const desafioService = {
     return apiFetch<DesafiosPagina>(`/desafios?${query}`, { cache: "no-store", signal });
   },
   detail: (id: number, authenticated: boolean, signal?: AbortSignal) => apiFetch<DesafioDetalhe>(`/desafios/${id}`, { authenticated, cache: "no-store", signal }),
+  ranking: (id: number, pagina = 1, signal?: AbortSignal) => apiFetch<DesafioRanking>(`/desafios/${id}/ranking?pagina=${pagina}&limite=20`, { cache: "no-store", signal }),
   predict: (id: number, partidaId: number, palpite: Palpite) => apiFetch<PalpiteSalvo>(`/desafios/${id}/partidas/${partidaId}/palpite`, { method: "PUT", authenticated: true, body: JSON.stringify({ palpite }) }),
   participate: (id: number) => apiFetch<ParticipacaoConfirmada>(`/desafios/${id}/participar`, { method: "POST", authenticated: true }),
 };

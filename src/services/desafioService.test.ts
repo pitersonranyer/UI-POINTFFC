@@ -16,6 +16,13 @@ it("consulta detalhe com JWT opcional e sem cache", async () => {
   await service.detail(7, true);
   expect(apiFetch).toHaveBeenLastCalledWith("/desafios/7", { authenticated: true, cache: "no-store", signal: undefined });
 });
+it("consulta ranking público sem JWT nem filtros locais de desempate", async () => {
+  const signal = new AbortController().signal;
+  await service.ranking(7, 2, signal);
+  expect(apiFetch).toHaveBeenLastCalledWith("/desafios/7/ranking?pagina=2&limite=20", { cache: "no-store", signal });
+  await service.ranking(7);
+  expect(apiFetch).toHaveBeenLastCalledWith("/desafios/7/ranking?pagina=1&limite=20", { cache: "no-store", signal: undefined });
+});
 it("grava palpite usando ID interno e participa sem payload financeiro/usuário", async () => {
   await service.predict(7, 14, "EMPATE");
   expect(apiFetch).toHaveBeenLastCalledWith("/desafios/7/partidas/14/palpite", { authenticated: true, method: "PUT", body: '{"palpite":"EMPATE"}' });
