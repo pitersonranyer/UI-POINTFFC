@@ -7,13 +7,18 @@ export const emptyForm: DesafioFormState = { nome: "", descricao: "", tipoAcesso
 export function fromDesafio(item: AdminDesafio): DesafioFormState {
   return { nome: item.nome, descricao: item.descricao ?? "", tipoAcesso: item.tipoAcesso, valorInscricao: item.valorInscricao, limiteParticipantes: item.limiteParticipantes?.toString() ?? "" };
 }
-export function formPayload(form: DesafioFormState): DesafioPayload {
+export function formPayload(form: DesafioFormState, mode: "create" | "edit" = "create"): DesafioPayload {
   const valor = form.tipoAcesso === "FREE" ? "0.00" : form.valorInscricao.trim().replace(",", ".");
   if (!form.nome.trim() || form.nome.trim().length > 255) throw new Error("Informe um nome com até 255 caracteres.");
   if (!/^\d{1,10}(\.\d{1,2})?$/.test(valor) || (form.tipoAcesso === "PAGO" && Number(valor) <= 0)) throw new Error("Informe um valor positivo com até duas casas decimais para PAGO.");
   const limite = form.limiteParticipantes === "" ? null : Number(form.limiteParticipantes);
   if (limite !== null && (!Number.isInteger(limite) || limite < 1 || limite > 4294967295)) throw new Error("Informe um limite inteiro entre 1 e 4294967295, ou deixe vazio.");
-  return { nome: form.nome.trim(), descricao: form.descricao.trim() || null, tipoAcesso: form.tipoAcesso, limiteParticipantes: limite, valorInscricao: Number(valor).toFixed(2) };
+  const descricao = form.descricao.trim();
+  return {
+    nome: form.nome.trim(), tipoAcesso: form.tipoAcesso, valorInscricao: Number(valor).toFixed(2),
+    ...(descricao || mode === "edit" ? { descricao: descricao || null } : {}),
+    ...(limite !== null || mode === "edit" ? { limiteParticipantes: limite } : {}),
+  };
 }
 export function desafioError(cause: unknown) {
   if (!(cause instanceof ApiError)) return "Não foi possível concluir a operação. Tente novamente.";

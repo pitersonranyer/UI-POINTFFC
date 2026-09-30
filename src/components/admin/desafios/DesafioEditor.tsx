@@ -59,7 +59,7 @@ export function DesafioEditor({ mode }: { mode: "create" | "edit" }) {
     event.preventDefault();
     if (!editable || lock.current) return;
     let payload;
-    try { payload = formPayload(form); } catch (cause) { setError((cause as Error).message); return; }
+    try { payload = formPayload(form, mode); } catch (cause) { setError((cause as Error).message); return; }
     await run(async () => {
       if (mode === "create") {
         const created = await service.create(payload);

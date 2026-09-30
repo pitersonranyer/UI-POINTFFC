@@ -4,12 +4,14 @@ export type DesafioStatus = "RASCUNHO" | "ABERTO" | "EM_ANDAMENTO" | "ENCERRADO"
 export type DesafioAcesso = "FREE" | "PAGO";
 export interface DesafioPayload {
   nome: string;
-  descricao: string | null;
+  descricao?: string | null;
   tipoAcesso: DesafioAcesso;
   valorInscricao: string;
-  limiteParticipantes: number | null;
+  limiteParticipantes?: number | null;
 }
 export interface AdminDesafio extends DesafioPayload {
+  descricao: string | null;
+  limiteParticipantes: number | null;
   inicioInscricao: string;
   fimInscricao: string;
   dataInicio: string;
@@ -70,7 +72,15 @@ function write<T>(path: string, method: string, body?: unknown) {
 export const adminDesafioService = {
   list: (filters: DesafioFilters = {}) => apiFetch<DesafioPage>(`${root}${query(filters)}`, read),
   get: (id: number) => apiFetch<AdminDesafio>(`${root}/${id}`, read),
-  create: (body: DesafioPayload) => write<AdminDesafio>("", "POST", body),
+  // Only these fields belong to the simplified creation contract. Runtime objects
+  // may still carry legacy dates despite the TypeScript type.
+  create: (body: DesafioPayload) => write<AdminDesafio>("", "POST", {
+    nome: body.nome,
+    tipoAcesso: body.tipoAcesso,
+    valorInscricao: body.tipoAcesso === "FREE" ? "0.00" : body.valorInscricao,
+    ...(body.descricao?.trim() ? { descricao: body.descricao.trim() } : {}),
+    ...(body.limiteParticipantes != null ? { limiteParticipantes: body.limiteParticipantes } : {}),
+  }),
   update: (id: number, body: Partial<DesafioPayload>) => write<AdminDesafio>(`/${id}`, "PATCH", body),
   publish: (id: number) => write<AdminDesafio>(`/${id}/publicar`, "POST"),
   cancel: (id: number) => write<AdminDesafio>(`/${id}/cancelar`, "POST"),

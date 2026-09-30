@@ -27,7 +27,8 @@ const button = (name: string | RegExp) => screen.getByRole("button", { name }) a
 
 it("envia somente dados básicos, normaliza FREE e valida valor/limites", () => {
   const form = fromDesafio({ ...desafio, dataInicio: "2099-10-03T12:42:37.125Z" });
-  expect(formPayload(form)).not.toHaveProperty("dataInicio");
+  const legacyForm = { ...form, inicioInscricao: "", fimInscricao: null, dataInicio: desafio.dataInicio, dataFim: "" };
+  for (const field of ["inicioInscricao", "fimInscricao", "dataInicio", "dataFim"]) expect(formPayload(legacyForm)).not.toHaveProperty(field);
   expect(formPayload({ ...form, valorInscricao: "99" }).valorInscricao).toBe("0.00");
   expect(formPayload({ ...form, tipoAcesso: "PAGO", valorInscricao: "2,50" }).valorInscricao).toBe("2.50");
   for (const value of ["0", "-1", "2.001", "NaN", "10000000000"]) expect(() => formPayload({ ...form, tipoAcesso: "PAGO", valorInscricao: value })).toThrow();
@@ -52,7 +53,8 @@ it("cria e encaminha à configuração das partidas", async () => {
   expect(document.querySelector('input[type="datetime-local"]')).toBeNull();
   fireEvent.click(button("Criar e selecionar partidas"));
   await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/admin/desafios/editar?id=7&criado=1"));
-  expect(service.create).toHaveBeenCalledWith({ nome: "Desafio POINT", descricao: null, tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: null });
+  expect(service.create).toHaveBeenCalledWith({ nome: "Desafio POINT", tipoAcesso: "FREE", valorInscricao: "0.00" });
+  for (const field of ["inicioInscricao", "fimInscricao", "dataInicio", "dataFim"]) expect(vi.mocked(service.create).mock.calls[0][0]).not.toHaveProperty(field);
 });
 it("busca, identifica duplicadas, adiciona, reordena e remove sem IDs inventados", async () => {
   vi.mocked(service.fixtures).mockResolvedValue([first, second].map(item => ({ fixtureId: item.fixtureIdApiFootball, leagueId: 2013, leagueNome: item.nomeCompeticao, dataHoraInicio: item.dataInicio, mandanteId: 1, visitanteId: 2, mandanteNome: item.nomeMandante, visitanteNome: item.nomeVisitante, mandanteLogo: null, visitanteLogo: null, horarioConfirmado: true, statusInterno: "AGENDADA" })));
@@ -154,7 +156,7 @@ it("cria PAGO com valor e limite opcionais sem datas e oculta valor ao voltar pa
   fireEvent.change(screen.getByLabelText("Valor da inscrição (R$)"), { target: { value: "2,50" } });
   fireEvent.change(screen.getByLabelText("Limite de participantes"), { target: { value: "30" } });
   fireEvent.click(button("Criar e selecionar partidas"));
-  await waitFor(() => expect(service.create).toHaveBeenCalledWith({ nome: "Copa paga", descricao: null, tipoAcesso: "PAGO", valorInscricao: "2.50", limiteParticipantes: 30 }));
+  await waitFor(() => expect(service.create).toHaveBeenCalledWith({ nome: "Copa paga", tipoAcesso: "PAGO", valorInscricao: "2.50", limiteParticipantes: 30 }));
 });
 
 it.each([

@@ -21,7 +21,7 @@ it("consulta lista, detalhe e fixtures somente pelo backend autenticado", async 
 it("preserva decimal como texto e usa payloads reais de configuração e ações", async () => {
   const payload: DesafioPayload = { nome: "Copa", descricao: null, tipoAcesso: "PAGO", valorInscricao: "2.50", limiteParticipantes: null };
   await service.create(payload);
-  expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios", { ...auth, method: "POST", body: JSON.stringify(payload) });
+  expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios", { ...auth, method: "POST", body: JSON.stringify({ nome: "Copa", tipoAcesso: "PAGO", valorInscricao: "2.50" }) });
   await service.update(7, { descricao: null });
   expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/7", { ...auth, method: "PATCH", body: '{"descricao":null}' });
   await service.publish(7);
@@ -36,4 +36,27 @@ it("adiciona ID oficial e usa IDs internos para remover/reordenar", async () => 
   expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/7/partidas/ordem", { ...auth, method: "PATCH", body: '{"partidaIds":[14,11]}' });
   await service.removeMatch(7, 14);
   expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/7/partidas/14", { ...auth, method: "DELETE" });
+});
+
+it.each(["", null, "2099-10-01T12:00:00.000Z"])("POST exclui as quatro datas mesmo recebendo valores legados %j", async value => {
+  const legacy = { nome: "Copa", tipoAcesso: "FREE" as const, valorInscricao: "0.00", descricao: null, limiteParticipantes: null,
+    inicioInscricao: value, fimInscricao: value, dataInicio: value, dataFim: value };
+  await service.create(legacy);
+  const [path, options] = vi.mocked(apiFetch).mock.calls[0];
+  expect(path).toBe("/admin/desafios");
+  expect(options?.method).toBe("POST");
+  const body = JSON.parse(options?.body as string);
+  for (const field of ["inicioInscricao", "fimInscricao", "dataInicio", "dataFim"]) expect(body).not.toHaveProperty(field);
+  expect(body).toEqual({ nome: "Copa", tipoAcesso: "FREE", valorInscricao: "0.00" });
+});
+
+it("POST preserva descrição preenchida e limite e exclui demais campos de um objeto existente", async () => {
+  await service.create({ ...{ id: 7, status: "RASCUNHO", dataInicio: "2099-10-01T12:00:00Z" }, nome: "Copa paga", tipoAcesso: "PAGO", valorInscricao: "2.50", descricao: " Copa do fim de semana ", limiteParticipantes: 30 });
+  const body = JSON.parse(vi.mocked(apiFetch).mock.calls[0][1]?.body as string);
+  expect(body).toEqual({ nome: "Copa paga", tipoAcesso: "PAGO", valorInscricao: "2.50", descricao: "Copa do fim de semana", limiteParticipantes: 30 });
+});
+
+it("POST omite descrição vazia e limite ausente e normaliza FREE", async () => {
+  await service.create({ nome: "Copa", tipoAcesso: "FREE", valorInscricao: "99.00", descricao: "   " });
+  expect(JSON.parse(vi.mocked(apiFetch).mock.calls[0][1]?.body as string)).toEqual({ nome: "Copa", tipoAcesso: "FREE", valorInscricao: "0.00" });
 });
