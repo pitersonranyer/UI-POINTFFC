@@ -6,6 +6,9 @@ import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { MagoDashboardCard } from "./MagoDashboardCard";
 import { magoRodada28 } from "@/data/mago/rodada28";
 import { buscarJogosHoje } from "@/services/futebolService";
+import { desafioService, type DesafioResumo } from "@/services/desafioService";
+
+vi.mock("@/services/desafioService", async original => ({ ...await original<object>(), desafioService: { list: vi.fn() } }));
 
 vi.mock("@/services/futebolService", () => ({ buscarJogosHoje: vi.fn().mockResolvedValue({ total: 0, jogos: [] }) }));
 vi.mock("@/services/pointLeagueService", () => ({ pointLeagueService: { competitions: vi.fn().mockResolvedValue([]) } }));
@@ -15,6 +18,7 @@ vi.mock("@/components/matches/FutebolMatches", () => ({ FutebolMatches: () => <s
 vi.mock("./GeneralRanking", () => ({ GeneralRanking: ({ round }: { round: number }) => <section>Ranking {round}</section> }));
 beforeEach(() => {
   vi.stubGlobal("React", React);
+  vi.mocked(desafioService.list).mockReset().mockResolvedValue({ itens: [], paginacao: { pagina: 1, limite: 20, total: 0, totalPaginas: 0 } });
   vi.mocked(buscarJogosHoje).mockResolvedValue({ data: "2026-09-15", timezone: "America/Sao_Paulo", total: 0, jogos: [] });
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -125,9 +129,55 @@ describe("Dashboard e resumo do Mago", () => {
     const state = setup();
     vi.mocked(useCartolaDashboard).mockReturnValue({ ...state, dashboard: null, loading: true });
     const view = render(<CartolaDashboard />);
-    expect(screen.getByRole("status")).toBeTruthy();
+    expect(screen.getByText("Aguarde, carregando os dados da rodada...")).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Desafios" })).getByRole("link", { name: "Ver todos" }).getAttribute("href")).toBe("/desafios");
     vi.mocked(useCartolaDashboard).mockReturnValue({ ...state, dashboard: null, error: "offline" });
     view.rerender(<CartolaDashboard />);
     expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Desafios" })).toBeTruthy();
+  });
+});
+
+describe("Descoberta de Desafios no Dashboard", () => {
+  it("resume até três desafios da API com preço, status, prazo e acesso ao detalhe", async () => {
+    setup();
+    const itens: DesafioResumo[] = [1, 2, 3, 4].map(id => ({
+      id, nome: `Desafio ${id}`, descricao: "Descrição completa não aparece no resumo",
+      tipoAcesso: id === 1 ? "FREE" : "PAGO", valorInscricao: "10.00", status: id === 2 ? "EM_ANDAMENTO" : "ABERTO",
+      inicioInscricao: "2026-09-01T12:00:00Z", fimInscricao: "2026-10-01T12:00:00Z", dataInicio: "2026-10-02T12:00:00Z", dataFim: "2026-10-03T12:00:00Z",
+    }));
+    vi.mocked(desafioService.list).mockResolvedValue({ itens, paginacao: { pagina: 1, limite: 20, total: 4, totalPaginas: 1 } });
+    render(<CartolaDashboard />);
+    const block = within(screen.getByRole("region", { name: "Desafios" }));
+    await block.findByRole("link", { name: "Abrir Desafio 1" });
+    expect(desafioService.list).toHaveBeenCalledWith(1, "", expect.any(AbortSignal));
+    expect(block.getAllByRole("listitem")).toHaveLength(3);
+    expect(block.getByText("FREE")).toBeTruthy();
+    expect(block.getAllByText(/R\$\s*10,00/)).toHaveLength(2);
+    expect(block.getByText("Em andamento")).toBeTruthy();
+    expect(block.getAllByText(/Inscrições até/)).toHaveLength(2);
+    expect(block.getByText(/^Até /)).toBeTruthy();
+    expect(block.getByRole("link", { name: "Abrir Desafio 2" }).getAttribute("href")).toBe("/desafios/detalhe?id=2");
+    expect(block.getByRole("link", { name: "Ver todos" }).getAttribute("href")).toBe("/desafios");
+    expect(block.queryByText("Desafio 4")).toBeNull();
+    expect(block.queryByText(itens[0].descricao!)).toBeNull();
+  });
+
+  it("mantém estado vazio discreto com acesso à lista completa", async () => {
+    setup();
+    render(<CartolaDashboard />);
+    const block = within(screen.getByRole("region", { name: "Desafios" }));
+    expect(await block.findByText("Nenhum Desafio disponível no momento.")).toBeTruthy();
+    expect(block.queryByRole("list")).toBeNull();
+    expect(block.getByRole("link", { name: "Ver todos" }).getAttribute("href")).toBe("/desafios");
+  });
+
+  it("isola falha dos Desafios e mantém o restante do dashboard", async () => {
+    setup();
+    vi.mocked(desafioService.list).mockRejectedValue(new Error("offline"));
+    render(<CartolaDashboard />);
+    expect(await screen.findByText("Não foi possível carregar os Desafios. Consulte em Ver todos.")).toBeTruthy();
+    expect(screen.getByText("Ranking 26")).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Acompanhe os jogos" })).toBeTruthy();
   });
 });
