@@ -7,13 +7,13 @@ export interface DesafioPayload {
   descricao: string | null;
   tipoAcesso: DesafioAcesso;
   valorInscricao: string;
+  limiteParticipantes: number | null;
+}
+export interface AdminDesafio extends DesafioPayload {
   inicioInscricao: string;
   fimInscricao: string;
   dataInicio: string;
   dataFim: string;
-  limiteParticipantes: number | null;
-}
-export interface AdminDesafio extends DesafioPayload {
   id: number;
   status: DesafioStatus;
   criadoPorId: number;
@@ -27,7 +27,7 @@ export interface DesafioPage {
   paginacao: { pagina: number; limite: number; total: number; totalPaginas: number };
 }
 export interface DesafioFilters { pagina?: number; limite?: number; status?: DesafioStatus | ""; tipoAcesso?: DesafioAcesso | "" }
-export interface FixtureFilters { date?: string; from?: string; to?: string; league?: number; team?: number; season?: number }
+export interface FixtureFilters { dataInicial: string; dataFinal: string }
 export interface DesafioFixture {
   fixtureId: number;
   leagueId: number;

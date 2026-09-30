@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { adminDesafioService, type DesafioFixture, type DesafioPartida, type FixtureFilters } from "@/services/adminDesafioService";
+import { adminDesafioService, type DesafioFixture, type DesafioPartida } from "@/services/adminDesafioService";
 import { desafioError, displayDate } from "./desafioForm";
+import { groupFixtures, periodShortcuts, shortcutPeriod, unavailableReason, validPeriod, type PeriodShortcut } from "./fixturePeriod";
 import styles from "../Admin.module.css";
 import css from "./Desafios.module.css";
 
@@ -11,13 +12,12 @@ function Team({ name, logo }: { name: string; logo: string | null }) {
   const [failed, setFailed] = useState(false);
   return <span className={css.team}>{logo && !failed && <Image src={logo} alt="" width={22} height={22} unoptimized onError={() => setFailed(true)} />}{name}</span>;
 }
-export function DesafioPartidas({ matches, editable, busy, initialDate, mutate }: {
-  matches: DesafioPartida[]; editable: boolean; busy: boolean; initialDate: string;
+export function DesafioPartidas({ matches, editable, busy, mutate }: {
+  matches: DesafioPartida[]; editable: boolean; busy: boolean;
   mutate: (action: "add" | "remove" | "reorder", ids: number[]) => Promise<void>;
 }) {
-  const [mode, setMode] = useState("date"), [date, setDate] = useState(initialDate.slice(0, 10));
-  const [to, setTo] = useState(initialDate.slice(0, 10)), [league, setLeague] = useState("");
-  const [season, setSeason] = useState(initialDate.slice(0, 4));
+  const [period, setPeriod] = useState<PeriodShortcut>("Hoje");
+  const [range, setRange] = useState(() => shortcutPeriod("Hoje"));
   const [fixtures, setFixtures] = useState<DesafioFixture[] | null>(null);
   const [searching, setSearching] = useState(false), [error, setError] = useState("");
   const searchingRef = useRef(false);
@@ -25,14 +25,8 @@ export function DesafioPartidas({ matches, editable, busy, initialDate, mutate }
     event.preventDefault();
     if (searchingRef.current) return;
     setError("");
-    if (!date || (mode === "range" && (!to || !league))) { setError("Informe as datas e a competição para buscar por período."); return; }
-    if (mode === "range") {
-      const days = (Date.parse(to) - Date.parse(date)) / 86400000;
-      if (days < 0 || days > 6) { setError("Escolha um período de até sete dias, incluindo início e fim."); return; }
-    }
-    if (league && (!Number.isInteger(Number(league)) || Number(league) < 1 || Number(league) > 4294967295 || !Number.isInteger(Number(season)) || Number(season) < 1900 || Number(season) > 9999)) { setError("Informe um ID de competição válido e a temporada (ano inicial)."); return; }
-    const filters: FixtureFilters = mode === "date" ? { date } : { from: date, to };
-    if (league) { filters.league = Number(league); filters.season = Number(season); }
+    const filters = period === "Personalizado" ? range : shortcutPeriod(period);
+    if (!validPeriod(filters)) { setError("Escolha um período de até sete dias, incluindo início e fim."); return; }
     searchingRef.current = true; setSearching(true); setFixtures(null);
     try { setFixtures(await adminDesafioService.fixtures(filters)); }
     catch (cause) { setError(desafioError(cause)); }
@@ -46,26 +40,27 @@ export function DesafioPartidas({ matches, editable, busy, initialDate, mutate }
   return <section className={`${styles.listPanel} ${css.panel}`} aria-label="Configuração das partidas">
     {editable && <>
       <h2 className={css.heading}>Buscar partidas</h2>
-      <p className={css.hint}>Datas da busca em UTC. Horários das partidas no fuso do seu dispositivo. Para filtrar por competição, informe seu ID e a temporada.</p>
+      <p className={css.hint}>Até 7 dias por busca. Datas e horários dos resultados em UTC.</p>
       <form className={css.toolbar} onSubmit={search}>
-        <label>Buscar por<select value={mode} onChange={event => { setMode(event.target.value); setFixtures(null); }}><option value="date">Data</option><option value="range">Período</option></select></label>
-        <label>{mode === "date" ? "Data (UTC)" : "De (UTC)"}<input type="date" required value={date} onChange={event => setDate(event.target.value)} /></label>
-        {mode === "range" && <label>Até (UTC)<input type="date" required value={to} onChange={event => setTo(event.target.value)} /></label>}
-        <label>ID da competição<input type="number" min="1" max="4294967295" required={mode === "range"} value={league} onChange={event => setLeague(event.target.value)} placeholder="Todas na data" /></label>
-        <label>Temporada<input type="number" min="1900" max="9999" required={!!league} disabled={!league} value={season} onChange={event => setSeason(event.target.value)} /></label>
+        <div className={css.shortcuts} role="group" aria-label="Período da busca">{periodShortcuts.map(shortcut => <button type="button" className={css.button} key={shortcut} aria-pressed={period === shortcut} disabled={searching || busy} onClick={() => { setPeriod(shortcut); if (shortcut !== "Personalizado") setRange(shortcutPeriod(shortcut)); setFixtures(null); setError(""); }}>{shortcut}</button>)}</div>
+        {period === "Personalizado" && <><label>De<input type="date" required disabled={searching || busy} value={range.dataInicial} onChange={event => { setRange(current => ({ ...current, dataInicial: event.target.value })); setFixtures(null); }} /></label><label>Até<input type="date" required disabled={searching || busy} value={range.dataFinal} onChange={event => { setRange(current => ({ ...current, dataFinal: event.target.value })); setFixtures(null); }} /></label></>}
         <button className={css.button} disabled={searching || busy}>{searching ? "Buscando..." : "Buscar"}</button>
       </form>
       {error && <p role="alert" className={styles.formError}>{error}</p>}
       {searching && <p role="status" className={css.hint}>Consultando partidas...</p>}
       {fixtures?.length === 0 && <p className={css.hint}>Nenhuma partida encontrada para os filtros informados.</p>}
-      {fixtures && <ul className={css.matches} aria-label="Resultados da busca">{fixtures.map(fixture => {
+      {fixtures && fixtures.length > 0 && <div className={css.results} role="region" aria-label="Resultados da busca" tabIndex={0}>{groupFixtures(fixtures).map(group => <section key={group.date} className={css.dateGroup} aria-label={group.date}>
+        <h3>{new Date(`${group.date}T12:00:00Z`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" })}</h3>
+        {group.competitions.map(competition => <section key={competition.id} aria-label={competition.name}><h4>{competition.name}</h4><ul className={css.matches}>{competition.fixtures.map(fixture => {
         const added = matches.some(item => item.fixtureIdApiFootball === fixture.fixtureId);
-        const eligible = fixture.horarioConfirmado && fixture.statusInterno === "AGENDADA" && Date.parse(fixture.dataHoraInicio) > Date.now();
+        const reason = unavailableReason(fixture);
         return <li key={fixture.fixtureId} className={css.match}>
-          <div className={css.matchInfo}><small>{fixture.leagueNome} · {displayDate(fixture.dataHoraInicio)}</small><div className={css.teams}><Team name={fixture.mandanteNome} logo={fixture.mandanteLogo} /><span>×</span><Team name={fixture.visitanteNome} logo={fixture.visitanteLogo} /></div>{!eligible && <small>Indisponível: exige horário confirmado e partida futura agendada.</small>}</div>
-          <button className={css.button} type="button" disabled={busy || added || !eligible} onClick={() => void mutate("add", [fixture.fixtureId])} aria-label={`${added ? "Já adicionada" : "Adicionar"}: ${fixture.mandanteNome} x ${fixture.visitanteNome}`}>{added ? "Já adicionada" : "Adicionar"}</button>
+          <time className={css.kickoff} dateTime={fixture.dataHoraInicio}>{fixture.horarioConfirmado ? new Date(fixture.dataHoraInicio).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) : "A definir"}</time>
+          <div className={css.matchInfo}><div className={css.teams}><Team name={fixture.mandanteNome} logo={fixture.mandanteLogo} /><span>×</span><Team name={fixture.visitanteNome} logo={fixture.visitanteLogo} /></div>{reason && <small>Indisponível: {reason}.</small>}</div>
+          <button className={css.button} type="button" disabled={busy || added || !!reason} onClick={() => void mutate("add", [fixture.fixtureId])} aria-label={`${added ? "Já adicionada" : "Adicionar"}: ${fixture.mandanteNome} x ${fixture.visitanteNome}`}>{added ? "✓" : "+"}</button>
         </li>;
-      })}</ul>}
+      })}</ul></section>)}
+      </section>)}</div>}
     </>}
     <h2 className={css.heading}>Partidas do Desafio ({matches.length})</h2>
     {!matches.length ? <p className={css.hint}>Nenhuma partida selecionada.{editable && " Busque e adicione partidas para publicar."}</p> : <ol className={css.matches} aria-label="Partidas selecionadas">{matches.map((match, index) => <li key={match.id} className={css.match}>

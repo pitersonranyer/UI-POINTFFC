@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/services/apiClient";
 import { adminDesafioService as service, type AdminDesafio, type DesafioPartida } from "@/services/adminDesafioService";
-import { dateLabels, desafioError, emptyForm, formPayload, fromDesafio, statusLabels, type DesafioFormState } from "./desafioForm";
+import { desafioError, displayDate, emptyForm, formPayload, fromDesafio, statusLabels, type DesafioFormState } from "./desafioForm";
+import { formatWalletCurrency } from "@/lib/format";
 import { DesafioPartidas } from "./DesafioPartidas";
 import styles from "../Admin.module.css";
 import css from "./Desafios.module.css";
@@ -20,6 +21,7 @@ export function DesafioEditor({ mode }: { mode: "create" | "edit" }) {
   const [loading, setLoading] = useState(mode === "edit"), [busy, setBusy] = useState(false);
   const [error, setError] = useState(""), [success, setSuccess] = useState("");
   const [blocked, setBlocked] = useState(false), [retry, setRetry] = useState(0);
+  const [periodStale, setPeriodStale] = useState(false);
   const lock = useRef(false);
   const editable = !blocked && (mode === "create" || source?.status === "RASCUNHO");
   const dirty = !!source && JSON.stringify(form) !== JSON.stringify(fromDesafio(source));
@@ -29,7 +31,7 @@ export function DesafioEditor({ mode }: { mode: "create" | "edit" }) {
     let active = true;
     setLoading(true); setError(""); setBlocked(false); setSource(null);
     if (!validId) { setError("Desafio não encontrado: ID inválido."); setLoading(false); return; }
-    Promise.all([service.get(id!), service.matches(id!)]).then(([item, selected]) => { if (active) { accept(item); setMatches(selected); } }).catch(cause => { if (active) setError(desafioError(cause)); }).finally(() => { if (active) setLoading(false); });
+    Promise.all([service.get(id!), service.matches(id!)]).then(([item, selected]) => { if (active) { accept(item); setMatches(selected); setPeriodStale(false); } }).catch(cause => { if (active) setError(desafioError(cause)); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [id, validId, mode, accept, retry]);
 
@@ -41,7 +43,7 @@ export function DesafioEditor({ mode }: { mode: "create" | "edit" }) {
       setBlocked(true);
       try {
         const [item, selected] = await Promise.all([service.get(id!), service.matches(id!)]);
-        setSource(item); setMatches(selected);
+        setSource(item); setMatches(selected); setPeriodStale(false);
         if (item.status !== "RASCUNHO") setForm(fromDesafio(item));
         setBlocked(false);
       } catch { setError(`${desafioError(cause)} Não foi possível atualizar o estado. Recarregue antes de continuar.`); }
@@ -76,6 +78,18 @@ export function DesafioEditor({ mode }: { mode: "create" | "edit" }) {
         const added = await service.addMatch(id!, ids[0]);
         setMatches(current => [...current, added].sort((a, b) => a.ordem - b.ordem));
       } else setMatches(await (action === "remove" ? service.removeMatch(id!, ids[0]) : service.reorder(id!, ids)));
+      if (action !== "reorder") {
+        setPeriodStale(true);
+        try {
+          const item = await service.get(id!);
+          setSource(item); setPeriodStale(false);
+          if (item.status !== "RASCUNHO") setForm(fromDesafio(item));
+        } catch {
+          setBlocked(true);
+          setError("Partidas salvas, mas não foi possível atualizar o período. Recarregue o Desafio antes de continuar.");
+          return;
+        }
+      }
       setSuccess(action === "add" ? "Partida adicionada." : action === "remove" ? "Partida removida." : "Ordem das partidas salva.");
     });
   }
@@ -104,20 +118,28 @@ export function DesafioEditor({ mode }: { mode: "create" | "edit" }) {
     {blocked && mode === "edit" && <button className={css.button} disabled={busy} onClick={() => setRetry(value => value + 1)}>Recarregar Desafio</button>}
     {!editable && source && <p className={styles.readonlyNotice}>Edição e composição disponíveis somente em rascunho.</p>}
     <form className={styles.competitionForm} onSubmit={save}>
-      <fieldset className={styles.formSection} disabled={!editable || busy}><legend>Configuração</legend><div className={styles.formGrid}>
+      <fieldset className={styles.formSection} disabled={!editable || busy}><legend>Dados básicos</legend><div className={styles.formGrid}>
         <label className={styles.wideField}>Nome<input required maxLength={255} value={form.nome} onChange={event => update("nome", event.target.value)} /></label>
         <label className={styles.wideField}>Descrição<textarea rows={2} value={form.descricao} onChange={event => update("descricao", event.target.value)} /></label>
         <label>Acesso<select value={form.tipoAcesso} onChange={event => { const value = event.target.value as DesafioFormState["tipoAcesso"]; update("tipoAcesso", value); if (value === "FREE") update("valorInscricao", "0.00"); }}><option>FREE</option><option>PAGO</option></select></label>
-        <label>Valor da inscrição (R$)<input inputMode="decimal" required value={form.valorInscricao} disabled={form.tipoAcesso === "FREE"} onChange={event => update("valorInscricao", event.target.value)} /></label>
-        {(Object.entries(dateLabels) as [keyof typeof dateLabels, string][]).map(([key, label]) => <label key={key}>{label}<input type="datetime-local" step="0.001" required value={form[key]} onChange={event => update(key, event.target.value)} /></label>)}
+        {form.tipoAcesso === "PAGO" && <label>Valor da inscrição (R$)<input inputMode="decimal" required value={form.valorInscricao} onChange={event => update("valorInscricao", event.target.value)} /></label>}
         <label>Limite de participantes<input type="number" min="1" max="4294967295" step="1" placeholder="Sem limite" value={form.limiteParticipantes} onChange={event => update("limiteParticipantes", event.target.value)} /></label>
-        <p className={css.hint}>Datas e horários no fuso do seu dispositivo. As inscrições devem terminar até o início do Desafio.</p>
       </div></fieldset>
       {editable && <div className={styles.formActions}><button type="submit" disabled={busy}>{busy ? "Aguarde..." : mode === "create" ? "Criar e selecionar partidas" : "Salvar alterações"}</button></div>}
     </form>
-    {source && <DesafioPartidas key={source.id} matches={matches} editable={editable} busy={busy} initialDate={source.dataInicio} mutate={mutate} />}
+    {source && <DesafioPartidas key={source.id} matches={matches} editable={editable} busy={busy} mutate={mutate} />}
+    {source && matches.length > 0 && <section className={css.period} aria-label="Período do Desafio">
+      <h2>{source.fimInscricao === source.dataInicio ? "Período definido automaticamente pelas partidas" : "Período registrado do Desafio"}</h2>
+      {periodStale ? <p className={css.hint}>Atualize o Desafio para consultar o período.</p> : <>
+        <p>{source.status === "RASCUNHO" ? "Inscrições abertas ao publicar" : `Inscrições abertas em: ${displayDate(source.inicioInscricao)}`}</p>
+        <dl><div><dt>Inscrições encerram</dt><dd>{displayDate(source.fimInscricao)}</dd></div><div><dt>Início do Desafio</dt><dd>{displayDate(source.dataInicio)}</dd></div><div><dt>Última partida prevista</dt><dd>{displayDate([...matches].sort((a, b) => Date.parse(b.dataInicio) - Date.parse(a.dataInicio))[0].dataInicio)}</dd></div></dl>
+        {source.fimInscricao !== source.dataInicio && <p className={css.hint}>Fim registrado: {displayDate(source.dataFim)}.{source.status === "RASCUNHO" && " Ao alterar as partidas ou publicar, o período será atualizado automaticamente."}</p>}
+        <p className={css.hint}>Horários no fuso do seu dispositivo.</p>
+      </>}
+    </section>}
     {source && (source.status === "RASCUNHO" || source.status === "ABERTO") && <>
       {dirty && editable && <p className={css.hint}>Salve as alterações antes de publicar.</p>}
+      {source.status === "RASCUNHO" && <p className={css.publishSummary} aria-label="Resumo da publicação">{matches.length} {matches.length === 1 ? "partida selecionada" : "partidas selecionadas"} · {form.tipoAcesso === "FREE" ? "FREE" : formatWalletCurrency(form.valorInscricao.replace(",", "."))}{matches.length > 0 && !periodStale && ` · Inscrições encerram: ${displayDate(source.fimInscricao)}`}</p>}
       <div className={styles.formActions}><button type="button" disabled={busy || blocked} onClick={() => void transition("cancel")}>Cancelar Desafio</button>{source.status === "RASCUNHO" && <button type="button" disabled={busy || blocked || dirty || !matches.length} onClick={() => void transition("publish")}>{busy ? "Aguarde..." : "Publicar Desafio"}</button>}</div>
     </>}
   </>;

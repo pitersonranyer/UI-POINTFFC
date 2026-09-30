@@ -11,15 +11,15 @@ it("consulta lista, detalhe e fixtures somente pelo backend autenticado", async 
   expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios?pagina=2&limite=20&status=RASCUNHO&tipoAcesso=PAGO", read);
   await service.get(7);
   expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/7", read);
-  await service.fixtures({ from: "2026-10-01", to: "2026-10-07", league: 2013, season: 2026 });
-  expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/fixtures?from=2026-10-01&to=2026-10-07&league=2013&season=2026", read);
-  await service.fixtures({ date: "2026-10-03" });
-  expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/fixtures?date=2026-10-03", read);
+  await service.fixtures({ dataInicial: "2026-10-01", dataFinal: "2026-10-07" });
+  expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/fixtures?dataInicial=2026-10-01&dataFinal=2026-10-07", read);
+  await service.fixtures({ dataInicial: "2026-10-03", dataFinal: "2026-10-03" });
+  expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/fixtures?dataInicial=2026-10-03&dataFinal=2026-10-03", read);
   await service.matches(7);
   expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/7/partidas", read);
 });
 it("preserva decimal como texto e usa payloads reais de configuração e ações", async () => {
-  const payload: DesafioPayload = { nome: "Copa", descricao: null, tipoAcesso: "PAGO", valorInscricao: "2.50", inicioInscricao: "2026-10-01T12:00:00Z", fimInscricao: "2026-10-02T12:00:00Z", dataInicio: "2026-10-03T12:00:00Z", dataFim: "2026-10-04T12:00:00Z", limiteParticipantes: null };
+  const payload: DesafioPayload = { nome: "Copa", descricao: null, tipoAcesso: "PAGO", valorInscricao: "2.50", limiteParticipantes: null };
   await service.create(payload);
   expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios", { ...auth, method: "POST", body: JSON.stringify(payload) });
   await service.update(7, { descricao: null });
