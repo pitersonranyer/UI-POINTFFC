@@ -27,6 +27,8 @@ export function Navigation() {
       "/esqueci-senha",
       "/redefinir-senha",
       "/confirmar-email",
+      "/auth/action",
+      "/auth/action/",
     ].includes(pathname)
   )
     return null;
