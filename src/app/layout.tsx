@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import { publicMetadata, siteUrl, siteTitle, siteDescription } from "@/lib/seo";
 import { Navigation } from "@/components/navigation/Navigation";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "POINT FFC | Fantasy Football Club",
-  description: "Jogos, ligas e inteligência para a sua rodada de fantasy football.",
+  metadataBase: new URL(siteUrl),
+  ...publicMetadata(siteTitle, siteDescription),
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

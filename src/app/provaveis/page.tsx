@@ -1,10 +1,7 @@
-import type { Metadata } from "next";
+import { publicMetadata } from "@/lib/seo";
 import { ProbableTeams } from "@/components/probables/ProbableTeams";
 
-export const metadata: Metadata = {
-  title: "Prováveis | POINT FFC",
-  description: "Confira os jogadores prováveis, dúvidas e desfalques de cada clube.",
-};
+export const metadata = publicMetadata("Prováveis | POINT FFC", "Confira os jogadores prováveis, dúvidas e desfalques de cada clube.", "/provaveis/");
 
 export default function ProbablesPage() {
   return (

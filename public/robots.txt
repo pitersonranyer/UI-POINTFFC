@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# As páginas operacionais usam noindex no HTML. Permitir seu rastreamento
+# permite que o Google leia essa instrução; autenticação continua independente.
+Sitemap: https://pointffc.com.br/sitemap.xml
