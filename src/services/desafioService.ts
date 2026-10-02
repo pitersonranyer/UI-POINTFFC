@@ -9,8 +9,11 @@ export interface DesafioResumo {
 }
 export interface DesafioJogo {
   id: number; ordem: number; nomeCompeticao: string;
-  nomeMandante: string; logoMandanteUrl: string | null;
-  nomeVisitante: string; logoVisitanteUrl: string | null;
+  nomeMandante?: string | null; logoMandanteUrl: string | null;
+  nomeVisitante?: string | null; logoVisitanteUrl: string | null;
+  mandanteNome?: string | null; visitanteNome?: string | null;
+  golsMandante?: number | null; golsVisitante?: number | null;
+  pontos?: number | null; apurado?: boolean | null;
   dataInicio: string; status: "AGENDADA" | "EM_ANDAMENTO" | "FINALIZADA" | "ANULADA";
   fechamentoEm: string; podeAlterarPalpite: boolean; meuPalpite?: Palpite | null;
 }

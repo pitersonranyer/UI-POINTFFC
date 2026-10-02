@@ -100,19 +100,20 @@ const match: DesafioJogo = { id: 1, ordem: 1, nomeCompeticao: "Brasileirão", no
 function showMatch(change: Partial<DesafioJogo> = {}) {
   render(<ol><DesafioMatch game={{ ...match, ...change }} authenticated disabled={false} saving={false} saved={false} missing={false} choose={vi.fn()} /></ol>);
 }
-it("finalizada exibe palpite e indisponibilidade individual sem inventar acerto, erro ou placar", () => {
-  showMatch(); expect(screen.getByText("Finalizada")).toBeTruthy(); expect(screen.getByText("1 · Mandante")).toBeTruthy();
-  expect(screen.getByText("Resultado e pontuação por partida indisponíveis.")).toBeTruthy();
+it("finalizada mantém palpite sem inventar acerto, erro ou placar", () => {
+  showMatch(); expect(screen.getByText("Finalizado")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("true");
   expect(screen.queryByText(/Acertou|Errou|0 pontos|1 ponto/)).toBeNull();
-  expect((screen.getByRole("button", { name: "1 Mandante" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "Casa" }) as HTMLButtonElement).disabled).toBe(true);
 });
 it("anulada tem estado neutro e não vira erro do jogador", () => {
-  showMatch({ status: "ANULADA" }); expect(screen.getByText("Anulada · sem pontuação")).toBeTruthy();
+  showMatch({ status: "ANULADA" }); expect(screen.getByText("Anulada")).toBeTruthy();
   expect(screen.queryByRole("alert")).toBeNull(); expect(screen.queryByText(/Errou|Resultado e pontuação/)).toBeNull();
-  expect(screen.getByText("1 · Mandante")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("true");
 });
 it("em andamento não presume resultado nem pontuação antes da apuração", () => {
   showMatch({ status: "EM_ANDAMENTO", meuPalpite: null });
-  expect(screen.getByText("Em andamento / aguardando apuração")).toBeTruthy(); expect(screen.getByText("Não informado")).toBeTruthy();
+  expect(screen.getByText("Em andamento")).toBeTruthy();
+  expect(screen.getAllByRole("button").every(item => item.getAttribute("aria-pressed") === "false")).toBe(true);
   expect(screen.queryByText(/Acertou|Errou/)).toBeNull();
 });

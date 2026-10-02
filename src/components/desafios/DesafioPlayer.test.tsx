@@ -56,11 +56,11 @@ it("vitrine trata erro, nova tentativa e vazio", async () => {
 it("restaura escolhas, ordena partidas e confia na elegibilidade da API, não no relógio", async () => {
   server.partidas = [second, first];
   await open();
-  expect(game().getByRole("button", { name: "1 Mandante" }).getAttribute("aria-pressed")).toBe("true");
-  expect((game().getByRole("button", { name: "X Empate" }) as HTMLButtonElement).disabled).toBe(false);
+  expect(game().getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("true");
+  expect((game().getByRole("button", { name: "Empate" }) as HTMLButtonElement).disabled).toBe(false);
   expect(within(screen.getByRole("list", { name: "Partidas do Desafio" })).getAllByRole("listitem")[0].textContent).toContain("Flamengo");
-  fireEvent.click(game().getByRole("button", { name: "X Empate" }));
-  await waitFor(() => expect(game().getByRole("button", { name: "X Empate" }).getAttribute("aria-pressed")).toBe("true"));
+  fireEvent.click(game().getByRole("button", { name: "Empate" }));
+  await waitFor(() => expect(game().getByRole("button", { name: "Empate" }).getAttribute("aria-pressed")).toBe("true"));
   expect(service.predict).toHaveBeenCalledWith(7, 14, "EMPATE");
   expect(service.participate).not.toHaveBeenCalled();
   expect(screen.queryByRole("dialog")).toBeNull();
@@ -70,20 +70,44 @@ it("anônimo consulta publicamente e vai ao login ao palpitar ou participar", as
   server.partidas = server.partidas.map(({ meuPalpite, ...item }) => ({ ...item, podeAlterarPalpite: false }));
   delete server.inscrito; delete server.minhaInscricao;
   await open();
+  expect(screen.getAllByRole("link", { name: "Entre para fazer seus palpites" })).toHaveLength(1);
+  expect(screen.queryByText("Entre para palpitar")).toBeNull();
   expect(service.detail).toHaveBeenCalledWith(7, false, expect.any(AbortSignal));
-  fireEvent.click(game().getByRole("button", { name: "1 Mandante" }));
+  fireEvent.click(game().getByRole("button", { name: "Casa" }));
   fireEvent.click(button("Participar do Desafio"));
   expect(nav.push).toHaveBeenCalledTimes(2); expect(nav.push).toHaveBeenCalledWith("/login");
   expect(service.predict).not.toHaveBeenCalled(); expect(service.participate).not.toHaveBeenCalled();
+});
+it("resumo usa quantidade real de jogos e elimina informações redundantes", async () => {
+  server.partidas = [{ ...first, meuPalpite: null }];
+  await open();
+  expect(screen.getByText("FREE · 1 jogo · Aberto")).toBeTruthy();
+  const list = screen.getByRole("list", { name: "Partidas do Desafio" });
+  expect(list.querySelectorAll("time")).toHaveLength(1);
+  expect(list.textContent).not.toMatch(/Agendada|Fechamento|Mandante|Visitante|Seu palpite|×|- x -/);
+  expect(game().getAllByRole("button").map(item => item.getAttribute("aria-label"))).toEqual(["Casa", "Empate", "Fora"]);
+  expect(game().getAllByRole("button").every(item => item.getAttribute("aria-pressed") === "false")).toBe(true);
+});
+it.each([ ["EM_ANDAMENTO", "Em andamento"], ["FINALIZADA", "Finalizado"], ["ANULADA", "Anulada"] ] as const)("mantém seletores e palpite no estado %s sem inventar placar ou pontos", async (status, label) => {
+  server.partidas = [{ ...first, status, podeAlterarPalpite: false }];
+  await open();
+  const list = within(screen.getByRole("list", { name: "Partidas do Desafio" }));
+  expect(list.getByText(label)).toBeTruthy();
+  expect(game().getAllByRole("button")).toHaveLength(3);
+  expect(game().getAllByRole("button").every(item => (item as HTMLButtonElement).disabled)).toBe(true);
+  expect(game().getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(game().getByRole("button", { name: "Fora" }));
+  expect(service.predict).not.toHaveBeenCalled();
+  expect(list.queryByText(/Acertou|Errou|ponto|indisponíveis|- x -/)).toBeNull();
 });
 it("mantém partida bloqueada visível com seu palpite e revalida 409", async () => {
   await open();
   server.partidas[0].podeAlterarPalpite = false;
   vi.mocked(service.predict).mockRejectedValueOnce(new ApiError(409, "Partida fechada."));
-  fireEvent.click(game().getByRole("button", { name: "2 Visitante" }));
+  fireEvent.click(game().getByRole("button", { name: "Fora" }));
   expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Partida fechada.");
-  await waitFor(() => expect((game().getByRole("button", { name: "2 Visitante" }) as HTMLButtonElement).disabled).toBe(true));
-  expect(game().getByRole("button", { name: "1 Mandante" }).getAttribute("aria-pressed")).toBe("true");
+  await waitFor(() => expect((game().getByRole("button", { name: "Fora" }) as HTMLButtonElement).disabled).toBe(true));
+  expect(game().getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("true");
 });
 it("indica jogos sem palpite, ignora anuladas e só participa após salvar", async () => {
   server.partidas[0].meuPalpite = null;
@@ -92,7 +116,7 @@ it("indica jogos sem palpite, ignora anuladas e só participa após salvar", asy
   expect(button("Participar do Desafio").disabled).toBe(true);
   expect(screen.getByRole("link", { name: "Flamengo × Palmeiras" }).getAttribute("href")).toBe("#partida-14");
   expect(screen.queryByRole("link", { name: "Grêmio × Corinthians" })).toBeNull();
-  fireEvent.click(game().getByRole("button", { name: "1 Mandante" }));
+  fireEvent.click(game().getByRole("button", { name: "Casa" }));
   await waitFor(() => expect(button("Participar do Desafio").disabled).toBe(false));
 });
 it("FREE confirma via API sem confirmação financeira nem carteira", async () => {
@@ -130,7 +154,7 @@ it("saldo insuficiente usa dados oficiais, abre PIX existente e permite repetir 
 it("inscrito não recebe nova cobrança e pode alterar palpites mesmo EM_ANDAMENTO", async () => {
   server = { ...server, inscrito: true, minhaInscricao: inscription, status: "EM_ANDAMENTO" };
   await open(); expect(screen.getByRole("heading", { name: "Participando" })).toBeTruthy();
-  fireEvent.click(game().getByRole("button", { name: "2 Visitante" }));
+  fireEvent.click(game().getByRole("button", { name: "Fora" }));
   await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 14, "FORA"));
   expect(service.participate).not.toHaveBeenCalled(); expect(screen.queryByRole("button", { name: "Participar do Desafio" })).toBeNull();
 });
@@ -162,14 +186,14 @@ it("PALPITES_INCOMPLETOS identifica IDs recebidos sem criar inscrição", async 
   expect(await screen.findByRole("link", { name: "Grêmio × Corinthians" })).toBeTruthy();
   expect(screen.queryByRole("heading", { name: "Participando" })).toBeNull();
   expect(button("Participar do Desafio").disabled).toBe(true);
-  await waitFor(() => expect((game("Grêmio x Corinthians").getByRole("button", { name: "X Empate" }) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(game("Grêmio x Corinthians").getByRole("button", { name: "X Empate" }));
+  await waitFor(() => expect((game("Grêmio x Corinthians").getByRole("button", { name: "Empate" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(game("Grêmio x Corinthians").getByRole("button", { name: "Empate" }));
   await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 11, "EMPATE"));
 });
 it("recusa reinscrição cancelada mas preserva edição de palpites abertos", async () => {
   server.minhaInscricao = { ...inscription, status: "CANCELADA" };
   await open(); expect(screen.queryByRole("button", { name: "Participar do Desafio" })).toBeNull();
-  expect((game().getByRole("button", { name: "X Empate" }) as HTMLButtonElement).disabled).toBe(false);
+  expect((game().getByRole("button", { name: "Empate" }) as HTMLButtonElement).disabled).toBe(false);
 });
 it.each([401, 403, 404])("detalhe trata HTTP %s", async status => {
   vi.mocked(service.detail).mockRejectedValueOnce(new ApiError(status));
@@ -178,7 +202,7 @@ it.each([401, 403, 404])("detalhe trata HTTP %s", async status => {
 });
 it("401 no palpite direciona ao login existente", async () => {
   await open(); vi.mocked(service.predict).mockRejectedValueOnce(new ApiError(401));
-  fireEvent.click(game().getByRole("button", { name: "X Empate" }));
+  fireEvent.click(game().getByRole("button", { name: "Empate" }));
   await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/login"));
 });
 it("troca de usuário descarta detalhes privados anteriores", async () => {
@@ -188,5 +212,5 @@ it("troca de usuário descarta detalhes privados anteriores", async () => {
   view.rerender(<DesafioDetailPage />);
   expect(screen.queryByRole("heading", { name: "Participando" })).toBeNull();
   await screen.findByRole("heading", { name: "Desafio POINT" });
-  expect(game().getByRole("button", { name: "1 Mandante" }).getAttribute("aria-pressed")).toBe("false");
+  expect(game().getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("false");
 });
