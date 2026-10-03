@@ -22,6 +22,18 @@ beforeEach(() => { vi.stubGlobal("React", React); vi.resetAllMocks(); auth.id = 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const rows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1);
 const positions = () => rows().map(row => within(row).getAllByRole("cell")[0].textContent);
+it("mantém entradas independentes do mesmo usuário com número e posições do backend", async () => {
+  vi.mocked(service.ranking).mockResolvedValue({ ...result, ranking: [
+    { ...result.ranking[1], inscricaoId: 88, numero: 1, nome: "Palpite 1", posicao: 1, pontos: 8 },
+    { ...result.ranking[0], inscricaoId: 90, numero: 1, nome: "Palpite 1", posicao: 2, pontos: 7 },
+    { ...result.ranking[1], inscricaoId: 99, numero: 2, nome: "Palpite 2", posicao: 3, pontos: 6 },
+  ] });
+  render(<DesafioRanking id={7} />); await screen.findByRole("table");
+  expect(positions()).toEqual(["1", "2", "3"]);
+  expect(rows().map(row => within(row).getAllByRole("cell")[1].textContent)).toEqual(["8", "7", "6"]);
+  expect(rows().map(row => within(row).getByRole("rowheader").textContent)).toEqual(["Bruno· Palpite 1Você", "Ana· Palpite 1", "Bruno· Palpite 2Você"]);
+  expect(screen.getAllByRole("row", { name: "Sua classificação" })).toHaveLength(2);
+});
 
 it("preserva exatamente ordem, posições empatadas e pontos da API", async () => {
   render(<DesafioRanking id={7} />); expect(screen.getByRole("status").textContent).toBe("Carregando ranking...");

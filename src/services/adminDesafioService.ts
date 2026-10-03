@@ -8,6 +8,7 @@ export interface DesafioPayload {
   tipoAcesso: DesafioAcesso;
   valorInscricao: string;
   limiteParticipantes?: number | null;
+  limiteInscricoesPorUsuario?: number;
 }
 export interface AdminDesafio extends DesafioPayload {
   descricao: string | null;
@@ -80,6 +81,7 @@ export const adminDesafioService = {
     valorInscricao: body.tipoAcesso === "FREE" ? "0.00" : body.valorInscricao,
     ...(body.descricao?.trim() ? { descricao: body.descricao.trim() } : {}),
     ...(body.limiteParticipantes != null ? { limiteParticipantes: body.limiteParticipantes } : {}),
+    ...(body.limiteInscricoesPorUsuario !== undefined ? { limiteInscricoesPorUsuario: body.limiteInscricoesPorUsuario } : {}),
   }),
   update: (id: number, body: Partial<DesafioPayload>) => write<AdminDesafio>(`/${id}`, "PATCH", body),
   publish: (id: number) => write<AdminDesafio>(`/${id}/publicar`, "POST"),

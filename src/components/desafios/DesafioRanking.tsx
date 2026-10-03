@@ -47,8 +47,8 @@ export function DesafioRanking({ id }: { id: number }) {
           <tbody>{data.ranking.map(row => {
             const own = ownId !== null && String(row.participante.idUsuario) === ownId;
             // Preserve the backend's order and positions, including ties across pages.
-            return <tr key={row.participante.idUsuario} className={own ? styles.ownRank : undefined} aria-label={own ? "Sua classificação" : undefined}>
-              <td>{row.posicao}</td><th scope="row"><div className={styles.rankingParticipant}><Participant participant={row.participante} />{own && <small>Você</small>}</div></th><td>{row.pontos}</td><td>{row.acertos}</td>
+            return <tr key={row.inscricaoId ?? `${row.participante.idUsuario}:${row.numero ?? 1}`} className={own ? styles.ownRank : undefined} aria-label={own ? "Sua classificação" : undefined}>
+              <td>{row.posicao}</td><th scope="row"><div className={styles.rankingParticipant}><Participant participant={row.participante} />{(row.nome || row.numero !== undefined) && <span>· {row.nome || `Palpite ${row.numero}`}</span>}{own && <small>Você</small>}</div></th><td>{row.pontos}</td><td>{row.acertos}</td>
             </tr>;
           })}</tbody>
         </table>

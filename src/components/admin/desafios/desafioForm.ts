@@ -2,10 +2,10 @@ import { ApiError } from "@/services/apiClient";
 import type { AdminDesafio, DesafioPayload, DesafioStatus } from "@/services/adminDesafioService";
 
 export const statusLabels: Record<DesafioStatus, string> = { RASCUNHO: "Rascunho", ABERTO: "Aberto", EM_ANDAMENTO: "Em andamento", ENCERRADO: "Encerrado", CANCELADO: "Cancelado" };
-export type DesafioFormState = Omit<DesafioPayload, "descricao" | "limiteParticipantes"> & { descricao: string; limiteParticipantes: string };
-export const emptyForm: DesafioFormState = { nome: "", descricao: "", tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: "" };
+export type DesafioFormState = Omit<DesafioPayload, "descricao" | "limiteParticipantes" | "limiteInscricoesPorUsuario"> & { descricao: string; limiteParticipantes: string; limiteInscricoesPorUsuario: string };
+export const emptyForm: DesafioFormState = { nome: "", descricao: "", tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: "", limiteInscricoesPorUsuario: "1" };
 export function fromDesafio(item: AdminDesafio): DesafioFormState {
-  return { nome: item.nome, descricao: item.descricao ?? "", tipoAcesso: item.tipoAcesso, valorInscricao: item.valorInscricao, limiteParticipantes: item.limiteParticipantes?.toString() ?? "" };
+  return { nome: item.nome, descricao: item.descricao ?? "", tipoAcesso: item.tipoAcesso, valorInscricao: item.valorInscricao, limiteParticipantes: item.limiteParticipantes?.toString() ?? "", limiteInscricoesPorUsuario: String(item.limiteInscricoesPorUsuario ?? 1) };
 }
 export function formPayload(form: DesafioFormState, mode: "create" | "edit" = "create"): DesafioPayload {
   const valor = form.tipoAcesso === "FREE" ? "0.00" : form.valorInscricao.trim().replace(",", ".");
@@ -14,8 +14,11 @@ export function formPayload(form: DesafioFormState, mode: "create" | "edit" = "c
   const limite = form.limiteParticipantes === "" ? null : Number(form.limiteParticipantes);
   if (limite !== null && (!Number.isInteger(limite) || limite < 1 || limite > 4294967295)) throw new Error("Informe um limite inteiro entre 1 e 4294967295, ou deixe vazio.");
   const descricao = form.descricao.trim();
+  const limiteUsuario = Number(form.limiteInscricoesPorUsuario);
+  if (!Number.isInteger(limiteUsuario) || limiteUsuario < 1 || limiteUsuario > 4294967295) throw new Error("Informe um número inteiro de palpites por usuário entre 1 e 4294967295.");
   return {
     nome: form.nome.trim(), tipoAcesso: form.tipoAcesso, valorInscricao: Number(valor).toFixed(2),
+    limiteInscricoesPorUsuario: limiteUsuario,
     ...(descricao || mode === "edit" ? { descricao: descricao || null } : {}),
     ...(limite !== null || mode === "edit" ? { limiteParticipantes: limite } : {}),
   };

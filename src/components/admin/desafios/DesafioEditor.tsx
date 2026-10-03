@@ -124,6 +124,7 @@ export function DesafioEditor({ mode }: { mode: "create" | "edit" }) {
         <label>Acesso<select value={form.tipoAcesso} onChange={event => { const value = event.target.value as DesafioFormState["tipoAcesso"]; update("tipoAcesso", value); if (value === "FREE") update("valorInscricao", "0.00"); }}><option>FREE</option><option>PAGO</option></select></label>
         {form.tipoAcesso === "PAGO" && <label>Valor da inscrição (R$)<input inputMode="decimal" required value={form.valorInscricao} onChange={event => update("valorInscricao", event.target.value)} /></label>}
         <label>Limite de participantes<input type="number" min="1" max="4294967295" step="1" placeholder="Sem limite" value={form.limiteParticipantes} onChange={event => update("limiteParticipantes", event.target.value)} /></label>
+        <label>Palpites por usuário<input type="number" required min="1" max="4294967295" step="1" value={form.limiteInscricoesPorUsuario} onChange={event => update("limiteInscricoesPorUsuario", event.target.value)} /></label>
       </div></fieldset>
       {editable && <div className={styles.formActions}><button type="submit" disabled={busy}>{busy ? "Aguarde..." : mode === "create" ? "Criar e selecionar partidas" : "Salvar alterações"}</button></div>}
     </form>

@@ -60,3 +60,9 @@ it("POST omite descrição vazia e limite ausente e normaliza FREE", async () =>
   await service.create({ nome: "Copa", tipoAcesso: "FREE", valorInscricao: "99.00", descricao: "   " });
   expect(JSON.parse(vi.mocked(apiFetch).mock.calls[0][1]?.body as string)).toEqual({ nome: "Copa", tipoAcesso: "FREE", valorInscricao: "0.00" });
 });
+it("envia limite independente de palpites por usuário na criação e edição", async () => {
+  await service.create({ nome: "Copa", tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: 30, limiteInscricoesPorUsuario: 3 });
+  expect(JSON.parse(vi.mocked(apiFetch).mock.calls[0][1]?.body as string)).toEqual({ nome: "Copa", tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: 30, limiteInscricoesPorUsuario: 3 });
+  await service.update(7, { limiteInscricoesPorUsuario: 2 });
+  expect(apiFetch).toHaveBeenLastCalledWith("/admin/desafios/7", { ...auth, method: "PATCH", body: '{"limiteInscricoesPorUsuario":2}' });
+});

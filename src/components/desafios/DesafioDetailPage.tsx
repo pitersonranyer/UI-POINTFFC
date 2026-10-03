@@ -8,7 +8,7 @@ import { useWallet } from "@/contexts/WalletContext";
 import { AddBalanceModal } from "@/components/wallet/AddBalanceModal";
 import { Dialog } from "@/components/ui/Dialog";
 import { ApiError } from "@/services/apiClient";
-import { desafioService as service, desafioMessage, desafioStatus, insufficientBalance, type DesafioDetalhe, type DesafioJogo, type Palpite, type SaldoInsuficiente } from "@/services/desafioService";
+import { desafioService as service, desafioMessage, desafioStatus, insufficientBalance, type DesafioDetalhe, type DesafioInscricao, type DesafioJogo, type Palpite, type SaldoInsuficiente } from "@/services/desafioService";
 import { formatWalletCurrency as money } from "@/lib/format";
 import { DesafioMatch } from "./DesafioMatch";
 import { DesafioRanking } from "./DesafioRanking";
@@ -40,6 +40,9 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
   const [missingIds, setMissingIds] = useState<number[]>([]), [blockedEntry, setBlockedEntry] = useState(false);
   const [balance, setBalance] = useState<SaldoInsuficiente | null>(null), [lowBalance, setLowBalance] = useState(false);
   const [confirm, setConfirm] = useState(false), [pixOpen, setPixOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null), [creating, setCreating] = useState(false);
+  const [creationError, setCreationError] = useState("");
+  const creationKey = useRef<string | null>(null);
   const lock = useRef(false), mounted = useRef(true), read = useRef<AbortController | null>(null);
   const refresh = useCallback(async () => {
     read.current?.abort();
@@ -49,6 +52,9 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
       const result = await service.detail(id, authenticated, controller.signal);
       if (controller.signal.aborted || !mounted.current) return null;
       setData(result); setNeedsRefresh(false);
+      setSelectedId(current => result.minhasInscricoes
+        ? result.minhasInscricoes.some(item => item.id === current) ? current : result.minhasInscricoes[0]?.id ?? null
+        : null);
       return result;
     } catch (cause) {
       if (controller.signal.aborted || !mounted.current) return null;
@@ -62,16 +68,65 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
     return () => { mounted.current = false; read.current?.abort(); };
   }, [refresh]);
   const login = () => router.push("/login");
+  const multipleContract = Array.isArray(data?.minhasInscricoes);
+  const selected = multipleContract ? data?.minhasInscricoes?.find(item => item.id === selectedId) : data?.minhaInscricao;
+  const cancelled = selected?.status === "CANCELADA";
+  const enrolled = multipleContract ? selected?.status === "ATIVA" : data?.inscrito === true || selected?.status === "ATIVA";
+  const games = data?.partidas.map(game => {
+    if (!multipleContract) return cancelled ? { ...game, podeAlterarPalpite: false } : game;
+    const pick = data?.minhasInscricoes?.find(item => item.id === selectedId)?.palpites.find(item => item.partidaId === game.id);
+    return { ...game, meuPalpite: pick?.meuPalpite ?? null, pontos: pick?.pontos ?? null,
+      apurado: pick?.apurado ?? false, podeAlterarPalpite: !cancelled && (pick?.podeAlterarPalpite ?? false) };
+  }) ?? [];
+
+  function resetFeedback() {
+    setSaved({}); setGameErrors({}); setMissingIds([]); setBlockedEntry(false);
+    setError(""); setSuccess(""); setBalance(null); setLowBalance(false); setConfirm(false);
+  }
+  function selectInscricao(inscricaoId: number) {
+    if (lock.current || refreshing || pixOpen) return;
+    setSelectedId(inscricaoId); resetFeedback();
+  }
+  function mergeInscricao(current: DesafioDetalhe, item: DesafioInscricao): DesafioDetalhe {
+    if (!Array.isArray(current.minhasInscricoes)) return { ...current, inscrito: item.status === "ATIVA", minhaInscricao: item };
+    const existing = current.minhasInscricoes.find(entry => entry.id === item.id);
+    const updated = { ...existing, ...item, numero: item.numero ?? existing?.numero ?? 1,
+      nome: item.nome ?? existing?.nome ?? `Palpite ${item.numero ?? 1}`, palpites: existing?.palpites ?? [] };
+    return { ...current, minhasInscricoes: [...current.minhasInscricoes.filter(entry => entry.id !== item.id), updated].sort((a, b) => a.numero - b.numero) };
+  }
+  async function createInscricao() {
+    if (!authenticated) { login(); return; }
+    if (!data || !multipleContract || lock.current || refreshing || needsRefresh) return;
+    lock.current = true; setCreating(true); setCreationError("");
+    try {
+      creationKey.current ??= crypto.randomUUID();
+      const result = await service.createInscricao(id, creationKey.current);
+      if (!mounted.current) return;
+      creationKey.current = null;
+      setData(current => current && mergeInscricao(current, result));
+      setSelectedId(result.id); resetFeedback();
+      await refresh();
+      if (mounted.current) setSelectedId(result.id);
+    } catch (cause) {
+      if (!mounted.current) return;
+      setCreationError(desafioMessage(cause));
+      if (cause instanceof ApiError && cause.status === 401) login();
+    } finally { lock.current = false; if (mounted.current) setCreating(false); }
+  }
 
   async function choose(game: DesafioJogo, value: Palpite) {
     if (!authenticated) { login(); return; }
-    if (lock.current || refreshing || needsRefresh || !game.podeAlterarPalpite || (game.meuPalpite === value && !missingIds.includes(game.id))) return;
+    if (lock.current || refreshing || needsRefresh || cancelled || (multipleContract && !selected) || !game.podeAlterarPalpite || (game.meuPalpite === value && !missingIds.includes(game.id))) return;
+    const inscricaoId = selected?.id;
     lock.current = true; setSaving(game.id); setGameErrors(current => ({ ...current, [game.id]: "" }));
     setSaved(current => ({ ...current, [game.id]: false }));
     try {
-      const result = await service.predict(id, game.id, value);
+      const result = inscricaoId !== undefined ? await service.predict(id, game.id, value, inscricaoId) : await service.predict(id, game.id, value);
       if (!mounted.current) return;
-      setData(current => current && ({ ...current, partidas: current.partidas.map(item => item.id === result.partidaId ? { ...item, meuPalpite: result.palpite, fechamentoEm: result.fechamentoEm, podeAlterarPalpite: result.podeAlterarPalpite } : item) }));
+      setData(current => current && (Array.isArray(current.minhasInscricoes)
+        ? { ...current, minhasInscricoes: current.minhasInscricoes.map(entry => entry.id !== inscricaoId ? entry : { ...entry,
+          palpites: entry.palpites.map(pick => pick.partidaId === result.partidaId ? { ...pick, meuPalpite: result.palpite, podeAlterarPalpite: result.podeAlterarPalpite } : pick) }) }
+        : { ...current, partidas: current.partidas.map(item => item.id === result.partidaId ? { ...item, meuPalpite: result.palpite, fechamentoEm: result.fechamentoEm, podeAlterarPalpite: result.podeAlterarPalpite } : item) }));
       setSaved(current => ({ ...current, [game.id]: true }));
       setMissingIds(current => current.filter(partidaId => partidaId !== game.id));
     } catch (cause) {
@@ -85,13 +140,14 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
 
   async function participate() {
     if (!authenticated) { login(); return; }
-    if (!data || lock.current || refreshing || needsRefresh || data.inscrito || data.minhaInscricao?.status === "ATIVA" || data.minhaInscricao?.status === "CANCELADA" || data.status !== "ABERTO") return;
+    if (!data || lock.current || refreshing || needsRefresh || enrolled || cancelled || (multipleContract && !selected) || data.status !== "ABERTO") return;
+    const inscricaoId = selected?.id;
     lock.current = true; setJoining(true); setError(""); setBalance(null); setLowBalance(false); setSuccess("");
     try {
-      const result = await service.participate(id);
+      const result = inscricaoId !== undefined ? await service.participate(id, inscricaoId) : await service.participate(id);
       if (!mounted.current) return;
       // Enrollment only comes from the backend response, never from saved predictions.
-      setData(current => current && ({ ...current, inscrito: result.inscricao.status === "ATIVA", minhaInscricao: result.inscricao }));
+      setData(current => current && mergeInscricao(current, result.inscricao));
       setConfirm(false); setSuccess("Participação confirmada!"); setMissingIds([]);
       if (result.tipoAcesso === "PAGO") void refreshWallet();
       await refresh();
@@ -107,16 +163,16 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
       }
       // Recover an existing enrollment after a lost response or concurrent attempt.
       const updated = await refresh();
-      if (updated?.inscrito || updated?.minhaInscricao?.status === "ATIVA") { setError(""); setSuccess("Participação confirmada!"); setLowBalance(false); setBalance(null); if (updated.tipoAcesso === "PAGO") void refreshWallet(); }
+      const recovered = updated?.minhasInscricoes ? updated.minhasInscricoes.find(item => item.id === inscricaoId)?.status === "ATIVA" : updated?.inscrito || updated?.minhaInscricao?.status === "ATIVA";
+      if (updated && recovered) { setError(""); setSuccess("Participação confirmada!"); setLowBalance(false); setBalance(null); if (updated.tipoAcesso === "PAGO") void refreshWallet(); }
     } finally { lock.current = false; if (mounted.current) setJoining(false); }
   }
 
-  const busy = saving !== null || joining || refreshing;
-  const enrolled = data?.inscrito === true || data?.minhaInscricao?.status === "ATIVA";
-  const cancelled = data?.minhaInscricao?.status === "CANCELADA";
-  const missing = data?.partidas.filter(game => game.status !== "ANULADA" && (!game.meuPalpite || missingIds.includes(game.id))) ?? [];
+  const busy = saving !== null || joining || refreshing || creating;
+  const missing = games.filter(game => game.status !== "ANULADA" && (!game.meuPalpite || missingIds.includes(game.id)));
   const acceptingEntries = data?.status === "ABERTO" && !cancelled;
-  const entryDisabled = busy || needsRefresh || blockedEntry || cancelled || data?.status !== "ABERTO" || (authenticated && (missing.length > 0 || !data?.partidas.some(game => game.status !== "ANULADA")));
+  const entryDisabled = busy || needsRefresh || blockedEntry || cancelled || (multipleContract && !selected) || data?.status !== "ABERTO" || (authenticated && (missing.length > 0 || !games.some(game => game.status !== "ANULADA")));
+  const canCreate = authenticated && multipleContract && (data?.status === "ABERTO" || data?.status === "EM_ANDAMENTO");
   async function retry() { if (lock.current) return; const result = await refresh(); if (result) setBlockedEntry(false); }
   function beginParticipation() {
     if (!authenticated) { login(); return; }
@@ -132,12 +188,18 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
       {data && <>
         <header className={styles.detailHeader}><div><h1>{data.nome}</h1><p>{data.tipoAcesso}{data.tipoAcesso === "PAGO" ? ` · ${money(data.valorInscricao)}` : ""} · {data.partidas.length} {data.partidas.length === 1 ? "jogo" : "jogos"} · {desafioStatus[data.status]}</p></div><button className={styles.secondary} disabled={busy} onClick={() => void retry()}>{refreshing ? "Atualizando..." : "Atualizar"}</button></header>
         <h2 className={styles.sectionTitle}>{authenticated ? "Seus palpites" : "Partidas"}</h2>
+        {authenticated && multipleContract && ((data.minhasInscricoes?.length ?? 0) > 1 || canCreate) && <div className={styles.pickSelector} role="group" aria-label="Seus palpites no Desafio">
+          {data.minhasInscricoes?.map(item => <button type="button" key={item.id} className={styles.secondary} aria-pressed={selectedId === item.id} disabled={busy || pixOpen} onClick={() => selectInscricao(item.id)}>Palpite {item.numero}</button>)}
+          {canCreate && <button type="button" className={styles.secondary} disabled={busy || needsRefresh || pixOpen} onClick={() => void createInscricao()}>{creating ? "Criando..." : "+ Novo palpite"}</button>}
+        </div>}
+        {authenticated && multipleContract && data.quantidadeUtilizada !== undefined && data.limiteInscricoesPorUsuario !== undefined && <p className={styles.pickSummary}>{data.quantidadeUtilizada} de {data.limiteInscricoesPorUsuario} participações confirmadas</p>}
+        {creationError && <p className={styles.error} role="alert">{creationError}</p>}
         {!authenticated && <Link className={styles.loginPrompt} href="/login">Entre para fazer seus palpites</Link>}
-        {!data.partidas.length ? <p className={styles.feedback}>Nenhuma partida disponível.</p> : <ol className={styles.games} aria-label="Partidas do Desafio">{[...data.partidas].sort((a, b) => a.ordem - b.ordem || a.id - b.id).map(game => <DesafioMatch key={game.id} game={game} authenticated={authenticated} disabled={busy || needsRefresh} saving={saving === game.id} saved={!!saved[game.id]} error={gameErrors[game.id]} missing={authenticated && acceptingEntries && !enrolled && game.podeAlterarPalpite && missing.some(item => item.id === game.id)} choose={(item, value) => void choose(item, value)} />)}</ol>}
+        {!data.partidas.length ? <p className={styles.feedback}>Nenhuma partida disponível.</p> : <ol className={styles.games} aria-label="Partidas do Desafio">{[...games].sort((a, b) => a.ordem - b.ordem || a.id - b.id).map(game => <DesafioMatch key={`${selectedId}:${game.id}`} game={game} authenticated={authenticated} disabled={busy || needsRefresh} saving={saving === game.id} saved={!!saved[game.id]} error={gameErrors[game.id]} missing={authenticated && acceptingEntries && !enrolled && game.podeAlterarPalpite && missing.some(item => item.id === game.id)} choose={(item, value) => void choose(item, value)} />)}</ol>}
         <section className={styles.participation} aria-label="Participação no Desafio">
           <h2>{enrolled ? "Participando" : acceptingEntries ? "Participar do Desafio" : "Participação"}</h2>
           {enrolled ? <p>Você está participando. Os palpites das partidas abertas continuam editáveis.</p> : <>
-            {cancelled ? <p>Sua inscrição foi cancelada. Não é possível participar novamente.</p> : data.status !== "ABERTO" ? <p>Novas participações indisponíveis neste estado.</p> : <p>{data.tipoAcesso === "FREE" ? "Participação gratuita." : `Inscrição: ${money(data.valorInscricao)}, debitados da sua carteira ao confirmar.`}</p>}
+            {cancelled ? <p>Este palpite foi cancelado. Não é possível confirmar ou alterar.</p> : data.status !== "ABERTO" ? <p>Novas participações indisponíveis neste estado.</p> : <p>{data.tipoAcesso === "FREE" ? "Participação gratuita." : `Inscrição: ${money(data.valorInscricao)}, debitados da sua carteira ao confirmar.`}</p>}
             {authenticated && acceptingEntries && missing.length > 0 && <div><p>Preencha os palpites destes jogos para participar:</p><ul>{missing.map(game => <li key={game.id}><a href={`#partida-${game.id}`}>{game.mandanteNome ?? game.nomeMandante} × {game.visitanteNome ?? game.nomeVisitante}</a></li>)}</ul></div>}
             {error && <p className={styles.error} role="alert">{error}</p>}
             {lowBalance && <div>{balance && <dl className={styles.balance}><dt>Saldo disponível</dt><dd>{money(balance.saldoDisponivel)}</dd><dt>Valor necessário</dt><dd>{money(balance.valorNecessario)}</dd><dt>Valor faltante</dt><dd>{money(balance.valorFaltante)}</dd></dl>}<button className={styles.secondary} disabled={busy} onClick={() => setPixOpen(true)}>Adicionar saldo</button></div>}

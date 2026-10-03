@@ -2,7 +2,7 @@ import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/apiClient";
-import { desafioService as service, type DesafioDetalhe, type DesafioInscricao, type DesafioJogo, type ParticipacaoConfirmada } from "@/services/desafioService";
+import { desafioService as service, type DesafioDetalhe, type DesafioInscricao, type DesafioMinhaInscricao, type DesafioJogo, type ParticipacaoConfirmada } from "@/services/desafioService";
 import { DesafioDetailPage } from "./DesafioDetailPage";
 import { DesafiosPage } from "./DesafiosPage";
 
@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: nav.push }), useSe
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: auth.authenticated, isLoading: auth.loading, user: auth.authenticated ? { idUsuario: auth.id } : null }) }));
 vi.mock("@/contexts/WalletContext", () => ({ useWallet: () => ({ refreshWallet: wallet.refresh }) }));
 vi.mock("@/components/wallet/AddBalanceModal", () => ({ AddBalanceModal: ({ close }: { close(): void }) => <div role="dialog" aria-label="PIX existente"><button onClick={close}>Concluir recarga</button></div> }));
-vi.mock("@/services/desafioService", async original => ({ ...await original<object>(), desafioService: { list: vi.fn(), detail: vi.fn(), predict: vi.fn(), participate: vi.fn() } }));
+vi.mock("@/services/desafioService", async original => ({ ...await original<object>(), desafioService: { list: vi.fn(), detail: vi.fn(), predict: vi.fn(), participate: vi.fn(), createInscricao: vi.fn() } }));
 const first: DesafioJogo = { id: 14, ordem: 1, nomeCompeticao: "Brasileirão", nomeMandante: "Flamengo", nomeVisitante: "Palmeiras", logoMandanteUrl: null, logoVisitanteUrl: null, dataInicio: "2001-10-03T19:00:00.000Z", status: "AGENDADA", fechamentoEm: "2001-10-03T19:00:00.000Z", podeAlterarPalpite: true, meuPalpite: "CASA" };
 const second: DesafioJogo = { ...first, id: 11, ordem: 2, nomeMandante: "Grêmio", nomeVisitante: "Corinthians", meuPalpite: "EMPATE" };
 const fixture: DesafioDetalhe = { id: 7, nome: "Desafio POINT", descricao: "Palpite nos jogos", tipoAcesso: "FREE", valorInscricao: "0.00", status: "ABERTO", inicioInscricao: "2001-10-01T12:00:00.000Z", fimInscricao: "2001-10-02T12:00:00.000Z", dataInicio: "2001-10-03T12:00:00.000Z", dataFim: "2001-10-04T23:00:00.000Z", partidas: [first, second], inscrito: false, minhaInscricao: null };
@@ -38,6 +38,160 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const button = (name: string | RegExp) => screen.getByRole("button", { name }) as HTMLButtonElement;
 const game = (name = "Flamengo x Palmeiras") => within(screen.getByRole("group", { name: `Palpite: ${name}` }));
 const open = async () => { render(<DesafioDetailPage />); await screen.findByRole("heading", { name: "Desafio POINT" }); };
+
+function entry(id: number, numero: number, status: DesafioInscricao["status"] = "RASCUNHO", pick: DesafioJogo["meuPalpite"] = "CASA"): DesafioMinhaInscricao {
+  return { ...inscription, id, numero, nome: `Palpite ${numero}`, status, palpites: [first, second].map(item => ({ partidaId: item.id, meuPalpite: pick ?? null, pontos: null, apurado: false, podeAlterarPalpite: status !== "CANCELADA" })) };
+}
+function multiple(entries = [entry(88, 1, "ATIVA"), entry(99, 2, "RASCUNHO", "FORA")]) {
+  server = { ...server, minhasInscricoes: entries, limiteInscricoesPorUsuario: 2, quantidadeUtilizada: 1, inscrito: true, minhaInscricao: entries[0] };
+  vi.mocked(service.predict).mockImplementation(async (id, partidaId, palpite, inscricaoId) => {
+    server.minhasInscricoes = server.minhasInscricoes!.map(item => item.id === inscricaoId ? { ...item, palpites: item.palpites.map(pick => pick.partidaId === partidaId ? { ...pick, meuPalpite: palpite } : pick) } : item);
+    return { desafioId: id, partidaId, palpite, fechamentoEm: first.fechamentoEm, podeAlterarPalpite: true };
+  });
+  vi.mocked(service.participate).mockImplementation(async (_id, inscricaoId) => {
+    const confirmed = { ...server.minhasInscricoes!.find(item => item.id === inscricaoId)!, status: "ATIVA" as const, valorInscricao: server.valorInscricao };
+    server.minhasInscricoes = server.minhasInscricoes!.map(item => item.id === inscricaoId ? confirmed : item);
+    server.quantidadeUtilizada = server.minhasInscricoes.filter(item => item.status === "ATIVA").length;
+    return { inscricao: confirmed, tipoAcesso: server.tipoAcesso, valorCobrado: confirmed.valorInscricao };
+  });
+}
+it("Palpite 1 é selecionado primeiro e alternância nunca usa os palpites legados", async () => {
+  multiple(); server.partidas[0].meuPalpite = "EMPATE";
+  await open();
+  expect(button("Palpite 1").getAttribute("aria-pressed")).toBe("true");
+  expect(game().getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(button("Palpite 2"));
+  expect(game().getByRole("button", { name: "Fora" }).getAttribute("aria-pressed")).toBe("true");
+  fireEvent.click(game().getByRole("button", { name: "Empate" }));
+  await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 14, "EMPATE", 99));
+  await waitFor(() => expect(button("Palpite 1").disabled).toBe(false));
+  fireEvent.click(button("Palpite 1"));
+  expect(game().getByRole("button", { name: "Casa" }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.queryByText("Salvo ✓")).toBeNull();
+  fireEvent.click(game().getByRole("button", { name: "Fora" }));
+  await waitFor(() => expect(service.predict).toHaveBeenLastCalledWith(7, 14, "FORA", 88));
+  expect(server.minhasInscricoes![1].palpites[0].meuPalpite).toBe("EMPATE");
+});
+it("replay de criação reutiliza a chave e uma nova solicitação gera outra", async () => {
+  multiple([entry(88, 1, "ATIVA")]);
+  const uuid = vi.fn().mockReturnValueOnce("11111111-1111-4111-8111-111111111111").mockReturnValueOnce("22222222-2222-4222-8222-222222222222");
+  vi.stubGlobal("crypto", { randomUUID: uuid });
+  vi.mocked(service.createInscricao).mockImplementationOnce(async () => {
+    server.minhasInscricoes!.push(entry(99, 2, "RASCUNHO", null));
+    throw new ApiError(0);
+  }).mockImplementationOnce(async () => server.minhasInscricoes![1]).mockImplementationOnce(async () => {
+    const created = entry(101, 3, "RASCUNHO", null); server.minhasInscricoes!.push(created); return created;
+  });
+  await open(); fireEvent.click(button("+ Novo palpite")); await screen.findByRole("alert");
+  fireEvent.click(button("+ Novo palpite"));
+  await waitFor(() => expect(button("Palpite 2").getAttribute("aria-pressed")).toBe("true"));
+  expect(service.createInscricao).toHaveBeenNthCalledWith(1, 7, "11111111-1111-4111-8111-111111111111");
+  expect(service.createInscricao).toHaveBeenNthCalledWith(2, 7, "11111111-1111-4111-8111-111111111111");
+  expect(screen.queryByRole("heading", { name: "Participando" })).toBeNull();
+  expect(button("Participar do Desafio").disabled).toBe(true);
+  expect(service.participate).not.toHaveBeenCalled(); expect(wallet.refresh).not.toHaveBeenCalled();
+  await waitFor(() => expect(button("+ Novo palpite").disabled).toBe(false));
+  fireEvent.click(button("+ Novo palpite"));
+  await waitFor(() => expect(button("Palpite 3").getAttribute("aria-pressed")).toBe("true"));
+  expect(service.createInscricao).toHaveBeenLastCalledWith(7, "22222222-2222-4222-8222-222222222222");
+  expect(uuid).toHaveBeenCalledTimes(2);
+});
+it("nova resposta sem inscrições exige criar antes de preencher e não reutiliza campos legados", async () => {
+  multiple([]); server.quantidadeUtilizada = 0;
+  vi.mocked(service.createInscricao).mockImplementation(async () => {
+    const created = entry(88, 1, "RASCUNHO", null); server.minhasInscricoes = [created]; return created;
+  });
+  await open(); expect((game().getByRole("button", { name: "Casa" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(button("+ Novo palpite"));
+  await waitFor(() => expect((game().getByRole("button", { name: "Casa" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(game().getByRole("button", { name: "Casa" }));
+  await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 14, "CASA", 88));
+});
+it("FREE confirma somente o palpite escolhido, mesmo com outra participação ativa", async () => {
+  multiple(); await open(); fireEvent.click(button("Palpite 2")); fireEvent.click(button("Participar do Desafio"));
+  await screen.findByRole("heading", { name: "Participando" });
+  expect(service.participate).toHaveBeenCalledWith(7, 99); expect(wallet.refresh).not.toHaveBeenCalled();
+  expect(screen.getByText("2 de 2 participações confirmadas")).toBeTruthy();
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+it("PAGO confirma cada palpite independentemente e não confirma novamente ATIVA", async () => {
+  multiple(); server.tipoAcesso = "PAGO"; server.valorInscricao = "2.00";
+  await open(); fireEvent.click(button("Palpite 2")); fireEvent.click(button("Participar do Desafio"));
+  expect(service.participate).not.toHaveBeenCalled(); fireEvent.click(button(/Confirmar e pagar/));
+  await screen.findByRole("heading", { name: "Participando" }); expect(service.participate).toHaveBeenCalledWith(7, 99);
+  expect(wallet.refresh).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(button("Palpite 1").disabled).toBe(false)); fireEvent.click(button("Palpite 1"));
+  expect(screen.queryByRole("button", { name: "Participar do Desafio" })).toBeNull();
+  expect(service.participate).toHaveBeenCalledTimes(1);
+});
+it("retry de confirmação mantém ID e não confunde falha com outra inscrição ATIVA", async () => {
+  multiple(); vi.mocked(service.participate).mockRejectedValueOnce(new ApiError(0));
+  await open(); fireEvent.click(button("Palpite 2")); fireEvent.click(button("Participar do Desafio")); await screen.findByRole("alert");
+  expect(screen.queryByText("Participação confirmada!")).toBeNull();
+  await waitFor(() => expect(button("Participar do Desafio").disabled).toBe(false));
+  fireEvent.click(button("Participar do Desafio")); await screen.findByRole("heading", { name: "Participando" });
+  expect(service.participate).toHaveBeenNthCalledWith(1, 7, 99); expect(service.participate).toHaveBeenNthCalledWith(2, 7, 99);
+});
+it("resposta perdida da confirmação recupera somente a inscrição escolhida", async () => {
+  multiple(); vi.mocked(service.participate).mockImplementationOnce(async () => {
+    server.minhasInscricoes![1].status = "ATIVA"; throw new ApiError(0);
+  });
+  await open(); fireEvent.click(button("Palpite 2")); fireEvent.click(button("Participar do Desafio"));
+  await screen.findByText("Participação confirmada!"); expect(service.participate).toHaveBeenCalledTimes(1);
+});
+it("saldo insuficiente é do palpite selecionado e reutiliza o PIX existente", async () => {
+  multiple(); server.tipoAcesso = "PAGO"; server.valorInscricao = "2.00";
+  vi.mocked(service.participate).mockRejectedValueOnce(new ApiError(409, "Adicione saldo para participar.", { code: "SALDO_INSUFICIENTE", saldoDisponivel: "0.50", valorNecessario: "2.00", valorFaltante: "1.50" }));
+  await open(); fireEvent.click(button("Palpite 2")); fireEvent.click(button("Participar do Desafio")); fireEvent.click(button(/Confirmar e pagar/));
+  await screen.findByText("Saldo disponível"); await waitFor(() => expect(button("Adicionar saldo").disabled).toBe(false));
+  fireEvent.click(button("Adicionar saldo")); expect(screen.getByRole("dialog", { name: "PIX existente" })).toBeTruthy();
+  fireEvent.click(button("Concluir recarga")); await waitFor(() => expect(button("Participar do Desafio").disabled).toBe(false));
+  fireEvent.click(button("Participar do Desafio")); fireEvent.click(button(/Confirmar e pagar/)); await screen.findByRole("heading", { name: "Participando" });
+  expect(service.participate).toHaveBeenNthCalledWith(2, 7, 99);
+});
+it("CANCELADA bloqueia preenchimento e confirmação, preservando a seleção", async () => {
+  multiple([entry(88, 1, "ATIVA"), entry(99, 2, "CANCELADA", "FORA")]); await open(); fireEvent.click(button("Palpite 2"));
+  expect(game().getByRole("button", { name: "Fora" }).getAttribute("aria-pressed")).toBe("true");
+  expect(game().getAllByRole("button").every(item => (item as HTMLButtonElement).disabled)).toBe(true);
+  expect(screen.queryByRole("button", { name: "Participar do Desafio" })).toBeNull();
+});
+it("limite usa quantidade do backend e apresenta rejeição de confirmação sem contar rascunhos", async () => {
+  multiple(); server.limiteInscricoesPorUsuario = 1;
+  vi.mocked(service.participate).mockRejectedValueOnce(new ApiError(409, "Limite de participações por usuário atingido.", { code: "LIMITE_INSCRICOES_USUARIO_ATINGIDO" }));
+  await open(); expect(screen.getByText("1 de 1 participações confirmadas")).toBeTruthy();
+  fireEvent.click(button("Palpite 2")); expect(button("Participar do Desafio").disabled).toBe(false);
+  fireEvent.click(button("Participar do Desafio")); expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Limite de participações por usuário atingido.");
+});
+it("apuração, pontos e elegibilidade pertencem a cada inscrição e placar é compartilhado", async () => {
+  multiple(); server.partidas[0] = { ...first, status: "FINALIZADA", golsMandante: 1, golsVisitante: 0 };
+  server.minhasInscricoes![0].palpites[0] = { partidaId: 14, meuPalpite: "CASA", pontos: 1, apurado: true, podeAlterarPalpite: false };
+  server.minhasInscricoes![1].palpites[0] = { partidaId: 14, meuPalpite: "FORA", pontos: 0, apurado: true, podeAlterarPalpite: false };
+  await open(); expect(screen.getByText("✓ Acertou · +1 ponto")).toBeTruthy(); expect(screen.getByLabelText("Placar do Palmeiras").textContent).toBe("0");
+  fireEvent.click(button("Palpite 2")); expect(screen.getByText("✕ Errou · 0 ponto")).toBeTruthy(); expect(screen.queryByText("✓ Acertou · +1 ponto")).toBeNull();
+  expect(screen.getByLabelText("Placar do Flamengo").textContent).toBe("1");
+});
+it("bloqueia alternância durante salvamento sem contaminar outro palpite", async () => {
+  multiple(); let resolve!: (value: Awaited<ReturnType<typeof service.predict>>) => void;
+  vi.mocked(service.predict).mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  await open(); fireEvent.click(game().getByRole("button", { name: "Empate" })); fireEvent.click(button("Palpite 2"));
+  expect(button("Palpite 1").getAttribute("aria-pressed")).toBe("true"); expect(button("Palpite 2").disabled).toBe(true);
+  resolve({ desafioId: 7, partidaId: 14, palpite: "EMPATE", fechamentoEm: first.fechamentoEm, podeAlterarPalpite: true });
+  await waitFor(() => expect(button("Palpite 2").disabled).toBe(false)); fireEvent.click(button("Palpite 2"));
+  expect(game().getByRole("button", { name: "Fora" }).getAttribute("aria-pressed")).toBe("true"); expect(screen.queryByText("Salvo ✓")).toBeNull();
+});
+it("confirmação exige preencher todos os palpites obrigatórios da inscrição escolhida", async () => {
+  multiple([entry(88, 1, "ATIVA"), entry(99, 2, "RASCUNHO", null)]); await open(); fireEvent.click(button("Palpite 2"));
+  expect(button("Participar do Desafio").disabled).toBe(true); fireEvent.click(game().getByRole("button", { name: "Casa" }));
+  await waitFor(() => expect((game("Grêmio x Corinthians").getByRole("button", { name: "Empate" }) as HTMLButtonElement).disabled).toBe(false));
+  expect(button("Participar do Desafio").disabled).toBe(true); fireEvent.click(game("Grêmio x Corinthians").getByRole("button", { name: "Empate" }));
+  await waitFor(() => expect(button("Participar do Desafio").disabled).toBe(false));
+  expect(server.minhasInscricoes![0].palpites.every(pick => pick.meuPalpite === "CASA")).toBe(true);
+});
+it("rejeição de criação exibe mensagem de negócio sem termos internos", async () => {
+  multiple(); vi.mocked(service.createInscricao).mockRejectedValueOnce(new ApiError(409, "Cartela indisponível para criação."));
+  await open(); fireEvent.click(button("+ Novo palpite"));
+  expect(await screen.findByRole("alert")).toHaveProperty("textContent", "palpite indisponível para criação."); expect(service.participate).not.toHaveBeenCalled();
+});
 
 it("vitrine pública compacta usa paginação, acesso e link do detalhe", async () => {
   render(<DesafiosPage />);
@@ -155,7 +309,7 @@ it("inscrito não recebe nova cobrança e pode alterar palpites mesmo EM_ANDAMEN
   server = { ...server, inscrito: true, minhaInscricao: inscription, status: "EM_ANDAMENTO" };
   await open(); expect(screen.getByRole("heading", { name: "Participando" })).toBeTruthy();
   fireEvent.click(game().getByRole("button", { name: "Fora" }));
-  await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 14, "FORA"));
+  await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 14, "FORA", 88));
   expect(service.participate).not.toHaveBeenCalled(); expect(screen.queryByRole("button", { name: "Participar do Desafio" })).toBeNull();
 });
 it("bloqueia cliques simultâneos enquanto participação está em andamento", async () => {
@@ -190,10 +344,10 @@ it("PALPITES_INCOMPLETOS identifica IDs recebidos sem criar inscrição", async 
   fireEvent.click(game("Grêmio x Corinthians").getByRole("button", { name: "Empate" }));
   await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 11, "EMPATE"));
 });
-it("recusa reinscrição cancelada mas preserva edição de palpites abertos", async () => {
+it("recusa reinscrição cancelada e bloqueia novos palpites", async () => {
   server.minhaInscricao = { ...inscription, status: "CANCELADA" };
   await open(); expect(screen.queryByRole("button", { name: "Participar do Desafio" })).toBeNull();
-  expect((game().getByRole("button", { name: "Empate" }) as HTMLButtonElement).disabled).toBe(false);
+  expect((game().getByRole("button", { name: "Empate" }) as HTMLButtonElement).disabled).toBe(true);
 });
 it.each([401, 403, 404])("detalhe trata HTTP %s", async status => {
   vi.mocked(service.detail).mockRejectedValueOnce(new ApiError(status));

@@ -33,6 +33,17 @@ it("envia somente dados básicos, normaliza FREE e valida valor/limites", () => 
   expect(formPayload({ ...form, tipoAcesso: "PAGO", valorInscricao: "2,50" }).valorInscricao).toBe("2.50");
   for (const value of ["0", "-1", "2.001", "NaN", "10000000000"]) expect(() => formPayload({ ...form, tipoAcesso: "PAGO", valorInscricao: value })).toThrow();
   expect(() => formPayload({ ...form, limiteParticipantes: "1.5" })).toThrow();
+  expect(form.limiteInscricoesPorUsuario).toBe("1");
+  expect(formPayload({ ...form, limiteInscricoesPorUsuario: "3", limiteParticipantes: "30" })).toMatchObject({ limiteInscricoesPorUsuario: 3, limiteParticipantes: 30 });
+  for (const value of ["", "0", "-1", "1.5", "NaN"]) expect(() => formPayload({ ...form, limiteInscricoesPorUsuario: value })).toThrow(/palpites por usuário/);
+});
+it("edita palpites por usuário sem alterar o limite total de participações", async () => {
+  vi.mocked(service.get).mockResolvedValue({ ...desafio, limiteInscricoesPorUsuario: 2, limiteParticipantes: 30 });
+  vi.mocked(service.update).mockResolvedValue({ ...desafio, limiteInscricoesPorUsuario: 3, limiteParticipantes: 30 });
+  render(<DesafioEditor mode="edit" />); await screen.findByLabelText("Palpites por usuário");
+  expect((screen.getByLabelText("Palpites por usuário") as HTMLInputElement).value).toBe("2");
+  fireEvent.change(screen.getByLabelText("Palpites por usuário"), { target: { value: "3" } }); fireEvent.click(button("Salvar alterações"));
+  await waitFor(() => expect(service.update).toHaveBeenCalledWith(7, expect.objectContaining({ limiteInscricoesPorUsuario: 3, limiteParticipantes: 30 })));
 });
 it("lista com filtros reais e paginação", async () => {
   render(<AdminDesafios />);
@@ -53,7 +64,8 @@ it("cria e encaminha à configuração das partidas", async () => {
   expect(document.querySelector('input[type="datetime-local"]')).toBeNull();
   fireEvent.click(button("Criar e selecionar partidas"));
   await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/admin/desafios/editar?id=7&criado=1"));
-  expect(service.create).toHaveBeenCalledWith({ nome: "Desafio POINT", tipoAcesso: "FREE", valorInscricao: "0.00" });
+  expect(service.create).toHaveBeenCalledWith({ nome: "Desafio POINT", tipoAcesso: "FREE", valorInscricao: "0.00", limiteInscricoesPorUsuario: 1 });
+  expect((screen.getByLabelText("Palpites por usuário") as HTMLInputElement).value).toBe("1");
   for (const field of ["inicioInscricao", "fimInscricao", "dataInicio", "dataFim"]) expect(vi.mocked(service.create).mock.calls[0][0]).not.toHaveProperty(field);
 });
 it("busca, identifica duplicadas, adiciona, reordena e remove sem IDs inventados", async () => {
@@ -156,7 +168,7 @@ it("cria PAGO com valor e limite opcionais sem datas e oculta valor ao voltar pa
   fireEvent.change(screen.getByLabelText("Valor da inscrição (R$)"), { target: { value: "2,50" } });
   fireEvent.change(screen.getByLabelText("Limite de participantes"), { target: { value: "30" } });
   fireEvent.click(button("Criar e selecionar partidas"));
-  await waitFor(() => expect(service.create).toHaveBeenCalledWith({ nome: "Copa paga", tipoAcesso: "PAGO", valorInscricao: "2.50", limiteParticipantes: 30 }));
+  await waitFor(() => expect(service.create).toHaveBeenCalledWith({ nome: "Copa paga", tipoAcesso: "PAGO", valorInscricao: "2.50", limiteParticipantes: 30, limiteInscricoesPorUsuario: 1 }));
 });
 
 it.each([
@@ -290,7 +302,7 @@ it("exibe período antigo sem recriar campos ou reenviar datas ao editar", async
   fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Antigo renomeado" } });
   fireEvent.click(button("Salvar alterações"));
   await screen.findByText("Alterações salvas com sucesso.");
-  expect(service.update).toHaveBeenCalledWith(7, { nome: "Antigo renomeado", descricao: null, tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: null });
+  expect(service.update).toHaveBeenCalledWith(7, { nome: "Antigo renomeado", descricao: null, tipoAcesso: "FREE", valorInscricao: "0.00", limiteParticipantes: null, limiteInscricoesPorUsuario: 1 });
 });
 
 it("mostra resumo antes da publicação e impede publicar sem partidas", async () => {
