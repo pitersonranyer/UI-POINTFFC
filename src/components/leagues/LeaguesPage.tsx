@@ -30,8 +30,8 @@ export function LeaguesPage() {
 
   return <main className={`page-shell ${styles.shell}`}>
     <header className={styles.header}>
-      <p className="eyebrow">Ligas</p><h1 className="page-title">Encontre sua próxima disputa</h1>
-      <p className="page-subtitle">Participe das ligas do POINT FFC e acompanhe diferentes formatos de competição.</p>
+      <p className="eyebrow">Ligas</p><h1 className="page-title">Ligas do Cartola e Fantasy Futebol</h1>
+      <p className="page-subtitle">Conheça as ligas do Cartola no POINT FFC e consulte as competições de fantasy futebol disponíveis em cada liga, seus formatos e rankings.</p>
     </header>
     {loading ? <section className={styles.skeleton} role="status" aria-label="Carregando ligas"><span /><span /><span /><span /></section>
       : error ? <section className={styles.state} role="alert"><Trophy aria-hidden="true" /><div><h2>Não foi possível carregar a POINT FFC.</h2><p>{error}</p><button type="button" onClick={() => void load()}>Tentar novamente</button></div></section>

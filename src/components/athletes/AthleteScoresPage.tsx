@@ -16,8 +16,8 @@ export function AthleteScoresPage(){
  const {dashboard,loading,error,atualizar,athletes,athletesLoading,athletesError}=useCartolaDashboard();
  const [page,setPage]=useState(1); const rankingRef=useRef<HTMLElement>(null);
  useEffect(()=>{setPage(1)},[athletes]);
- if(loading&&!dashboard)return <main className={styles.shell}><div className={styles.loading}><RefreshCw/> Carregando pontuações...</div></main>;
- if(!dashboard)return <main className={styles.shell}><div className={styles.error}><p>Não foi possível carregar as informações da rodada.</p><button onClick={atualizar}>Tentar novamente</button></div></main>;
+ if(loading&&!dashboard)return <main className={styles.shell}><ScoresHeader/><div className={styles.loading}><RefreshCw/> Carregando pontuações...</div></main>;
+ if(!dashboard)return <main className={styles.shell}><ScoresHeader/><div className={styles.error}><p>Não foi possível carregar as informações da rodada.</p><button onClick={atualizar}>Tentar novamente</button></div></main>;
  const firstRound=dashboard.mercadoAberto&&dashboard.rodada===1;
  const displayedRound=dashboard.mercadoAberto?Math.max(1,dashboard.rodada-1):dashboard.rodada;
  const ranking=athletes?Object.entries(athletes.atletas).map(([id,athlete])=>({id,athlete})).sort((a,b)=>b.athlete.pontuacao-a.athlete.pontuacao):[];
@@ -25,13 +25,17 @@ export function AthleteScoresPage(){
  const changePage=(next:number)=>{setPage(Math.min(totalPages,Math.max(1,next)));rankingRef.current?.scrollIntoView({behavior:"smooth",block:"start"});};
  return <main className={styles.shell}>
   <Link className={styles.back} href="/"><ArrowLeft/> Voltar ao Dashboard</Link>
-  <section className={styles.hero}><div><span className={styles.eyebrow}>Brasileirão • Rodada {displayedRound}</span><h1>Pontuação dos atletas</h1><p>{dashboard.mercadoAberto?`Destaques consolidados da rodada ${displayedRound}.`:`Acompanhe a pontuação da rodada ${displayedRound}.`}</p></div><div className={styles.roundInfo}><Trophy/><span><small>Atletas pontuados</small><strong>{athletes?.total_atletas??ranking.length}</strong></span></div></section>
+  <ScoresHeader round={displayedRound} totalAthletes={athletes?.total_atletas??ranking.length}/>
   <div className={styles.statusBar}><span className={dashboard.mercadoAberto?styles.open:styles.closed}>Mercado {dashboard.mercadoAberto?"aberto":"fechado"}</span>{!dashboard.mercadoAberto&&dashboard.bolaRolando&&<b>● Ao vivo</b>}<small>Exibindo rodada {displayedRound}</small></div>
   <section className={styles.ranking} ref={rankingRef}><header><div><h2>Classificação da rodada</h2><p>Ordenada pela maior pontuação</p></div><button type="button" onClick={atualizar} aria-label="Atualizar pontuações"><RefreshCw/> Atualizar</button></header>
    {firstRound?<p className={styles.feedback}>Os destaques dos atletas aparecerão após a primeira rodada.</p>:athletesLoading&&!athletes?<div className={styles.skeleton}/>:athletesError&&!athletes?<div className={styles.feedback}><p>Não foi possível carregar a pontuação dos atletas.</p><button onClick={atualizar}>Tentar novamente</button></div>:ranking.length?<><ol className={styles.list}>{visibleRanking.map(({id,athlete},index)=><Athlete key={id} athlete={athlete} club={athlete.clube_id?athletes?.clubes?.[String(athlete.clube_id)]:undefined} rank={(page-1)*PAGE_SIZE+index+1}/>)}</ol>{totalPages>1&&<Pagination page={page} total={totalPages} onChange={changePage}/>}</>:<p className={styles.feedback}>Ainda não existem atletas pontuados nesta rodada.</p>}
    {(athletesError||error)&&athletes&&<small className={styles.updateError}>Não foi possível obter a atualização mais recente. Exibindo os últimos dados válidos.</small>}
   </section>
  </main>;
+}
+
+function ScoresHeader({round,totalAthletes}:{round?:number;totalAthletes?:number}){
+ return <section className={styles.hero}><div><span className={styles.eyebrow}>Brasileirão{round!==undefined&&<> • Rodada {round}</>}</span><h1>Pontuação e Parciais do Cartola</h1><p>Acompanhe a pontuação e as parciais dos atletas do Cartola durante a rodada. Consulte as parciais durante os jogos e as pontuações finais após sua conclusão.</p><p>Para planejar a próxima escalação, consulte as <Link href="/mago/">dicas do Mago</Link>.</p></div>{totalAthletes!==undefined&&<div className={styles.roundInfo}><Trophy/><span><small>Atletas pontuados</small><strong>{totalAthletes}</strong></span></div>}</section>;
 }
 
 function Pagination({page,total,onChange}:{page:number;total:number;onChange:(page:number)=>void}){const pages=Array.from({length:total},(_,index)=>index+1).filter(value=>value===1||value===total||Math.abs(value-page)<=1);return <nav className={paginationStyles.pagination} aria-label="Páginas do ranking"><button disabled={page===1} onClick={()=>onChange(page-1)}>Anterior</button><div>{pages.map((value,index)=><span key={value}>{index>0&&value-pages[index-1]>1&&<i>…</i>}<button className={value===page?paginationStyles.current:""} aria-current={value===page?"page":undefined} onClick={()=>onChange(value)}>{value}</button></span>)}</div><button disabled={page===total} onClick={()=>onChange(page+1)}>Próxima</button></nav>}

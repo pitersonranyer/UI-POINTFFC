@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUpRight, Flame, Orbit, ShieldCheck, Sparkles, Swords, Target, TriangleAlert, Trophy, WandSparkles } from "lucide-react";
 import React, { type ReactNode } from "react";
+import Link from "next/link";
 import type { MagoRound, MagoTeam } from "@/types/mago-premium";
 import styles from "./MagoPage.module.css";
 
@@ -21,8 +22,9 @@ function TeamMetrics({ team }: { team: MagoTeam }) {
 export function MagoHero({ rodada }: { rodada: number }) {
   return <header className={styles.hero}>
     <div className={styles.heroCopy}><div className={styles.eyebrow}><WandSparkles size={16} aria-hidden="true" /> POINT FANTASY INTELLIGENCE <span>RODADA {rodada}</span></div>
-      <h1>Mago do <span>Point Fantasy</span></h1><p className={styles.subtitle}>Inteligência para a sua rodada</p>
-      <p className={styles.description}>Probabilidades, xG, desempenho defensivo e análise especializada cruzados para encontrar as melhores oportunidades da rodada.</p>
+      <h1>Dicas do Cartola — Rodada {rodada} | <span>Mago do POINT</span></h1><p className={styles.subtitle}>Inteligência para a sua rodada</p>
+      <p className={styles.description}>Explore a prévia editorial de dicas do Cartola, com análises de saldo de gols (SG), potencial dos ataques e placares projetados a partir de dados demonstrativos.</p>
+      <p className={styles.description}>Complemente a análise com os <Link href="/provaveis/">jogadores prováveis</Link> e os <Link href="/jogos-da-rodada/">jogos da rodada</Link>.</p>
       <a href="#top-sg" className={styles.heroLink}>Explore a análise <ArrowDown size={16} aria-hidden="true" /></a>
     </div>
     <div className={styles.wizard} aria-hidden="true"><div className={styles.orbit} /><div className={styles.orbitInner} /><div className={styles.wizardSeal}><WandSparkles strokeWidth={1} /><Sparkles className={styles.spark} /></div><span className={styles.signal}>DADOS · VISÃO · ESTRATÉGIA</span></div>

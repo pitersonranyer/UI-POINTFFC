@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ImageOff } from "lucide-react";
@@ -67,9 +66,7 @@ export function FullRankingPage() {
   };
   const totalPages = data?.paginacao?.totalPaginas ?? Math.ceil((data?.total ?? 0) / 20);
 
-  return <main className={`page-shell ${styles.page}`}>
-    <Link className={styles.back} href="/">← Dashboard</Link>
-    <header className={styles.hero}><span>POINT FFC</span><h1>RANKING</h1><p>Acompanhe a classificação dos times</p></header>
+  return <>
     {contextError ? <div className={styles.feedback} role="alert"><p>Não foi possível carregar o ranking.</p><button type="button" onClick={() => setContextAttempt(value => value + 1)}>Tentar novamente</button></div>
       : !context ? <div className={styles.skeleton} role="status" aria-label="Carregando ranking" /> : <>
         <form className={styles.filters} onSubmit={applyFilters}>
@@ -95,5 +92,5 @@ export function FullRankingPage() {
           </nav>}
         </section>
       </>}
-  </main>;
+  </>;
 }

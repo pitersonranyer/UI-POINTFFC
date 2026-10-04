@@ -13,10 +13,10 @@ import { GeneralRanking } from "./GeneralRanking";
 import styles from "./Dashboard.module.css";
 export function CartolaDashboard(){
  const {dashboard,loading,error,stale,atualizar,athletes,athletesLoading,athletesError,statisticsMatches}=useCartolaDashboard(); const featured=leagueService.getFeatured();
- if(!dashboard&&loading)return <div className={styles.shell}><div className={styles.pageTitle}><h1>Dashboard</h1></div><DashboardDesafios /><div className={styles.dashboardLoading} role="status" aria-live="polite"><RefreshCw/><strong>Aguarde, carregando os dados da rodada...</strong><span>Nosso servidor pode levar alguns segundos para iniciar.</span></div></div>;
- if(!dashboard)return <div className={styles.shell}><div className={styles.pageTitle}><h1>Dashboard</h1></div><DashboardDesafios /><section className={styles.loadError}><p>Não foi possível atualizar os dados da rodada.</p><button type="button" onClick={atualizar}>Tentar novamente</button></section></div>;
+ if(!dashboard&&loading)return <div className={styles.shell}><HomeHeader/><DashboardDesafios /><div className={styles.dashboardLoading} role="status" aria-live="polite"><RefreshCw/><strong>Aguarde, carregando os dados da rodada...</strong><span>Nosso servidor pode levar alguns segundos para iniciar.</span></div></div>;
+ if(!dashboard)return <div className={styles.shell}><HomeHeader/><DashboardDesafios /><section className={styles.loadError}><p>Não foi possível atualizar os dados da rodada.</p><button type="button" onClick={atualizar}>Tentar novamente</button></section></div>;
  const round=dashboard.rodada;const rankingRound=dashboard.mercadoAberto?Math.max(1,round-1):round;const statsRound=dashboard.mercadoAberto?Math.max(1,round-1):round;const statsMatches=statisticsMatches??[];const scoredMatches=statsMatches.filter(match=>match.placar_oficial_mandante!=null&&match.placar_oficial_visitante!=null);const confirmedGoals=scoredMatches.reduce((total,match)=>total+match.placar_oficial_mandante!+match.placar_oficial_visitante!,0);const realRoundStatistics=[{label:"Jogos",value:String(statsMatches.length)},{label:"Com placar",value:String(scoredMatches.length)},{label:"Gols confirmados",value:String(confirmedGoals)},{label:"Média de gols",value:scoredMatches.length?(confirmedGoals/scoredMatches.length).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:2}):"—"}];
- return <div className={styles.shell}><div className={styles.pageTitle}><h1>Dashboard</h1><span>Rodada {round}</span></div>
+ return <div className={styles.shell}><HomeHeader round={round}/>
  {featured&&<FeaturedLeagueCard name={featured.name} round={round}/>}
  {stale&&<p className={styles.staleNotice}>Dados temporariamente desatualizados.</p>}{error&&<p className={styles.refreshError}>Não foi possível buscar a atualização mais recente.</p>}
  <CartolaMarketStatus mercado={dashboard.mercado} aberto={dashboard.mercadoAberto} aoVivo={dashboard.bolaRolando} atualizar={atualizar}/>
@@ -26,4 +26,8 @@ export function CartolaDashboard(){
  <GeneralRanking season={dashboard.mercado.temporada ?? new Date().getFullYear()} round={rankingRound} marketOpen={dashboard.mercadoAberto}/>
  <TopAthletes data={athletes} round={dashboard.mercadoAberto?Math.max(1,round-1):round} live={!dashboard.mercadoAberto&&dashboard.bolaRolando} loading={athletesLoading} error={athletesError} firstRound={dashboard.mercadoAberto&&round===1}/>
  <section className={styles.statsSection}><div className={styles.sectionHead}><h2>Estatísticas da rodada {statsRound}</h2></div><div className={styles.stats}>{realRoundStatistics.map((x,i)=><article key={x.label}>{i===0?<Trophy/>:<Users/>}<div><strong>{x.value}</strong><small>{x.label}</small></div></article>)}</div></section></div>;
+}
+
+function HomeHeader({round}:{round?:number}){
+ return <header><div className={styles.pageTitle}><h1>POINT FFC — Fantasy Futebol</h1>{round!==undefined&&<span>Rodada {round}</span>}</div><p className="page-subtitle">O POINT FFC é uma plataforma de fantasy futebol com ligas e competições. Aqui você encontra ferramentas do Cartola para planejar sua escalação e acompanhar a rodada.</p></header>;
 }

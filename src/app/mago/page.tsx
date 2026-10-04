@@ -3,8 +3,8 @@ import { MagoPage } from "@/components/mago/MagoPage";
 import { magoRodada28 } from "@/data/mago/rodada28";
 
 export const metadata = publicMetadata(
-  "Mago do Point Fantasy | Inteligência para a sua rodada",
-  `Análise do Mago para a rodada ${magoRodada28.rodada}: melhores SGs, ataques e placares projetados.`,
+  `Dicas do Cartola — Rodada ${magoRodada28.rodada} | Mago do POINT`,
+  `Explore a prévia editorial do Mago para a rodada ${magoRodada28.rodada}, com dicas do Cartola, análises de SG, ataques e placares projetados em dados demonstrativos.`,
   "/mago/",
 );
 
