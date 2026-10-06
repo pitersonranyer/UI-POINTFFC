@@ -103,6 +103,29 @@ function PlayerList({ players }: { players: FieldPlayer[] }) {
   return <ul className={styles.playerList}>{players.map((player, index) => <li key={player.idExterno ?? `example-${index}`}><b>{player.numero ?? "—"}</b><strong>{player.nome}</strong><span>{player.posicao ?? "—"}</span></li>)}</ul>;
 }
 
+function MatchLineup({ data, examples }: { data: FantasyLineup; examples?: Examples }) {
+  const sides = ["mandante", "visitante"] as const;
+  const [selectedSide, setSelectedSide] = useState<typeof sides[number]>("mandante");
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+  return <section aria-label="Escalações">
+    <h2 className={styles.sectionTitle}>Formação das equipes</h2>
+    <p className={styles.help}>Visualização parcial da POC. Os elencos completos não foram fornecidos.</p>
+    <div className={styles.teamTabs} role="tablist" aria-label="Equipe da formação">
+      {sides.map((side, index) => <button key={side} ref={element => { buttons.current[index] = element; }} type="button" role="tab" id={`fantasy-team-tab-${side}`} aria-controls={`fantasy-team-panel-${side}`} aria-label={data[side].nome} aria-selected={selectedSide === side} tabIndex={selectedSide === side ? 0 : -1} className={selectedSide === side ? styles.selectedTeam : undefined} onClick={() => setSelectedSide(side)} onKeyDown={event => {
+        let next: number;
+        if (event.key === "ArrowRight" || event.key === "ArrowLeft") next = 1 - index;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = 1;
+        else return;
+        event.preventDefault(); setSelectedSide(sides[next]); buttons.current[next]?.focus();
+      }}><TeamShield team={data[side]} /><span>{data[side].nome}</span></button>)}
+    </div>
+    {sides.map(side => <div key={side} role="tabpanel" id={`fantasy-team-panel-${side}`} aria-labelledby={`fantasy-team-tab-${side}`} hidden={selectedSide !== side} tabIndex={0}>
+      {selectedSide === side && <LineupTeam key={side} team={data[side]} examples={examples?.[side]} />}
+    </div>)}
+  </section>;
+}
+
 export function MatchCenterPage({ sections, examples }: { sections: MatchCenterSections; examples?: Examples }) {
   const [selected, setSelected] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
@@ -121,7 +144,7 @@ export function MatchCenterPage({ sections, examples }: { sections: MatchCenterS
     {tabs.map((tab, index) => <div key={tab} role="tabpanel" id={`fantasy-panel-${index}`} aria-labelledby={`fantasy-tab-${index}`} hidden={selected !== index} tabIndex={0}>
       {selected === index && (index === 0 ? <SectionState state={sections.summary} label="Sumário">{data => <MatchSummary data={data} />}</SectionState>
         : index === 1 ? <SectionState state={sections.statistics} label="Estatísticas">{data => <MatchStatistics data={data} />}</SectionState>
-          : <SectionState state={sections.lineup} label="Formação">{data => <section aria-label="Escalações"><h2 className={styles.sectionTitle}>Formação das equipes</h2><p className={styles.help}>Visualização parcial da POC. Os elencos completos não foram fornecidos.</p><div className={styles.lineups}><LineupTeam team={data.mandante} examples={examples?.mandante} /><LineupTeam team={data.visitante} examples={examples?.visitante} /></div></section>}</SectionState>)}
+          : <SectionState state={sections.lineup} label="Formação">{data => <MatchLineup data={data} examples={examples} />}</SectionState>)}
     </div>)}
   </div>;
 }

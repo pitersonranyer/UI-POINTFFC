@@ -42,11 +42,21 @@ it("switches statistics, preserves zeros and nulls, and formats percentages and 
 
 it("shows the supplied partial formations without invented identities or reserves", () => {
   show(); fireEvent.click(screen.getByRole("tab", { name: "Formação" }));
-  expect(screen.getByText("3-3-1-3")).toBeTruthy(); expect(screen.getByText("3-4-1-2")).toBeTruthy();
+  expect(screen.getByRole("tab", { name: "Botafogo" }).getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByText("3-3-1-3")).toBeTruthy(); expect(screen.queryByText("3-4-1-2")).toBeNull();
   expect(screen.getByText("Treinador: Artur Jorge")).toBeTruthy();
   expect(within(screen.getByRole("region", { name: "Campo de Botafogo" })).getByText("John")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Campo de São Paulo" })).toBeNull();
+  expect(screen.getAllByText("Reservas disponíveis no mock (0)")).toHaveLength(1);
+  fireEvent.click(screen.getByRole("tab", { name: "São Paulo" }));
+  expect(screen.getByRole("tab", { name: "São Paulo" }).getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByText("3-4-1-2")).toBeTruthy(); expect(screen.queryByText("3-3-1-3")).toBeNull();
+  expect(screen.getByText("Treinador: L. Zubeldía")).toBeTruthy();
   expect(within(screen.getByRole("region", { name: "Campo de São Paulo" })).getByText("William")).toBeTruthy();
-  expect(screen.getAllByText("Reservas disponíveis no mock (0)")).toHaveLength(2);
+  expect(screen.queryByRole("region", { name: "Campo de Botafogo" })).toBeNull();
+  fireEvent.click(screen.getByRole("tab", { name: "Botafogo" }));
+  expect(screen.getByRole("region", { name: "Campo de Botafogo" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Campo de São Paulo" })).toBeNull();
   expect(lineupMock.mandante.titulares).toEqual([]);
   expect(lineupExamples.mandante).toHaveLength(3);
 });
@@ -76,7 +86,37 @@ it("supports loading, missing data, unknown events and empty lineups", () => {
   fireEvent.click(screen.getByRole("tab", { name: "Estatísticas" })); expect(screen.getByText("Nenhum dado de estatísticas disponível.")).toBeTruthy();
   view.rerender(<MatchCenterPage sections={{ ...matchCenterMock, summary: { status: "ready", data: { ...summaryMock, eventos: [{ tipo: "NOVO_EVENTO", tempo: { minuto: null, acrescimo: null, exibicao: "—" }, equipe: null, comentarios: "Informação recebida", origem: null }] } } }} />);
   fireEvent.click(screen.getByRole("tab", { name: "Sumário" })); expect(screen.getByText("NOVO_EVENTO")).toBeTruthy();
-  fireEvent.click(screen.getByRole("tab", { name: "Formação" })); expect(screen.getAllByText("Posições no campo indisponíveis")).toHaveLength(2);
+  fireEvent.click(screen.getByRole("tab", { name: "Formação" })); expect(screen.getAllByText("Posições no campo indisponíveis")).toHaveLength(1);
+});
+
+it("supports team keyboard navigation and resets to the home team when entering Formação", () => {
+  show(); const originalUrl = window.location.href;
+  fireEvent.click(screen.getByRole("tab", { name: "Formação" }));
+  const home = screen.getByRole("tab", { name: "Botafogo" });
+  const away = screen.getByRole("tab", { name: "São Paulo" });
+  home.focus(); fireEvent.keyDown(home, { key: "ArrowRight" });
+  expect(document.activeElement).toBe(away); expect(away.tabIndex).toBe(0); expect(home.tabIndex).toBe(-1);
+  expect(screen.getByRole("region", { name: "Campo de São Paulo" })).toBeTruthy();
+  fireEvent.keyDown(away, { key: "ArrowRight" }); expect(document.activeElement).toBe(home);
+  fireEvent.keyDown(home, { key: "ArrowLeft" }); expect(document.activeElement).toBe(away);
+  fireEvent.keyDown(away, { key: "Home" }); expect(document.activeElement).toBe(home);
+  fireEvent.keyDown(home, { key: "End" }); expect(document.activeElement).toBe(away);
+  expect(window.location.href).toBe(originalUrl);
+  fireEvent.click(screen.getByRole("tab", { name: "Sumário" }));
+  fireEvent.click(screen.getByRole("tab", { name: "Formação" }));
+  expect(screen.getByRole("tab", { name: "Botafogo" }).getAttribute("aria-selected")).toBe("true");
+});
+
+it("preserves null formation and coach and empty rosters for the selected team", () => {
+  render(<MatchCenterPage sections={{ ...matchCenterMock, lineup: { status: "ready", data: { ...lineupMock, visitante: { ...lineupMock.visitante, formacao: null, treinador: null } } } }} />);
+  fireEvent.click(screen.getByRole("tab", { name: "Formação" }));
+  fireEvent.click(screen.getByRole("tab", { name: "São Paulo" }));
+  const team = within(screen.getByRole("region", { name: "Formação de São Paulo" }));
+  expect(team.getByText("Treinador: Indisponível")).toBeTruthy();
+  expect(team.getByText("—")).toBeTruthy();
+  expect(team.getByText("Nenhum registro completo disponível.")).toBeTruthy();
+  expect(team.getByText("Nenhum reserva fornecido nesta POC.")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Formação de Botafogo" })).toBeNull();
 });
 
 it("positions valid contract players by grid and lists missing positions without guessing", () => {
