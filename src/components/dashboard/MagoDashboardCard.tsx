@@ -6,7 +6,6 @@ import type { MagoRound } from "@/types/mago-premium";
 import styles from "./MagoDashboardCard.module.css";
 
 const number = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const labels = ["SG do Mago", "Melhores ataques", "Especialistas", "Alerta do Mago"];
 
 export function MagoDashboardCard({ data }: { data: MagoRound }) {
   const carousel = useRef<HTMLDivElement>(null);
@@ -15,6 +14,8 @@ export function MagoDashboardCard({ data }: { data: MagoRound }) {
   const pick = data.topSg[0];
   const attack = data.ataques[0];
   const platoon = data.pelotoes[0];
+  const labels = ["SG do Mago", "Melhores ataques", data.pelotoesDoMago ? "Pelotão 1" : "Especialistas", "Alerta do Mago"];
+  const attackLeaders = data.ataques.filter(team => team.xg === attack.xg);
   const favorites = new Set(data.convergencia.find(item => item.rotulo === "Pelotão 1 confirmados pelo Mago")?.valor.split(/, | e /) ?? []);
   const overlap = platoon.clubes.filter(clube => favorites.has(clube)).length;
   function goTo(index: number) {
@@ -39,17 +40,17 @@ export function MagoDashboardCard({ data }: { data: MagoRound }) {
       </article>
       <article className={styles.slide} aria-label="2 de 4: Melhores ataques">
         <h3><Swords aria-hidden="true" /> Melhores ataques</h3>
-        <div className={styles.insight}><div className={styles.highlight}><span>{attack.clube}</span><strong>{number.format(attack.xg)} xG</strong><small>Maior xG projetado da R{data.rodada}</small></div>
+        <div className={styles.insight}><div className={styles.highlight}><span>{attackLeaders.length > 1 ? `${attackLeaders.length === 3 ? "Três" : attackLeaders.length} ataques lideram a projeção` : attack.clube}</span><strong>{number.format(attack.xg)} xG</strong><small>Maior xG projetado da R{data.rodada}</small></div>
           <ol className={styles.ranking}>{data.ataques.slice(0, 3).map(team => <li key={team.clube}><span>{team.clube}</span><strong>{number.format(team.xg)} xG</strong></li>)}</ol></div>
       </article>
-      <article className={styles.slide} aria-label="3 de 4: Especialistas">
-        <h3><Target aria-hidden="true" /> Especialistas</h3>
-        <div className={styles.specialists}><strong>{platoon.nome}</strong><div className={styles.chips}>{platoon.clubes.map(clube => <span key={clube}>{clube}</span>)}</div><p>{overlap} dos principais nomes também estão entre os favoritos do Mago.</p></div>
+      <article className={styles.slide} aria-label={`3 de 4: ${data.pelotoesDoMago ? "Pelotão 1" : "Especialistas"}`}>
+        <h3><Target aria-hidden="true" /> {data.pelotoesDoMago ? "Pelotão 1 do Mago" : "Especialistas"}</h3>
+        <div className={styles.specialists}><strong>{platoon.nome}</strong><div className={styles.chips}>{platoon.clubes.map(clube => <span key={clube}>{clube}</span>)}</div><p>{data.pelotoesDoMago ? "O Mago cruzou SG, xG adversário, força defensiva e contexto para montar seu próprio pelotão." : `${overlap} dos principais nomes também estão entre os favoritos do Mago.`}</p></div>
       </article>
       <article className={`${styles.slide} ${styles.warning}`} aria-label="4 de 4: Alerta do Mago">
         <h3><TriangleAlert aria-hidden="true" /> Alerta do Mago</h3>
-        <div className={styles.insight}><div className={styles.highlight}><span>{data.alerta.clube}</span><strong>{number.format(data.alerta.sg)}% SG</strong><small>Risco alto para SG</small></div>
-          <p className={styles.opponent}>Adversário: <b>{data.alerta.adversario}</b><br />{data.alerta.adversario}: <b>{data.alerta.xgAdversario === null ? "—" : number.format(data.alerta.xgAdversario)} xG projetado</b></p></div>
+        <div className={styles.insight}><div className={styles.highlight}><span>{data.teaserAlerta?.titulo ?? data.alerta.clube}</span><strong>{number.format(data.alerta.sg)}% SG</strong><small>{data.teaserAlerta?.subtitulo ?? "Risco alto para SG"}</small></div>
+          <p className={styles.opponent}>{data.teaserAlerta ? <>{data.teaserAlerta.texto}<br />{data.teaserAlerta.detalhe}</> : <>Adversário: <b>{data.alerta.adversario}</b><br />{data.alerta.adversario}: <b>{data.alerta.xgAdversario === null ? "—" : number.format(data.alerta.xgAdversario)} xG projetado</b></>}</p></div>
       </article>
     </div>
     <div className={styles.dots} aria-label="Selecionar insight">{labels.map((label, index) => <button key={label} type="button" aria-label={`Ir para ${label}`} aria-controls={carouselId} aria-current={active === index ? "true" : undefined} onClick={() => goTo(index)} />)}</div>

@@ -19,11 +19,11 @@ function TeamMetrics({ team }: { team: MagoTeam }) {
   return <dl className={styles.metrics}><div><dt>Adversário</dt><dd>{team.adversario}</dd></div><div><dt>xG adversário</dt><dd>{team.xgAdversario === null ? "Não informado" : number.format(team.xgAdversario)}</dd></div>{team.xga !== undefined && <div><dt>xGA</dt><dd>{number.format(team.xga)}</dd></div>}{team.golsSofridos !== undefined && <div><dt>Gols sofridos no recorte</dt><dd>{team.golsSofridos}</dd></div>}</dl>;
 }
 
-export function MagoHero({ rodada }: { rodada: number }) {
+export function MagoHero({ rodada, pelotoesDoMago = false }: { rodada: number; pelotoesDoMago?: boolean }) {
   return <header className={styles.hero}>
     <div className={styles.heroCopy}><div className={styles.eyebrow}><WandSparkles size={16} aria-hidden="true" /> POINT FANTASY INTELLIGENCE <span>RODADA {rodada}</span></div>
       <h1>Dicas do Cartola — Rodada {rodada} | <span>Mago do POINT</span></h1><p className={styles.subtitle}>Inteligência para a sua rodada</p>
-      <p className={styles.description}>Explore a prévia editorial de dicas do Cartola, com análises de saldo de gols (SG), potencial dos ataques e placares projetados a partir de dados demonstrativos.</p>
+      <p className={styles.description}>{pelotoesDoMago ? "O Mago monta seus próprios pelotões cruzando probabilidade de SG, xG do adversário, força defensiva, mando, momento e contexto. A ordem editorial não replica o ranking bruto de SG do Gato Mestre." : "Explore a prévia editorial de dicas do Cartola, com análises de saldo de gols (SG), potencial dos ataques e placares projetados a partir de dados demonstrativos."}</p>
       <p className={styles.description}>Complemente a análise com os <Link href="/provaveis/">jogadores prováveis</Link> e os <Link href="/jogos-da-rodada/">jogos da rodada</Link>.</p>
       <a href="#top-sg" className={styles.heroLink}>Explore a análise <ArrowDown size={16} aria-hidden="true" /></a>
     </div>
@@ -35,7 +35,7 @@ export function MagoTopPick({ data }: { data: MagoRound }) {
   const team = data.topSg[0];
   return <section className={styles.topPick} aria-labelledby="escolha-mago"><div>
     <p className={styles.eyebrow}><Flame size={17} aria-hidden="true" /> ESCOLHA DO MAGO</p><h2 id="escolha-mago">{team.clube}</h2><Confidence value={team.confianca} /><p className={styles.pickText}>{data.escolhaTexto}</p><div className={styles.verdict}><ShieldCheck size={18} aria-hidden="true" />{team.veredito}</div>
-    </div><div className={styles.pickNumbers}><span className={styles.metricLabel}>PROBABILIDADE DE SG</span><strong className={styles.bigNumber}>{number.format(team.sg)}<small>%</small></strong><TeamMetrics team={team} /><span className={styles.pelotao}>Especialistas: {team.pelotao ?? "Não informado"}</span></div>
+    </div><div className={styles.pickNumbers}><span className={styles.metricLabel}>PROBABILIDADE DE SG</span><strong className={styles.bigNumber}>{number.format(team.sg)}<small>%</small></strong><TeamMetrics team={team} /><span className={styles.pelotao}>{data.pelotoesDoMago ? "Mago" : "Especialistas"}: {team.pelotao ?? "Não informado"}</span></div>
   </section>;
 }
 
@@ -63,10 +63,12 @@ function MagoAlerts({ data }: { data: MagoRound }) { return <>{(data.alertas?.le
 
 export function MagoAttackRanking({ data }: { data: MagoRound }) {
   const best = data.ataques[0];
-  return <section aria-labelledby="ataques" className={styles.section}><SectionTitle id="ataques" icon={<Swords />} title="Melhores ataques" subtitle="Onde o Mago enxerga mais potencial ofensivo." /><div className={styles.attackLayout}><ol className={styles.attackList}>{data.ataques.map((team, index) => <li key={team.clube}><span className={styles.attackPosition}>{String(index + 1).padStart(2, "0")}</span><div><strong>{team.clube}</strong><div className={styles.attackTrack} aria-hidden="true"><span style={{ width: `${team.xg / best.xg * 100}%` }} /></div></div><b>{number.format(team.xg)} <small>xG</small></b></li>)}</ol><div className={styles.attackHighlights}><article><Swords aria-hidden="true" /><p>Melhor ataque projetado</p><h3>{best.clube}</h3><strong>{number.format(best.xg)} <small>xG</small></strong></article><article><Trophy aria-hidden="true" /><p>Melhor combinação ataque + defesa</p><h3>{data.melhorCombinacao}</h3><span>Equilíbrio para a sua escalação</span></article></div></div></section>;
+  const leaders = data.ataques.filter(team => team.xg === best.xg);
+  return <section aria-labelledby="ataques" className={styles.section}><SectionTitle id="ataques" icon={<Swords />} title="Melhores ataques" subtitle={data.ataquesTexto ?? "Onde o Mago enxerga mais potencial ofensivo."} /><div className={styles.attackLayout}><ol className={styles.attackList}>{data.ataques.map((team, index) => <li key={team.clube}><span className={styles.attackPosition}>{String(index + 1).padStart(2, "0")}</span><div><strong>{team.clube}</strong><div className={styles.attackTrack} aria-hidden="true"><span style={{ width: `${team.xg / best.xg * 100}%` }} /></div></div><b>{number.format(team.xg)} <small>xG</small></b></li>)}</ol><div className={styles.attackHighlights}><article><Swords aria-hidden="true" /><p>{leaders.length > 1 ? "Ataques líderes da projeção" : "Melhor ataque projetado"}</p><h3>{leaders.map(team => team.clube).join(", ")}</h3><strong>{number.format(best.xg)} <small>xG</small></strong></article><article><Trophy aria-hidden="true" /><p>Melhor combinação ataque + defesa</p><h3>{data.melhorCombinacao}</h3><span>Equilíbrio para a sua escalação</span></article></div></div></section>;
 }
 
 export function MagoPredictions({ data }: { data: MagoRound }) {
+  if (!data.placares.length) return data.jogos?.length ? <section aria-labelledby="placares" className={styles.section}><SectionTitle id="placares" icon={<Orbit />} title="Jogos da rodada" subtitle={`Confrontos válidos da R${data.rodada}. Nenhum placar projetado foi fornecido.`} /><div className={styles.predictions}>{data.jogos.map(game => <article key={game.mandante} className={styles.prediction}><span className={styles.predictionLabel}>{game.dia} · {game.horario}</span><div className={styles.score}><span>{game.mandante}</span><strong>×</strong><span>{game.visitante}</span></div></article>)}</div></section> : null;
   return <section aria-labelledby="placares" className={styles.section}><SectionTitle id="placares" icon={<Orbit />} title="Placares do Mago" subtitle="Projeções da rodada. São cenários estimados, não garantias de resultado." /><div className={styles.predictions}>{data.placares.map(game => {
     const sg = game.golsMandante === 0 || game.golsVisitante === 0;
     return <article key={game.mandante} className={`${styles.prediction} ${sg ? styles.predictedSg : ""}`}><span className={styles.predictionLabel}>{sg ? <><ShieldCheck size={13} aria-hidden="true" /> Projeção com SG</> : "Placar projetado"}</span><div className={styles.score}><span>{game.mandante}</span><strong>{game.golsMandante} <small>x</small> {game.golsVisitante}</strong><span>{game.visitante}</span></div></article>;
@@ -74,13 +76,13 @@ export function MagoPredictions({ data }: { data: MagoRound }) {
 }
 
 export function MagoSummary({ data }: { data: MagoRound }) {
-  return <section className={styles.summary} aria-labelledby="resumo"><SectionTitle id="resumo" icon={<WandSparkles />} title={`Resumo do Mago — R${data.rodada}`} subtitle="A leitura da rodada, em um só lugar." /><dl>{data.resumo.map(item => <div key={item.rotulo}><dt>{item.rotulo}</dt><dd>{item.valor}</dd></div>)}</dl><div className={styles.convergence}><h3>Convergência com especialistas</h3><dl>{data.convergencia.map(item => <div key={item.rotulo}><dt>{item.rotulo}</dt><dd>{item.valor}</dd></div>)}</dl></div></section>;
+  return <section className={styles.summary} aria-labelledby="resumo"><SectionTitle id="resumo" icon={<WandSparkles />} title={`Resumo do Mago — R${data.rodada}`} subtitle="A leitura da rodada, em um só lugar." /><dl>{data.resumo.map(item => <div key={item.rotulo}><dt>{item.rotulo}</dt><dd>{item.valor}</dd></div>)}</dl><div className={styles.convergence}><h3>{data.pelotoesDoMago ? "Convergência dos dados e contexto" : "Convergência com especialistas"}</h3><dl>{data.convergencia.map(item => <div key={item.rotulo}><dt>{item.rotulo}</dt><dd>{item.valor}</dd></div>)}</dl></div></section>;
 }
 
 export function MagoExpertGroups({ data }: { data: MagoRound }) {
   const teams = [...data.topSg, ...data.alternativas, ...(data.alertas?.length ? data.alertas : [data.alerta])];
   return <section className={styles.section} aria-labelledby="pelotoes">
-    <SectionTitle id="pelotoes" icon={<Target />} title="Pelotões dos Especialistas" subtitle="As equipes destacadas pelos especialistas antes do cruzamento do Mago." />
+    <SectionTitle id="pelotoes" icon={<Target />} title={data.pelotoesDoMago ? "Pelotões do Mago" : "Pelotões dos Especialistas"} subtitle={data.pelotoesDoMago ? "Ordem própria do Mago: dados, estrutura defensiva e contexto de cada confronto." : "As equipes destacadas pelos especialistas antes do cruzamento do Mago."} />
     <div className={styles.expertGroups}>{data.pelotoes.map((group, index) => <article key={group.nome} className={`${styles.expertGroup} ${index === 0 ? styles.primaryGroup : ""}`}>
       <h3>{index === 0 ? <Target size={19} aria-hidden="true" /> : <Swords size={19} aria-hidden="true" />}{group.nome}</h3>
       <p>{group.descricao}</p>
@@ -88,8 +90,8 @@ export function MagoExpertGroups({ data }: { data: MagoRound }) {
     </article>)}</div>
     <div className={styles.crossing}>
       <h3><WandSparkles size={19} aria-hidden="true" /> Cruzamento do Mago</h3>
-      <p>O Mago não replica os Pelotões. Ele cruza a leitura dos especialistas com os dados estatísticos da rodada.</p>
-      <p>O ranking final pode seguir outra ordem: SG, xG, xGA, mando e contexto também entram na análise.</p>
+      <p>{data.pelotoesDoMago ? "O Mago não replica o ranking bruto de SG. Ele combina a probabilidade com xG adversário, xGA disponível, gols sofridos, consistência defensiva, mando, momento e volatilidade." : "O Mago não replica os Pelotões. Ele cruza a leitura dos especialistas com os dados estatísticos da rodada."}</p>
+      <p>{data.pelotoesDoMago ? "Os pelotões e o Top 5 seguem essa interpretação editorial; dados defensivos ausentes não são estimados." : "O ranking final pode seguir outra ordem: SG, xG, xGA, mando e contexto também entram na análise."}</p>
       <div className={styles.crossingExamples}>{data.cruzamentos.map(example => {
         const team = teams.find(item => item.clube === example.clube);
         if (!team) return null;
@@ -102,5 +104,5 @@ export function MagoExpertGroups({ data }: { data: MagoRound }) {
 
 export function MagoPage({ data }: { data: MagoRound }) {
   const withGroup = (team: MagoTeam): MagoTeam => ({ ...team, pelotao: data.pelotoes.find(group => group.clubes.includes(team.clube))?.nome ?? team.pelotao });
-  return <div className={styles.page}><div className={styles.shell}><MagoHero rodada={data.rodada} /><p className={styles.preview}><Sparkles size={14} aria-hidden="true" /> Prévia editorial · Dados demonstrativos da rodada {data.rodada}</p><MagoTopPick data={data} /><MagoSgRanking teams={data.topSg.map(withGroup)} /><MagoAlternatives teams={data.alternativas.map(withGroup)} /><MagoAlerts data={data} /><MagoExpertGroups data={data} /><MagoAttackRanking data={data} /><MagoPredictions data={data} /><MagoSummary data={data} /><footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer></div></div>;
+  return <div className={styles.page}><div className={styles.shell}><MagoHero rodada={data.rodada} pelotoesDoMago={data.pelotoesDoMago} /><p className={styles.preview}><Sparkles size={14} aria-hidden="true" /> Prévia editorial · Dados demonstrativos da rodada {data.rodada}</p><MagoTopPick data={data} /><MagoSgRanking teams={data.topSg.map(withGroup)} /><MagoAlternatives teams={data.alternativas.map(withGroup)} /><MagoAlerts data={data} />{data.duelo && <section className={styles.crossing} aria-labelledby="duelo-mago"><h3 id="duelo-mago"><Swords aria-hidden="true" />{data.duelo.titulo}</h3><p>{data.duelo.texto}</p></section>}<MagoExpertGroups data={data} /><MagoAttackRanking data={data} /><MagoPredictions data={data} /><MagoSummary data={data} /><footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer></div></div>;
 }

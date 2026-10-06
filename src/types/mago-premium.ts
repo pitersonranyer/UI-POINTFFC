@@ -13,6 +13,12 @@ export interface MagoTeam {
 
 export interface MagoRound {
   rodada: number;
+  pelotoesDoMago?: boolean;
+  ataquesTexto?: string;
+  teaserAlerta?: { titulo: string; subtitulo: string; texto: string; detalhe: string };
+  duelo?: { titulo: string; texto: string };
+  jogos?: { mandante: string; visitante: string; dia: string; horario: string }[];
+  indicadores?: { clube: string; xgRodada: number; xgTotal: number; gols: number; sg: number; xga?: number; golsSofridos?: number }[];
   topSg: MagoTeam[];
   alternativas: MagoTeam[];
   alerta: MagoTeam & { texto: string };

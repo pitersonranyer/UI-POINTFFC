@@ -1,6 +1,6 @@
 "use client";
 import { RefreshCw, Trophy, Users } from "lucide-react";
-import { magoRodada28 } from "@/data/mago/rodada28";
+import { magoRodada29 } from "@/data/mago/rodada29";
 import { MagoDashboardCard } from "./MagoDashboardCard";
 import { FeaturedLeagueCard } from "./FeaturedLeagueCard";
 import { leagueService } from "@/services/leagueService";
@@ -22,7 +22,7 @@ export function CartolaDashboard(){
  <CartolaMarketStatus mercado={dashboard.mercado} aberto={dashboard.mercadoAberto} aoVivo={dashboard.bolaRolando} atualizar={atualizar}/>
  <DashboardDesafios />
  <DashboardGames />
- <MagoDashboardCard data={magoRodada28} />
+ <MagoDashboardCard data={magoRodada29} />
  <GeneralRanking season={dashboard.mercado.temporada ?? new Date().getFullYear()} round={rankingRound} marketOpen={dashboard.mercadoAberto}/>
  <TopAthletes data={athletes} round={dashboard.mercadoAberto?Math.max(1,round-1):round} live={!dashboard.mercadoAberto&&dashboard.bolaRolando} loading={athletesLoading} error={athletesError} firstRound={dashboard.mercadoAberto&&round===1}/>
  <section className={styles.statsSection}><div className={styles.sectionHead}><h2>Estatísticas da rodada {statsRound}</h2></div><div className={styles.stats}>{realRoundStatistics.map((x,i)=><article key={x.label}>{i===0?<Trophy/>:<Users/>}<div><strong>{x.value}</strong><small>{x.label}</small></div></article>)}</div></section></div>;

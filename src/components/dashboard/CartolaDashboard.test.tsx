@@ -5,6 +5,7 @@ import { CartolaDashboard } from "./CartolaDashboard";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import { MagoDashboardCard } from "./MagoDashboardCard";
 import { magoRodada28 } from "@/data/mago/rodada28";
+import { magoRodada29 } from "@/data/mago/rodada29";
 import { buscarJogosHoje } from "@/services/futebolService";
 import { desafioService, type DesafioResumo } from "@/services/desafioService";
 
@@ -34,6 +35,22 @@ function setup(round = 27, open = true) {
 }
 
 describe("Dashboard e resumo do Mago", () => {
+  it("resume a R29 sem análise completa, preservando os quatro slides e o destino /mago", () => {
+    render(<MagoDashboardCard data={magoRodada29} />);
+    const card = screen.getByRole("region", { name: "Mago do Point Fantasy" });
+    const block = within(card);
+    expect(block.getByText("Rodada 29")).toBeTruthy();
+    expect(block.queryByText("Rodada 28")).toBeNull();
+    const sg = within(block.getByRole("article", { name: "1 de 4: SG do Mago" }));
+    expect(sg.getAllByRole("listitem").map(item => item.textContent)).toEqual(["Vitória40,74%", "Athletico-PR39,44%", "Palmeiras34,13%"]);
+    expect(block.getByText("Três ataques lideram a projeção")).toBeTruthy();
+    expect(block.getByText("Santos em alta")).toBeTruthy();
+    expect(block.getByText(/5 vitórias nos últimos 6 jogos/)).toBeTruthy();
+    expect(block.getByRole("article", { name: "3 de 4: Pelotão 1" }).textContent).toContain("Bragantino");
+    expect(block.getByRole("link", { name: "Ver análise completa" }).getAttribute("href")).toBe("/mago");
+    expect(block.queryByText(magoRodada29.escolhaTexto)).toBeNull();
+    expect(block.getAllByRole("article")).toHaveLength(4);
+  });
   it("preserva bloco e aba Hoje vazia com agenda e sem carrossel", async () => {
     setup();
     render(<CartolaDashboard />);
@@ -113,7 +130,7 @@ describe("Dashboard e resumo do Mago", () => {
     expect(screen.getAllByText("Rodada 28").length).toBeGreaterThan(0);
     expect(screen.getByText("Fechado")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Melhores da Rodada 28" })).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "Mago do Point Fantasy" })).getByText("Rodada 28")).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Mago do Point Fantasy" })).getByText("Rodada 29")).toBeTruthy();
   });
 
   it("aceita outra análise sem números fixados no componente", () => {
