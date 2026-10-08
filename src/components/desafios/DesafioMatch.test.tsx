@@ -73,3 +73,18 @@ it("usa nomes antigos quando novos nomes são null", () => {
   show({ mandanteNome: null, visitanteNome: null });
   expect(screen.getByText("SC Internacional")).toBeTruthy(); expect(screen.getByText("SC Corinthians Paulista")).toBeTruthy();
 });
+it("mantém coluna vazia de gols sem números fictícios", () => {
+  show();
+  const slots = screen.getByRole("listitem").querySelectorAll('[class*="teamGoals"]');
+  expect(slots).toHaveLength(2);
+  expect([...slots].every(slot => slot.textContent === "" && slot.getAttribute("aria-hidden") === "true")).toBe(true);
+});
+it("preserva placares de dois dígitos com nomes longos", () => {
+  show({ mandanteNome: "Clube com nome muito longo", visitanteNome: "ABC", golsMandante: 12, golsVisitante: 10 });
+  expect(screen.getByLabelText("Placar do Clube com nome muito longo").textContent).toBe("12");
+  expect(screen.getByLabelText("Placar do ABC").textContent).toBe("10");
+});
+it.each([[1, "pickCorrect"], [0, "pickIncorrect"]] as const)("aplica cor ao resultado apurado %s", (pontos, className) => {
+  show({ status: "FINALIZADA", apurado: true, pontos });
+  expect(screen.getByRole("status").className).toContain(className);
+});

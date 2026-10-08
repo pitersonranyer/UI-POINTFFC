@@ -21,7 +21,7 @@ const inscription: DesafioInscricao = { id: 88, desafioId: 7, status: "ATIVA", v
 let server: DesafioDetalhe;
 beforeEach(() => {
   vi.stubGlobal("React", React); vi.resetAllMocks(); nav.query = "id=7"; auth.authenticated = true; auth.loading = false; auth.id = "user-1";
-  server = structuredClone(fixture); wallet.refresh.mockResolvedValue(true);
+  server = { ...structuredClone(fixture), fimInscricao: "2099-10-02T12:00:00.000Z" }; wallet.refresh.mockResolvedValue(true);
   vi.mocked(service.detail).mockImplementation(async () => structuredClone(server));
   vi.mocked(service.list).mockResolvedValue({ itens: [fixture], paginacao: { pagina: 1, limite: 20, total: 21, totalPaginas: 2 } });
   vi.mocked(service.predict).mockImplementation(async (id, partidaId, palpite) => {
@@ -38,6 +38,20 @@ afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 const button = (name: string | RegExp) => screen.getByRole("button", { name }) as HTMLButtonElement;
 const game = (name = "Flamengo x Palmeiras") => within(screen.getByRole("group", { name: `Palpite: ${name}` }));
 const open = async () => { render(<DesafioDetailPage />); await screen.findByRole("heading", { name: "Desafio POINT" }); };
+it.each(["EM_ANDAMENTO", "ENCERRADO", "CANCELADO"] as const)("não oferece novo palpite no estado %s", async status => {
+  multiple(); server.status = status;
+  await open();
+  expect(screen.queryByRole("button", { name: "+ Novo palpite" })).toBeNull();
+  expect(button("Palpite 1")).toBeTruthy();
+});
+it("oculta criação após fim das inscrições e preserva edição individual", async () => {
+  multiple(); server.fimInscricao = "2001-10-02T12:00:00.000Z";
+  await open();
+  expect(screen.queryByRole("button", { name: "+ Novo palpite" })).toBeNull();
+  expect((game().getByRole("button", { name: "Empate" }) as HTMLButtonElement).disabled).toBe(false);
+  fireEvent.click(game().getByRole("button", { name: "Empate" }));
+  await waitFor(() => expect(service.predict).toHaveBeenCalledWith(7, 14, "EMPATE", 88));
+});
 
 it("polling atualiza placar, aguarda apuração e preserva Palpite 2 até parar", async () => {
   multiple();
@@ -284,7 +298,9 @@ it("anônimo consulta publicamente e vai ao login ao palpitar ou participar", as
 it("resumo usa quantidade real de jogos e elimina informações redundantes", async () => {
   server.partidas = [{ ...first, meuPalpite: null }];
   await open();
-  expect(screen.getByText("FREE · 1 jogo · Aberto")).toBeTruthy();
+  expect(screen.getByText("Gratuito")).toBeTruthy();
+  expect(screen.getByText("1 jogo")).toBeTruthy();
+  expect(screen.getByText("Aberto")).toBeTruthy();
   const list = screen.getByRole("list", { name: "Partidas do Desafio" });
   expect(list.querySelectorAll("time")).toHaveLength(1);
   expect(list.textContent).not.toMatch(/Agendada|Fechamento|Mandante|Visitante|Seu palpite|×|- x -/);

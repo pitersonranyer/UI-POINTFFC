@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { RefreshCw } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -104,7 +105,7 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
   }
   async function createInscricao() {
     if (!authenticated) { login(); return; }
-    if (!data || !multipleContract || lock.current || refreshing || needsRefresh) return;
+    if (!data || !multipleContract || !canCreate || lock.current || refreshing || needsRefresh) return;
     lock.current = true; setCreating(true); setCreationError("");
     try {
       creationKey.current ??= crypto.randomUUID();
@@ -180,23 +181,23 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
   const missing = games.filter(game => game.status !== "ANULADA" && (!game.meuPalpite || missingIds.includes(game.id)));
   const acceptingEntries = data?.status === "ABERTO" && !cancelled;
   const entryDisabled = busy || needsRefresh || blockedEntry || cancelled || (multipleContract && !selected) || data?.status !== "ABERTO" || (authenticated && (missing.length > 0 || !games.some(game => game.status !== "ANULADA")));
-  const canCreate = authenticated && multipleContract && (data?.status === "ABERTO" || data?.status === "EM_ANDAMENTO");
+  const canCreate = authenticated && multipleContract && data?.status === "ABERTO" && Date.now() <= Date.parse(data.fimInscricao);
   async function retry() { if (lock.current) return; const result = await refresh(); if (result) setBlockedEntry(false); }
   function beginParticipation() {
     if (!authenticated) { login(); return; }
     if (entryDisabled || enrolled || lock.current) return;
     if (data?.tipoAcesso === "PAGO") setConfirm(true); else void participate();
   }
-  return <div className="page-shell">
+  return <div className={`page-shell ${styles.palpitePage}`}>
     <Link className={styles.back} href="/desafios">← Desafios</Link>
+    {data && <header className={styles.rankHeader}><div><p>DESAFIO / PALPITES</p><h1>{data.nome}</h1><div className={styles.detailMeta}><span className={styles.badge}>{desafioStatus[data.status]}</span><span>{data.tipoAcesso === "PAGO" ? money(data.valorInscricao) : "Gratuito"}</span><span>{data.partidas.length} {data.partidas.length === 1 ? "jogo" : "jogos"}</span></div></div><button className={styles.rankRefresh} aria-label="Atualizar" title={refreshing ? "Atualizando..." : "Atualizar"} disabled={busy} onClick={() => void retry()}><RefreshCw size={18} aria-hidden="true" /></button></header>}
     <DesafioTabs id={id} active="desafio" busy={busy} />
     {success && <p className={styles.success} role="status">{success}</p>}
     {loading ? <p role="status" className={styles.feedback}>Carregando Desafio...</p> : <>
       {loadError && <div className={styles.error} role="alert"><p>{loadError}</p>{loadStatus === 404 && <p>Se o Desafio já encerrou, consulte a aba Ranking.</p>}<button className={styles.secondary} disabled={busy} onClick={() => void retry()}>Tentar novamente</button>{loadStatus === 401 && <Link className={styles.secondary} href="/login">Entrar novamente</Link>}</div>}
       {data && <>
-        <header className={styles.detailHeader}><div><h1>{data.nome}</h1><p>{data.tipoAcesso}{data.tipoAcesso === "PAGO" ? ` · ${money(data.valorInscricao)}` : ""} · {data.partidas.length} {data.partidas.length === 1 ? "jogo" : "jogos"} · {desafioStatus[data.status]}</p></div><button className={styles.secondary} disabled={busy} onClick={() => void retry()}>{refreshing ? "Atualizando..." : "Atualizar"}</button></header>
         <h2 className={styles.sectionTitle}>{authenticated ? "Seus palpites" : "Partidas"}</h2>
-        {authenticated && multipleContract && ((data.minhasInscricoes?.length ?? 0) > 1 || canCreate) && <div className={styles.pickSelector} role="group" aria-label="Seus palpites no Desafio">
+        {authenticated && multipleContract && ((data.minhasInscricoes?.length ?? 0) > 0 || canCreate) && <div className={styles.pickSelector} role="group" aria-label="Seus palpites no Desafio">
           {data.minhasInscricoes?.map(item => <button type="button" key={item.id} className={styles.secondary} aria-pressed={selectedId === item.id} disabled={busy || pixOpen} onClick={() => selectInscricao(item.id)}>Palpite {item.numero}</button>)}
           {canCreate && <button type="button" className={styles.secondary} disabled={busy || needsRefresh || pixOpen} onClick={() => void createInscricao()}>{creating ? "Criando..." : "+ Novo palpite"}</button>}
         </div>}

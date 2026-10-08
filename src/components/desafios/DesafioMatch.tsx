@@ -6,7 +6,7 @@ import styles from "./Desafios.module.css";
 
 function Team({ name, logo, goals }: { name: string; logo: string | null; goals?: number }) {
   const [failed, setFailed] = useState(false);
-  return <span className={styles.team}>{logo && !failed && <Image src={logo} alt="" width={28} height={28} unoptimized onError={() => setFailed(true)} />}<span>{name}</span>{goals !== undefined && <b aria-label={`Placar do ${name}`}>{goals}</b>}</span>;
+  return <span className={styles.team}><span className={styles.teamIdentity}>{logo && !failed && <Image src={logo} alt="" width={28} height={28} unoptimized onError={() => setFailed(true)} />}<span>{name}</span></span><b className={styles.teamGoals} aria-label={goals !== undefined ? `Placar do ${name}` : undefined} aria-hidden={goals === undefined || undefined}>{goals}</b></span>;
 }
 const choices: { value: Palpite; label: string }[] = [{ value: "CASA", label: "Casa" }, { value: "EMPATE", label: "Empate" }, { value: "FORA", label: "Fora" }];
 const matchStatus = { AGENDADA: "", EM_ANDAMENTO: "Em andamento", FINALIZADA: "Finalizado", ANULADA: "Anulada" };
@@ -34,7 +34,7 @@ export function DesafioMatch({ game, authenticated, disabled, saving, saved, err
     </div>
     {(matchStatus[game.status] || blocked || result || saving || (saved && !blocked) || missing) && <div className={styles.gameFoot}>
       <span>{matchStatus[game.status]}{blocked && game.status === "AGENDADA" ? "Palpite bloqueado" : ""}</span>
-      <span role="status">{result || (saving ? "Salvando..." : saved && !blocked ? "Salvo ✓" : missing ? <span className={styles.missingText}>Falta seu palpite</span> : "")}</span>
+      <span role="status" className={result ? game.pontos === 1 ? styles.pickCorrect : styles.pickIncorrect : undefined}>{result || (saving ? "Salvando..." : saved && !blocked ? "Salvo ✓" : missing ? <span className={styles.missingText}>Falta seu palpite</span> : "")}</span>
     </div>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
   </li>;
