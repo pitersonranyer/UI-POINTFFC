@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/apiClient";
 import { desafioService as service, type DesafioDetalhe, type DesafioInscricao, type DesafioMinhaInscricao, type DesafioJogo, type ParticipacaoConfirmada } from "@/services/desafioService";
@@ -34,10 +34,59 @@ beforeEach(() => {
     return { inscricao: saved, tipoAcesso: server.tipoAcesso, valorCobrado: saved.valorInscricao };
   });
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 const button = (name: string | RegExp) => screen.getByRole("button", { name }) as HTMLButtonElement;
 const game = (name = "Flamengo x Palmeiras") => within(screen.getByRole("group", { name: `Palpite: ${name}` }));
 const open = async () => { render(<DesafioDetailPage />); await screen.findByRole("heading", { name: "Desafio POINT" }); };
+
+it("polling atualiza placar, aguarda apuração e preserva Palpite 2 até parar", async () => {
+  multiple();
+  server.partidas = [{ ...first, status: "EM_ANDAMENTO", golsMandante: 0, golsVisitante: 0 }];
+  vi.useFakeTimers();
+  render(<DesafioDetailPage />);
+  await act(async () => {});
+  fireEvent.click(button("Palpite 2"));
+  server.partidas[0].golsMandante = 1;
+  await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+  expect(screen.getByLabelText("Placar do Flamengo").textContent).toBe("1");
+  expect(button("Palpite 2").getAttribute("aria-pressed")).toBe("true");
+  expect(screen.queryByText(/Acertou|Errou/)).toBeNull();
+  server.partidas[0].status = "FINALIZADA";
+  await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+  expect(screen.getByText("Finalizado")).toBeTruthy();
+  expect(screen.queryByText(/Acertou|Errou/)).toBeNull();
+  server.partidas[0].apurado = true;
+  server.minhasInscricoes!.forEach(entry => { entry.palpites[0].apurado = true; entry.palpites[0].pontos = entry.id === 99 ? 0 : 1; });
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  expect(screen.getByText("✕ Errou · 0 ponto")).toBeTruthy();
+  const calls = vi.mocked(service.detail).mock.calls.length;
+  await act(async () => { await vi.advanceTimersByTimeAsync(180_000); });
+  expect(service.detail).toHaveBeenCalledTimes(calls);
+  fireEvent.click(button("Palpite 1"));
+  expect(screen.getByText("✓ Acertou · +1 ponto")).toBeTruthy();
+});
+
+it("polling suspende na aba oculta, retoma e não concorre com salvamento", async () => {
+  vi.useFakeTimers();
+  server.partidas[0].status = "EM_ANDAMENTO";
+  render(<DesafioDetailPage />); await act(async () => {});
+  let hidden = true;
+  vi.spyOn(document, "hidden", "get").mockImplementation(() => hidden);
+  fireEvent(document, new Event("visibilitychange"));
+  await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+  expect(service.detail).toHaveBeenCalledTimes(1);
+  hidden = false;
+  await act(async () => { fireEvent(document, new Event("visibilitychange")); });
+  expect(service.detail).toHaveBeenCalledTimes(2);
+  let resolve!: (value: Awaited<ReturnType<typeof service.predict>>) => void;
+  vi.mocked(service.predict).mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  fireEvent.click(game().getByRole("button", { name: "Empate" }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  expect(service.detail).toHaveBeenCalledTimes(2);
+  await act(async () => { resolve({ desafioId: 7, partidaId: 14, palpite: "EMPATE", fechamentoEm: first.fechamentoEm, podeAlterarPalpite: true }); });
+  expect(game().getByRole("button", { name: "Empate" }).getAttribute("aria-pressed")).toBe("true");
+  vi.restoreAllMocks();
+});
 
 function entry(id: number, numero: number, status: DesafioInscricao["status"] = "RASCUNHO", pick: DesafioJogo["meuPalpite"] = "CASA"): DesafioMinhaInscricao {
   return { ...inscription, id, numero, nome: `Palpite ${numero}`, status, palpites: [first, second].map(item => ({ partidaId: item.id, meuPalpite: pick ?? null, pontos: null, apurado: false, podeAlterarPalpite: status !== "CANCELADA" })) };

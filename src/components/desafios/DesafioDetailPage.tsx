@@ -13,6 +13,7 @@ import { formatWalletCurrency as money } from "@/lib/format";
 import { DesafioMatch } from "./DesafioMatch";
 import { DesafioRanking } from "./DesafioRanking";
 import { DesafioTabs } from "./DesafioTabs";
+import { detailPollingInterval, useDesafioPolling } from "./useDesafioPolling";
 import styles from "./Desafios.module.css";
 
 export function DesafioDetailPage() {
@@ -45,7 +46,7 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
   const creationKey = useRef<string | null>(null);
   const lock = useRef(false), mounted = useRef(true), read = useRef<AbortController | null>(null);
   const refresh = useCallback(async () => {
-    read.current?.abort();
+    if (read.current && !read.current.signal.aborted) return null;
     const controller = new AbortController(); read.current = controller;
     setRefreshing(true); setLoadError(""); setLoadStatus(null);
     try {
@@ -61,12 +62,19 @@ function DesafioDetail({ id, authenticated }: { id: number; authenticated: boole
       setLoadError(desafioMessage(cause)); setNeedsRefresh(true); setLoadStatus(cause instanceof ApiError ? cause.status : null);
       if (cause instanceof ApiError && [401, 403, 404].includes(cause.status)) setData(null);
       return null;
-    } finally { if (!controller.signal.aborted && mounted.current) { setRefreshing(false); setLoading(false); } }
+    } finally {
+      if (read.current === controller) read.current = null;
+      if (!controller.signal.aborted && mounted.current) { setRefreshing(false); setLoading(false); }
+    }
   }, [id, authenticated]);
   useEffect(() => {
     mounted.current = true; void refresh();
     return () => { mounted.current = false; read.current?.abort(); };
   }, [refresh]);
+  useDesafioPolling(async () => {
+    if (lock.current || document.hidden) return;
+    await refresh();
+  }, detailPollingInterval(data));
   const login = () => router.push("/login");
   const multipleContract = Array.isArray(data?.minhasInscricoes);
   const selected = multipleContract ? data?.minhasInscricoes?.find(item => item.id === selectedId) : data?.minhaInscricao;

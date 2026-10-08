@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiError } from "@/services/apiClient";
 import { desafioService, desafioMessage, desafioStatus, type DesafioRanking as Ranking, type DesafioRankingItem } from "@/services/desafioService";
 import { DesafioTabs } from "./DesafioTabs";
+import { rankingPollingInterval, useDesafioPolling } from "./useDesafioPolling";
 import styles from "./Desafios.module.css";
 
 function Participant({ participant }: { participant: DesafioRankingItem["participante"] }) {
@@ -16,28 +17,40 @@ function Participant({ participant }: { participant: DesafioRankingItem["partici
 
 export function DesafioRanking({ id }: { id: number }) {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const [page, setPage] = useState(1), [retry, setRetry] = useState(0);
+  const [page, setPage] = useState(1);
   const [data, setData] = useState<Ranking | null>(null);
   const [loading, setLoading] = useState(true), [error, setError] = useState("");
-  useEffect(() => {
+  const read = useRef<AbortController | null>(null);
+  const refresh = useCallback(async (background = false) => {
+    if (read.current && !read.current.signal.aborted) return;
     const controller = new AbortController();
-    setLoading(true); setError("");
-    desafioService.ranking(id, page, controller.signal).then(result => {
+    read.current = controller;
+    if (!background) setLoading(true);
+    setError("");
+    try {
+      const result = await desafioService.ranking(id, page, controller.signal);
       if (controller.signal.aborted) return;
       // If enrollment changes shrink the last page, ask for the new final page.
       if (page > Math.max(1, result.paginacao.totalPaginas)) { setPage(Math.max(1, result.paginacao.totalPaginas)); return; }
       setData(result);
-    }).catch(cause => {
+    } catch (cause) {
       if (!controller.signal.aborted) setError(cause instanceof ApiError && cause.status === 404 ? "Ranking indisponível para este Desafio." : desafioMessage(cause));
-    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [id, page, retry]);
+    } finally {
+      if (read.current === controller) read.current = null;
+      if (!controller.signal.aborted) setLoading(false);
+    }
+  }, [id, page]);
+  useEffect(() => {
+    void refresh();
+    return () => read.current?.abort();
+  }, [refresh]);
+  useDesafioPolling(() => refresh(true), rankingPollingInterval(data));
   const ownId = !authLoading && isAuthenticated && user ? String(user.idUsuario) : null;
   return <div className="page-shell">
     <Link className={styles.back} href="/desafios">← Desafios</Link>
-    <header className={styles.header}><div><p className="eyebrow">DESAFIO #{id}</p><h1 className="page-title">Ranking</h1></div><button className={styles.secondary} disabled={loading} onClick={() => setRetry(value => value + 1)}>Atualizar ranking</button></header>
+    <header className={styles.header}><div><p className="eyebrow">DESAFIO #{id}</p><h1 className="page-title">Ranking</h1></div><button className={styles.secondary} disabled={loading} onClick={() => void refresh()}>Atualizar ranking</button></header>
     <DesafioTabs id={id} active="ranking" />
-    {loading ? <p className={styles.feedback} role="status">Carregando ranking...</p> : error ? <div className={styles.error} role="alert"><p>{error}</p><button className={styles.secondary} onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : data && <>
+    {loading ? <p className={styles.feedback} role="status">Carregando ranking...</p> : error ? <div className={styles.error} role="alert"><p>{error}</p><button className={styles.secondary} onClick={() => void refresh()}>Tentar novamente</button></div> : data && <>
       <div className={styles.rankingSummary} aria-label="Resumo do ranking"><span className={styles.badge}>{desafioStatus[data.status]}</span><span>{data.totalPartidasApuradas} de {data.totalPartidasValidas} partidas apuradas</span><span>{data.totalPartidasAnuladas} anuladas</span><span>Máximo: {data.pontuacaoMaxima} pts</span></div>
       {data.status === "ENCERRADO" && <p className={styles.feedback}>Desafio encerrado. Classificação conforme a última apuração.</p>}
       {!data.ranking.length ? <p className={styles.feedback}>Nenhum participante no ranking ainda.</p> : <>

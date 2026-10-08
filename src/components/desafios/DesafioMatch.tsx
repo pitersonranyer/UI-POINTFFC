@@ -23,7 +23,7 @@ export function DesafioMatch({ game, authenticated, disabled, saving, saved, err
   const homeName = game.mandanteNome ?? game.nomeMandante ?? "";
   const awayName = game.visitanteNome ?? game.nomeVisitante ?? "";
   const hasScore = game.golsMandante != null && game.golsVisitante != null;
-  const result = authenticated && game.status !== "ANULADA" && game.apurado === true
+  const result = authenticated && game.status === "FINALIZADA" && game.apurado === true
     ? game.pontos === 1 ? "✓ Acertou · +1 ponto" : game.pontos === 0 ? "✕ Errou · 0 ponto" : ""
     : "";
   return <li id={`partida-${game.id}`} className={`${styles.game} ${missing ? styles.missing : ""}`}>

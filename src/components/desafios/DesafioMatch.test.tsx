@@ -37,6 +37,10 @@ it("mostra cada gol imediatamente após seu time, incluindo zero", () => {
   expect(away.previousElementSibling?.textContent).toBe("Corinthians");
   expect(screen.queryByText(/Acertou|Errou/)).toBeNull();
 });
+it("não apresenta acerto definitivo durante jogo mesmo com apuração na resposta", () => {
+  show({ status: "EM_ANDAMENTO", apurado: true, pontos: 1 });
+  expect(screen.queryByText(/Acertou|Errou/)).toBeNull();
+});
 it.each([false, null, undefined])("não exibe resultado quando apurado é %s, mesmo com pontos", apurado => {
   show({ status: "FINALIZADA", podeAlterarPalpite: false, pontos: 1, apurado });
   expect(screen.queryByText(/Acertou|Errou/)).toBeNull();

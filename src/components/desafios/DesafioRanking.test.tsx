@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "@/services/apiClient";
 import { desafioService as service, type DesafioRanking as Ranking, type DesafioJogo } from "@/services/desafioService";
@@ -19,9 +19,23 @@ const result: Ranking = {
   paginacao: { pagina: 1, limite: 20, total: 5, totalPaginas: 1 },
 };
 beforeEach(() => { vi.stubGlobal("React", React); vi.resetAllMocks(); auth.id = "2"; auth.authenticated = true; auth.loading = false; nav.query = "id=7&aba=ranking"; vi.mocked(service.ranking).mockResolvedValue(structuredClone(result)); });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 const rows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1);
 const positions = () => rows().map(row => within(row).getAllByRole("cell")[0].textContent);
+it("atualiza ranking automaticamente, evita leituras duplicadas e para após apuração", async () => {
+  vi.useFakeTimers();
+  render(<DesafioRanking id={7} />); await act(async () => {});
+  let resolve!: (value: Ranking) => void;
+  vi.mocked(service.ranking).mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+  fireEvent.click(screen.getByRole("button", { name: "Atualizar ranking" }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+  expect(service.ranking).toHaveBeenCalledTimes(2);
+  await act(async () => { resolve({ ...result, totalPartidasApuradas: 8, ranking: [{ ...result.ranking[1], pontos: 8, acertos: 8 }] }); });
+  expect(within(rows()[0]).getAllByRole("cell")[1].textContent).toBe("8");
+  await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
+  expect(service.ranking).toHaveBeenCalledTimes(2);
+});
 it("mantém entradas independentes do mesmo usuário com número e posições do backend", async () => {
   vi.mocked(service.ranking).mockResolvedValue({ ...result, ranking: [
     { ...result.ranking[1], inscricaoId: 88, numero: 1, nome: "Palpite 1", posicao: 1, pontos: 8 },
