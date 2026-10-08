@@ -18,10 +18,35 @@ const result: Ranking = {
   ranking: [1, 1, 3, 4, 4].map((posicao, index) => ({ posicao, participante: { idUsuario: index + 1, nome: ["Ana", "Bruno", "Carla", "Diego", "Eva"][index], fotoUrl: null }, pontos: [5, 5, 3, 1, 1][index], acertos: [5, 5, 3, 1, 1][index] })),
   paginacao: { pagina: 1, limite: 20, total: 5, totalPaginas: 1 },
 };
-beforeEach(() => { vi.stubGlobal("React", React); vi.resetAllMocks(); auth.id = "2"; auth.authenticated = true; auth.loading = false; nav.query = "id=7&aba=ranking"; vi.mocked(service.ranking).mockResolvedValue(structuredClone(result)); });
+beforeEach(() => { vi.stubGlobal("React", React); vi.resetAllMocks(); auth.id = "2"; auth.authenticated = true; auth.loading = false; nav.query = "id=7&aba=ranking"; vi.mocked(service.ranking).mockResolvedValue(structuredClone(result)); vi.mocked(service.detail).mockResolvedValue({ nome: "Desafio da torcida" } as Awaited<ReturnType<typeof service.detail>>); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 const rows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1);
 const positions = () => rows().map(row => within(row).getAllByRole("cell")[0].textContent);
+it.each([1, 10, 20])("renderiza %s participações sem perder nomes longos ou identificação", async count => {
+  const nome = "Participante com nome muito longo da torcida POINT FFC";
+  vi.mocked(service.ranking).mockResolvedValue({ ...result, ranking: Array.from({ length: count }, (_, index) => ({ ...result.ranking[0], inscricaoId: index + 1, numero: index + 1, participante: { ...result.ranking[0].participante, nome } })), paginacao: { pagina: 1, limite: 20, total: count, totalPaginas: 1 } });
+  render(<DesafioRanking id={7} />);
+  await screen.findByRole("table");
+  expect(rows()).toHaveLength(count);
+  expect(screen.getAllByText(nome)).toHaveLength(count);
+  expect(screen.getByText(`Palpite ${count}`)).toBeTruthy();
+});
+it("exibe nome real, progresso e permite atualização manual", async () => {
+  render(<DesafioRanking id={7} />);
+  await screen.findByRole("heading", { name: "Desafio da torcida" });
+  await screen.findByRole("table");
+  expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("62.5");
+  fireEvent.click(screen.getByRole("button", { name: "Atualizar ranking" }));
+  await waitFor(() => expect(service.ranking).toHaveBeenCalledTimes(2));
+});
+it("mantém ranking e progresso zero quando detalhe está indisponível e não há partidas válidas", async () => {
+  vi.mocked(service.detail).mockRejectedValue(new ApiError(404));
+  vi.mocked(service.ranking).mockResolvedValue({ ...result, totalPartidasValidas: 0, totalPartidasApuradas: 0 });
+  render(<DesafioRanking id={7} />);
+  await screen.findByRole("table");
+  expect(screen.getByRole("heading", { name: "Desafio #7" })).toBeTruthy();
+  expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("0");
+});
 it("atualiza ranking automaticamente, evita leituras duplicadas e para após apuração", async () => {
   vi.useFakeTimers();
   render(<DesafioRanking id={7} />); await act(async () => {});
@@ -32,7 +57,7 @@ it("atualiza ranking automaticamente, evita leituras duplicadas e para após apu
   await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
   expect(service.ranking).toHaveBeenCalledTimes(2);
   await act(async () => { resolve({ ...result, totalPartidasApuradas: 8, ranking: [{ ...result.ranking[1], pontos: 8, acertos: 8 }] }); });
-  expect(within(rows()[0]).getAllByRole("cell")[1].textContent).toBe("8");
+  expect(within(rows()[0]).getAllByRole("cell")[1].querySelector("strong")!.textContent).toBe("8");
   await act(async () => { await vi.advanceTimersByTimeAsync(120_000); });
   expect(service.ranking).toHaveBeenCalledTimes(2);
 });
@@ -44,8 +69,8 @@ it("mantém entradas independentes do mesmo usuário com número e posições do
   ] });
   render(<DesafioRanking id={7} />); await screen.findByRole("table");
   expect(positions()).toEqual(["1", "2", "3"]);
-  expect(rows().map(row => within(row).getAllByRole("cell")[1].textContent)).toEqual(["8", "7", "6"]);
-  expect(rows().map(row => within(row).getByRole("rowheader").textContent)).toEqual(["Bruno· Palpite 1Você", "Ana· Palpite 1", "Bruno· Palpite 2Você"]);
+  expect(rows().map(row => within(row).getAllByRole("cell")[1].querySelector("strong")!.textContent)).toEqual(["8", "7", "6"]);
+  expect(rows().map(row => within(row).getByRole("rowheader").textContent)).toEqual(["BBrunoPalpite 1Você", "AAnaPalpite 1", "BBrunoPalpite 2Você"]);
   expect(screen.getAllByRole("row", { name: "Sua classificação" })).toHaveLength(2);
 });
 
@@ -53,13 +78,13 @@ it("preserva exatamente ordem, posições empatadas e pontos da API", async () =
   render(<DesafioRanking id={7} />); expect(screen.getByRole("status").textContent).toBe("Carregando ranking...");
   await screen.findByRole("table");
   expect(positions()).toEqual(["1", "1", "3", "4", "4"]);
-  expect(rows().map(row => within(row).getByRole("rowheader").textContent)).toEqual(["Ana", "BrunoVocê", "Carla", "Diego", "Eva"]);
-  expect(rows().map(row => within(row).getAllByRole("cell")[1].textContent)).toEqual(["5", "5", "3", "1", "1"]);
+  expect(rows().map(row => within(row).getByRole("rowheader").textContent)).toEqual(["AAnaPalpite 1", "BBrunoPalpite 1Você", "CCarlaPalpite 1", "DDiegoPalpite 1", "EEvaPalpite 1"]);
+  expect(rows().map(row => within(row).getAllByRole("cell")[1].querySelector("strong")!.textContent)).toEqual(["5", "5", "3", "1", "1"]);
   expect(screen.getByText("5 de 8 partidas apuradas")).toBeTruthy(); expect(screen.getByText("Máximo: 8 pts")).toBeTruthy();
 });
 it("identifica usuário por ID, mesmo com string na autenticação e número na API", async () => {
   render(<DesafioRanking id={7} />); const own = await screen.findByRole("row", { name: "Sua classificação" });
-  expect(within(own).getByRole("rowheader").textContent).toBe("BrunoVocê");
+  expect(within(own).getByRole("rowheader").textContent).toBe("BBrunoPalpite 1Você");
   expect(own.className).toContain("ownRank");
 });
 it.each(["anonimo", "ausente"])("não inventa inscrição nem posição para usuário %s", async mode => {
@@ -82,7 +107,7 @@ it("ranking encerrado abre diretamente sem depender do detalhe 404, até durante
   vi.mocked(service.detail).mockRejectedValue(new ApiError(404));
   render(<DesafioDetailPage />); await screen.findByText("Encerrado");
   expect(screen.getByText("Desafio encerrado. Classificação conforme a última apuração.")).toBeTruthy();
-  expect(service.detail).not.toHaveBeenCalled();
+  expect(service.detail).toHaveBeenCalledWith(7, false, expect.any(AbortSignal));
   expect(screen.getByRole("link", { name: "Desafio / Palpites" }).getAttribute("href")).toBe("/desafios/detalhe?id=7");
   expect(screen.getByRole("link", { name: "Ranking" }).getAttribute("aria-current")).toBe("page");
 });
@@ -95,8 +120,8 @@ it("detalhe indisponível mantém acesso ao ranking", async () => {
 it("mostra zero pontos como zero e participantes sem nome com fallback neutro", async () => {
   vi.mocked(service.ranking).mockResolvedValue({ ...result, status: "ABERTO", totalPartidasApuradas: 0, ranking: [{ posicao: 1, participante: { idUsuario: 99, nome: null, fotoUrl: null }, pontos: 0, acertos: 0 }] });
   render(<DesafioRanking id={7} />); await screen.findByRole("table");
-  expect(within(rows()[0]).getByRole("rowheader").textContent).toBe("Participante");
-  expect(within(rows()[0]).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["1", "0", "0"]);
+  expect(within(rows()[0]).getByRole("rowheader").textContent).toBe("PParticipantePalpite 1");
+  expect(within(rows()[0]).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["1", "0pts", "0 acertos"]);
 });
 it("vazio não cria classificações fictícias", async () => {
   vi.mocked(service.ranking).mockResolvedValue({ ...result, ranking: [], paginacao: { pagina: 1, limite: 20, total: 0, totalPaginas: 0 } });
