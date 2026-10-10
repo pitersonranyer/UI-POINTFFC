@@ -19,10 +19,10 @@ function TeamMetrics({ team }: { team: MagoTeam }) {
   return <dl className={styles.metrics}><div><dt>Adversário</dt><dd>{team.adversario}</dd></div><div><dt>xG adversário</dt><dd>{team.xgAdversario === null ? "Não informado" : number.format(team.xgAdversario)}</dd></div>{team.xga !== undefined && <div><dt>xGA</dt><dd>{number.format(team.xga)}</dd></div>}{team.golsSofridos !== undefined && <div><dt>Gols sofridos no recorte</dt><dd>{team.golsSofridos}</dd></div>}</dl>;
 }
 
-export function MagoHero({ rodada, pelotoesDoMago = false }: { rodada: number; pelotoesDoMago?: boolean }) {
+export function MagoHero({ rodada, pelotoesDoMago = false, editorial }: { rodada: number; pelotoesDoMago?: boolean; editorial?: MagoRound["editorial"] }) {
   return <header className={styles.hero}>
     <div className={styles.heroCopy}><div className={styles.eyebrow}><WandSparkles size={16} aria-hidden="true" /> POINT FANTASY INTELLIGENCE <span>RODADA {rodada}</span></div>
-      <h1>Dicas do Cartola — Rodada {rodada} | <span>Mago do POINT</span></h1><p className={styles.subtitle}>Inteligência para a sua rodada</p>
+      <h1>{editorial?.titulo ?? `Dicas do Cartola — Rodada ${rodada}`} | <span>Mago do POINT</span></h1><p className={styles.subtitle}>{editorial?.subtitulo ?? "Inteligência para a sua rodada"}</p>
       <p className={styles.description}>{pelotoesDoMago ? "O Mago monta seus próprios pelotões cruzando probabilidade de SG, xG do adversário, força defensiva, mando, momento e contexto. A ordem editorial não replica o ranking bruto de SG do Gato Mestre." : "Explore a prévia editorial de dicas do Cartola, com análises de saldo de gols (SG), potencial dos ataques e placares projetados a partir de dados demonstrativos."}</p>
       <p className={styles.description}>Complemente a análise com os <Link href="/provaveis/">jogadores prováveis</Link> e os <Link href="/jogos-da-rodada/">jogos da rodada</Link>.</p>
       <a href="#top-sg" className={styles.heroLink}>Explore a análise <ArrowDown size={16} aria-hidden="true" /></a>
@@ -69,10 +69,11 @@ export function MagoAttackRanking({ data }: { data: MagoRound }) {
 
 export function MagoPredictions({ data }: { data: MagoRound }) {
   if (!data.placares.length) return data.jogos?.length ? <section aria-labelledby="placares" className={styles.section}><SectionTitle id="placares" icon={<Orbit />} title="Jogos da rodada" subtitle={`Confrontos válidos da R${data.rodada}. Nenhum placar projetado foi fornecido.`} /><div className={styles.predictions}>{data.jogos.map(game => <article key={game.mandante} className={styles.prediction}><span className={styles.predictionLabel}>{game.dia} · {game.horario}</span><div className={styles.score}><span>{game.mandante}</span><strong>×</strong><span>{game.visitante}</span></div></article>)}</div></section> : null;
-  return <section aria-labelledby="placares" className={styles.section}><SectionTitle id="placares" icon={<Orbit />} title="Placares do Mago" subtitle="Projeções da rodada. São cenários estimados, não garantias de resultado." /><div className={styles.predictions}>{data.placares.map(game => {
+  return <section aria-labelledby="placares" className={styles.section}><SectionTitle id="placares" icon={<Orbit />} title={data.editorial ? "Placar Imaginário do Mago" : "Placares do Mago"} subtitle={data.editorial ? "Se os números virassem placar, a rodada poderia ser assim." : "Projeções da rodada. São cenários estimados, não garantias de resultado."} /><div className={styles.predictions}>{data.placares.map(game => {
     const sg = game.golsMandante === 0 || game.golsVisitante === 0;
-    return <article key={game.mandante} className={`${styles.prediction} ${sg ? styles.predictedSg : ""}`}><span className={styles.predictionLabel}>{sg ? <><ShieldCheck size={13} aria-hidden="true" /> Projeção com SG</> : "Placar projetado"}</span><div className={styles.score}><span>{game.mandante}</span><strong>{game.golsMandante} <small>x</small> {game.golsVisitante}</strong><span>{game.visitante}</span></div></article>;
-  })}</div></section>;
+    const agenda = data.jogos?.find(item => item.mandante === game.mandante && item.visitante === game.visitante);
+    return <article key={game.mandante} className={`${styles.prediction} ${sg ? styles.predictedSg : ""}`}><span className={styles.predictionLabel}>{sg ? <><ShieldCheck size={13} aria-hidden="true" /> Projeção com SG</> : "Placar projetado"}</span>{agenda && <p className={styles.predictionLabel}>{agenda.dia} · {agenda.horario}</p>}<div className={styles.score}><span>{game.mandante === "Bragantino" ? "RB Bragantino" : game.mandante}</span><strong>{game.golsMandante} <small>x</small> {game.golsVisitante}</strong><span>{game.visitante}</span></div></article>;
+  })}</div>{data.editorial && <p className={styles.note}>Projeções editoriais do Mago, baseadas na leitura dos confrontos. Não representam resultados garantidos nem placares exatos calculados pelo modelo estatístico.</p>}</section>;
 }
 
 export function MagoSummary({ data }: { data: MagoRound }) {
@@ -104,5 +105,19 @@ export function MagoExpertGroups({ data }: { data: MagoRound }) {
 
 export function MagoPage({ data }: { data: MagoRound }) {
   const withGroup = (team: MagoTeam): MagoTeam => ({ ...team, pelotao: data.pelotoes.find(group => group.clubes.includes(team.clube))?.nome ?? team.pelotao });
+  if (data.editorial) return <div className={styles.page}><div className={styles.shell}>
+    <MagoHero rodada={data.rodada} pelotoesDoMago={data.pelotoesDoMago} editorial={data.editorial} />
+    <p className={styles.preview}>Prévia editorial · Temporada 2026 · Probabilidades de SG: Gato Mestre · Classificação editorial: POINT FFC</p>
+    <section className={styles.crossing} aria-labelledby="visao-mago"><h2 id="visao-mago">A visão do Mago</h2>{data.editorial.visao.map(text => <p key={text}>{text}</p>)}</section>
+    <MagoSgRanking teams={data.topSg.map(withGroup)} /><MagoAlternatives teams={data.alternativas.map(withGroup)} />
+    <section className={styles.section} aria-labelledby="de-olho"><SectionTitle id="de-olho" icon={<TriangleAlert />} title="O Mago está de olho" /><MagoAlerts data={data} /><article className={styles.crossing}><h3>Jogos de segunda-feira e fechamento do mercado</h3><p>{data.editorial.mercado}</p></article></section>
+    <MagoAttackRanking data={data} /><MagoPredictions data={data} /><MagoTopPick data={data} />
+    <section className={styles.section} aria-labelledby="indicadores"><SectionTitle id="indicadores" icon={<Target />} title="Indicadores da R30" subtitle="SG: Gato Mestre. xG da rodada: projeção ofensiva. xG acumulado: total informado. xGA e gols sofridos: recorte acumulado por mando, disponível para dez clubes; não são projeções de uma partida." />
+      <div className={styles.tableScroll}><table className={styles.indicatorTable}><caption>Dados fornecidos para a Rodada 30 de 2026</caption><thead><tr>{["Clube", "xG R30", "xG acumulado", "Gols marcados", "SG — Gato Mestre", "xGA por mando", "Gols sofridos no recorte"].map(label => <th key={label} scope="col">{label}</th>)}</tr></thead><tbody>{data.indicadores?.map(team => <tr key={team.clube}><th scope="row">{team.clube}</th><td>{number.format(team.xgRodada)}</td><td>{number.format(team.xgTotal)}</td><td>{team.gols}</td><td>{number.format(team.sg)}%</td><td>{team.xga === undefined ? "Não informado" : number.format(team.xga)}</td><td>{team.golsSofridos ?? "Não informado"}</td></tr>)}</tbody></table></div>
+    </section>
+    <section className={styles.crossing} aria-labelledby="estrategia"><h2 id="estrategia">Estratégia dos 30 times</h2><p>Distribuição editorial preliminar, condicionada à confirmação dos jogadores disponíveis. Não é escalação confirmada nem recomendação obrigatória.</p><ul className={styles.expertChips}>{data.editorial.estrategia.map(item => <li key={item.clube}><strong>{item.clube}</strong><span>{item.quantidade} times</span></li>)}<li><strong>Total</strong><span>30 times</span></li></ul></section>
+    <section className={styles.summary} aria-labelledby="veredito"><SectionTitle id="veredito" icon={<WandSparkles />} title="Veredito do Mago" />{data.editorial.veredito.map(text => <p className={styles.pickText} key={text}>{text}</p>)}</section>
+    <footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer>
+  </div></div>;
   return <div className={styles.page}><div className={styles.shell}><MagoHero rodada={data.rodada} pelotoesDoMago={data.pelotoesDoMago} /><p className={styles.preview}><Sparkles size={14} aria-hidden="true" /> Prévia editorial · Dados demonstrativos da rodada {data.rodada}</p><MagoTopPick data={data} /><MagoSgRanking teams={data.topSg.map(withGroup)} /><MagoAlternatives teams={data.alternativas.map(withGroup)} /><MagoAlerts data={data} />{data.duelo && <section className={styles.crossing} aria-labelledby="duelo-mago"><h3 id="duelo-mago"><Swords aria-hidden="true" />{data.duelo.titulo}</h3><p>{data.duelo.texto}</p></section>}<MagoExpertGroups data={data} /><MagoAttackRanking data={data} /><MagoPredictions data={data} /><MagoSummary data={data} /><footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer></div></div>;
 }

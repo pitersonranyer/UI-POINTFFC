@@ -1,4 +1,10 @@
 .page { --mago-gold: #dfc47b; --mago-muted: #a6aca8; background: #0b0e0d; color: #f5f6f3; min-height: 100vh; }
+.tableScroll { max-width: 100%; overflow-x: auto; }
+.indicatorTable { width: 100%; border-collapse: collapse; font-size: 12px; background: #141915; }
+.indicatorTable caption { text-align: left; color: var(--mago-muted); padding: 12px; }
+.indicatorTable th, .indicatorTable td { padding: 12px; text-align: left; border-bottom: 1px solid #2c332d; }
+.indicatorTable thead { color: var(--mago-gold); }
+.section + .topPick { margin-top: 42px; }
 .shell { width: min(1200px, calc(100% - 40px)); margin: auto; padding: 52px 0 110px; }
 .page h1, .page h2, .page h3, .page p { margin-top: 0; }
 .hero { display: grid; grid-template-columns: 1.6fr 1fr; align-items: center; min-height: 350px; gap: 30px; }

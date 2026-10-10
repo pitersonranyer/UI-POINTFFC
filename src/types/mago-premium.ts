@@ -13,6 +13,7 @@ export interface MagoTeam {
 
 export interface MagoRound {
   rodada: number;
+  editorial?: { titulo: string; subtitulo: string; visao: string[]; mercado: string; veredito: string[]; estrategia: { clube: string; quantidade: number }[] };
   pelotoesDoMago?: boolean;
   ataquesTexto?: string;
   teaserAlerta?: { titulo: string; subtitulo: string; texto: string; detalhe: string };

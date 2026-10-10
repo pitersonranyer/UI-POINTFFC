@@ -130,7 +130,7 @@ describe("Dashboard e resumo do Mago", () => {
     expect(screen.getAllByText("Rodada 28").length).toBeGreaterThan(0);
     expect(screen.getByText("Fechado")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Melhores da Rodada 28" })).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "Mago do Point Fantasy" })).getByText("Rodada 29")).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Mago do Point Fantasy" })).getByText("Rodada 30")).toBeTruthy();
   });
 
   it("aceita outra análise sem números fixados no componente", () => {

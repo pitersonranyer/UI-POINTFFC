@@ -1,13 +1,13 @@
 import { publicMetadata } from "@/lib/seo";
 import { MagoPage } from "@/components/mago/MagoPage";
-import { magoRodada29 } from "@/data/mago/rodada29";
+import { magoRodada30 } from "@/data/mago/rodada30";
 
 export const metadata = publicMetadata(
-  `Dicas do Cartola — Rodada ${magoRodada29.rodada} | Mago do POINT`,
-  `Explore a prévia editorial do Mago para a rodada ${magoRodada29.rodada}, com pelotões próprios, Top 5 SG, projeções de ataques e alertas de contexto para sua escalação.`,
+  `Dicas do Cartola — Rodada ${magoRodada30.rodada} | Mago do POINT`,
+  `Explore a rodada ${magoRodada30.rodada} de 2026: Palmeiras como escolha inicial, São Paulo e Flamengo em destaque, probabilidades de SG e alertas de escalação.`,
   "/mago/",
 );
 
 export default function Page() {
-  return <MagoPage data={magoRodada29} />;
+  return <MagoPage data={magoRodada30} />;
 }
