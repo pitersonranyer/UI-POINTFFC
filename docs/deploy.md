@@ -13,4 +13,12 @@ build. A configuração do Next rejeita endereços HTTP e hosts de loopback dura
 o build de produção. Não basta alterar variáveis depois do build: a URL fica
 gravada no JavaScript exportado.
 
+O card de suporte da liga usa a variável opcional `NEXT_PUBLIC_WHATSAPP_SUPORTE_URL`. Configure-a no ambiente antes de `npm run deploy`; por exemplo:
+
+```bash
+NEXT_PUBLIC_WHATSAPP_SUPORTE_URL=https://chat.whatsapp.com/Lcst3TQ4wwAD8fWuoArfkT?mode=gi_t npm run deploy
+```
+
+O valor precisa ser um convite HTTPS em `chat.whatsapp.com`. Sem um convite válido, o card fica oculto. Como a hospedagem é estática, a URL fica gravada no build; altere a variável e gere um novo build para atualizar o link publicado.
+
 Antes de publicar alterações, execute `npm test` e `npm run build`.

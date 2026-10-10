@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarDays, ChevronRight, Clock3, Download, Gift, Home, Loader2, Plus, RefreshCw, Search, Shield, Trophy, Users } from "lucide-react";
+import { whatsappSupportUrl } from "@/config/whatsappSupport";
 import { useWallet } from "@/contexts/WalletContext";
 import { AddBalanceModal } from "@/components/wallet/AddBalanceModal";
 import { ApiError } from "@/services/apiClient";
@@ -27,6 +28,9 @@ const score = (value: number | null) => value === null ? "Sem pontuação" : val
 const position = (value: number | null) => value === null ? "—" : `${value}º`;
 const message = (error: unknown) => error instanceof Error ? error.message : "Não foi possível carregar os dados.";
 const prizePosition = (prize: Prize) => prize.posicaoInicio === prize.posicaoFim ? `${prize.posicaoInicio}º lugar` : `${prize.posicaoInicio}º ao ${prize.posicaoFim}º lugar`;
+function WhatsAppIcon({ size = 22 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.149-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.463 1.065 2.85 1.213 3.049.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12.04 2c5.507 0 9.988 4.48 9.988 9.987 0 5.507-4.481 9.987-9.988 9.987-1.75 0-3.465-.46-4.967-1.33l-.357-.208-3.69.968.985-3.6-.234-.37a9.95 9.95 0 0 1-1.53-5.447C2.25 6.48 6.53 2 12.04 2m0-2C5.48 0 .14 5.34.14 11.9c0 2.1.55 4.16 1.6 5.96L0 24l6.3-1.65a11.85 11.85 0 0 0 5.74 1.47h.01c6.56 0 11.9-5.34 11.9-11.9A11.91 11.91 0 0 0 12.04 0z" /></svg>;
+}
 const prizeValue = (prize: Prize) => {
   if (prize.valorCalculado != null) return money(Number(prize.valorCalculado));
   if (prize.tipoPremiacao === "VALOR_FIXO" && prize.valor !== null) return money(prize.valor);
@@ -216,6 +220,14 @@ export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: 
               : marketLoading ? <div className={styles.marketPlaceholder} role="status">Carregando mercado...</div>
                 : <div className={styles.marketPlaceholder} role="alert">{marketError || "Não foi possível carregar o mercado."}</div>}
             <button className={styles.enrollmentCta} type="button" onClick={() => void openModal()} disabled={!canEnroll || busy}><Plus size={18} aria-hidden="true" />Inscreva seu time<ArrowRight size={18} aria-hidden="true" /></button>
+            {whatsappSupportUrl && <aside className={styles.supportCard} aria-label="Suporte via WhatsApp">
+              <span className={styles.supportIcon}><WhatsAppIcon /></span>
+              <div className={styles.supportCopy}>
+                <h3>Precisa de ajuda?</h3>
+                <p>Tire suas dúvidas sobre a competição no nosso grupo de WhatsApp.</p>
+              </div>
+              <a className={styles.supportLink} href={whatsappSupportUrl} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={17} />Suporte via WhatsApp</a>
+            </aside>}
             {blockReason && <p className={styles.notice}>{blockReason}</p>}
           </section>
           <section className={styles.panel}><div className={styles.panelTitle}><Shield aria-hidden="true" /><h2>Sobre a competição</h2></div>
