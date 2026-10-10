@@ -220,7 +220,7 @@ export function PointCompetitionPage({ id, initialTab = "Visão geral" }: { id: 
               : marketLoading ? <div className={styles.marketPlaceholder} role="status">Carregando mercado...</div>
                 : <div className={styles.marketPlaceholder} role="alert">{marketError || "Não foi possível carregar o mercado."}</div>}
             <button className={styles.enrollmentCta} type="button" onClick={() => void openModal()} disabled={!canEnroll || busy}><Plus size={18} aria-hidden="true" />Inscreva seu time<ArrowRight size={18} aria-hidden="true" /></button>
-            {whatsappSupportUrl && <aside className={styles.supportCard} aria-label="Suporte via WhatsApp">
+            {summary.liga.slug === "point-ffc" && <aside className={styles.supportCard} aria-label="Suporte via WhatsApp">
               <span className={styles.supportIcon}><WhatsAppIcon /></span>
               <div className={styles.supportCopy}>
                 <h3>Precisa de ajuda?</h3>

@@ -8,6 +8,7 @@ import CompetitionRoute from "@/app/competicoes/page";
 import { ApiError } from "@/services/apiClient";
 import { pointLeagueService, type EnrollmentBatchResult, type CompetitionSummary, type Entry, type RankingEntry } from "@/services/pointLeagueService";
 import { teamService } from "@/services/teamService";
+import { whatsappSupportUrl } from "@/config/whatsappSupport";
 
 const state = vi.hoisted(() => ({ marketOpen: true, marketRound: 27, authenticated: false, push: vi.fn(), refreshWallet: vi.fn(), wallet: { saldoDisponivel: "100.00", saldoBloqueado: "0.00", status: "ATIVA" }, refreshMarket: vi.fn() }));
 vi.mock("@/contexts/WalletContext", () => ({ useWallet: () => ({ wallet: state.wallet, isLoading: false, error: null, refreshWallet: state.refreshWallet }) }));
@@ -38,6 +39,26 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const open = async () => { render(<PointCompetitionPage id={42} />); return screen.findByRole("heading", { name: "Disputa 42" }); };
+
+it("mostra o suporte POINT FFC abaixo da inscrição e antes da descrição", async () => {
+  await open();
+  const card = screen.getByRole("complementary", { name: "Suporte via WhatsApp" });
+  expect(within(card).getByRole("heading", { name: "Precisa de ajuda?" })).toBeTruthy();
+  expect(card.textContent).toContain("Tire suas dúvidas sobre a competição no nosso grupo de WhatsApp.");
+  const link = within(card).getByRole("link", { name: "Suporte via WhatsApp" });
+  expect(link.getAttribute("href")).toBe(whatsappSupportUrl);
+  expect(link.getAttribute("target")).toBe("_blank");
+  expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+  expect(screen.getByRole("button", { name: "Inscreva seu time" }).nextElementSibling).toBe(card);
+  expect(card.compareDocumentPosition(screen.getByRole("heading", { name: "Sobre a competição" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(pointLeagueService.enrollBatch).not.toHaveBeenCalled();
+});
+
+it("não mostra o suporte POINT FFC para competições de outra liga", async () => {
+  vi.mocked(pointLeagueService.summary).mockResolvedValue({ ...summary, liga: { ...summary.liga, slug: "outra-liga" } });
+  await open();
+  expect(screen.queryByRole("complementary", { name: "Suporte via WhatsApp" })).toBeNull();
+});
 
 it.each([
   ["INSCRICOES_ABERTAS", 27, true, false],

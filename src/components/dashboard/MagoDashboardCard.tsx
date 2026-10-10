@@ -34,7 +34,7 @@ export function MagoDashboardCard({ data }: { data: MagoRound }) {
       onScroll={event => setActive(Math.max(0, Math.min(3, Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))))}
       onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); goTo(Math.max(0, Math.min(3, active + (event.key === "ArrowRight" ? 1 : -1)))); } }}>
       <article className={styles.slide} aria-label="1 de 4: SG do Mago">
-        <h3><Flame aria-hidden="true" /> SG do Mago</h3>{data.editorial && <p>Probabilidades de SG: Gato Mestre · Ordem editorial: POINT FFC</p>}
+        <h3><Flame aria-hidden="true" /> SG do Mago</h3>{data.editorial && <p>Radar de SG · Curadoria editorial: POINT FFC</p>}
         <div className={styles.insight}><div className={styles.highlight}><span>{pick.clube}</span><strong>{number.format(pick.sg)}%</strong><small>Confiança: {pick.confianca}</small></div>
           <ol className={styles.ranking}>{data.topSg.slice(0, 3).map(team => <li key={team.clube}><span>{team.clube}</span><strong>{number.format(team.sg)}%</strong></li>)}</ol></div>
       </article>

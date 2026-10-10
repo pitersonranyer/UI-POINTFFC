@@ -17,7 +17,7 @@ describe("Mago da rodada 29", () => {
     const alternatives = screen.getByRole("region", { name: "Alternativas no radar" });
     expect(within(alternatives).getAllByRole("heading", { level: 3 }).map(node => node.textContent)).toEqual(["Fluminense", "Cruzeiro", "Flamengo", "Botafogo", "Santos"]);
     expect(screen.getByRole("region", { name: "Pelotões do Mago" })).toBeTruthy();
-    expect(container.textContent).toContain("não replica o ranking bruto de SG do Gato Mestre");
+    expect(container.textContent).toContain("A classificação expressa a curadoria editorial do POINT FFC");
     expect(container.textContent).not.toMatch(/Rodada 28|rodada 28|R28|Pelotões dos Especialistas/);
     const inter = within(ranking).getAllByRole("article")[4];
     expect(inter.textContent).toContain("xGA do Internacional não foi fornecido");
@@ -46,6 +46,7 @@ describe("Mago da rodada 29", () => {
   it("atualiza metadata sem perder canonical e redes sociais", () => {
     expect(metadata.title).toContain("Rodada 30");
     expect(metadata.description).toContain("rodada 30");
+    expect(JSON.stringify(metadata)).not.toMatch(/gato[\s_-]*mestre/i);
     expect(metadata.alternates?.canonical).toBe("https://pointffc.com.br/mago/");
     expect(metadata.openGraph).toBeTruthy(); expect(metadata.twitter).toBeTruthy();
   });

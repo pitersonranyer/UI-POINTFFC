@@ -1,4 +1,6 @@
 const GROUP_INVITE_PATH = /^\/(?:invite\/)?[A-Za-z0-9_-]+\/?$/i;
+// Fallback versionado para a exportação estática, mesmo sem variável no build.
+export const DEFAULT_WHATSAPP_SUPPORT_URL = "https://chat.whatsapp.com/Lcst3TQ4wwAD8fWuoArfkT?mode=gi_t";
 
 export function getWhatsAppSupportUrl(value = process.env.NEXT_PUBLIC_WHATSAPP_SUPORTE_URL): string | null {
   if (!value?.trim()) return null;
@@ -18,4 +20,4 @@ export function getWhatsAppSupportUrl(value = process.env.NEXT_PUBLIC_WHATSAPP_S
   }
 }
 
-export const whatsappSupportUrl = getWhatsAppSupportUrl();
+export const whatsappSupportUrl = getWhatsAppSupportUrl() ?? DEFAULT_WHATSAPP_SUPPORT_URL;

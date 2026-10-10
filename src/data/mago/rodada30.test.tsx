@@ -22,13 +22,14 @@ it("preserva os indicadores fornecidos, a ausência de xGA e a ordem editorial",
 it("mostra os dez placares e horários no HTML, com fonte e limites estatísticos", () => {
   render(<MagoPage data={data} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("Rodada 30");
+  expect(document.body.textContent).not.toMatch(/gato[\s_-]*mestre/i);
   const predictions = screen.getByRole("region", { name: "Placar Imaginário do Mago" });
   const cards = within(predictions).getAllByRole("article");
   expect(cards.map(card => card.textContent?.replace(/\s+/g," ").trim())).toEqual([
     "Projeção com SGSábado, 10/10 · 18hVasco2 x 0Remo", "Projeção com SGSábado, 10/10 · 21hSão Paulo2 x 0Vitória", "Placar projetadoDomingo, 11/10 · 16hAtlético-MG2 x 1Santos", "Projeção com SGDomingo, 11/10 · 17h30Flamengo2 x 0Fluminense", "Projeção com SGDomingo, 11/10 · 17h30Palmeiras2 x 0Corinthians", "Placar projetadoDomingo, 11/10 · 17h30Grêmio1 x 1Internacional", "Projeção com SGDomingo, 11/10 · 19h30Bahia2 x 0Mirassol", "Placar projetadoSegunda-feira, 12/10 · 16hCoritiba1 x 1Botafogo", "Placar projetadoSegunda-feira, 12/10 · 19h30Chapecoense1 x 1Athletico-PR", "Placar projetadoSegunda-feira, 12/10 · 21hRB Bragantino2 x 1Cruzeiro",
   ]);
   expect(predictions.textContent).toContain("nem placares exatos calculados");
-  expect(screen.getByRole("region", { name: "Indicadores da R30" }).textContent).toContain("SG: Gato Mestre");
+  expect(screen.getByRole("region", { name: "Indicadores da R30" }).textContent).toContain("Probabilidade de SG: chance de não sofrer gols");
   expect(screen.getByRole("region", { name: "O Mago está de olho" }).textContent).toContain("às 18h");
 });
 
@@ -36,6 +37,8 @@ it("resume a R30 no Dashboard com Palmeiras, São Paulo, Flamengo e alerta de es
   render(<MagoDashboardCard data={data} />);
   const card = screen.getByRole("region", { name: "Mago do Point Fantasy" });
   expect(card.textContent).toContain("Rodada 30");
+  expect(card.textContent).not.toMatch(/gato[\s_-]*mestre/i);
+  expect(card.textContent).toContain("Curadoria editorial: POINT FFC");
   expect(within(card).getByRole("article", { name: "1 de 4: SG do Mago" }).textContent).toContain("Palmeiras40,93%");
   expect(within(card).getAllByRole("listitem").slice(0,3).map(t => t.textContent)).toEqual(["Palmeiras40,93%","São Paulo40,51%","Flamengo39,29%"]);
   expect(card.textContent).toContain("Escalações sob observação");

@@ -1,9 +1,25 @@
-import { describe, expect, it } from "vitest";
-import { getWhatsAppSupportUrl } from "./whatsappSupport";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_WHATSAPP_SUPPORT_URL, getWhatsAppSupportUrl } from "./whatsappSupport";
+
+afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
+
+it.each([undefined, "", "invalid"])("usa o convite oficial quando o build não tem uma configuração válida (%s)", async value => {
+  vi.stubEnv("NEXT_PUBLIC_WHATSAPP_SUPORTE_URL", value);
+  vi.resetModules();
+  const config = await import("./whatsappSupport");
+  expect(config.whatsappSupportUrl).toBe(DEFAULT_WHATSAPP_SUPPORT_URL);
+});
+
+it("permite substituir o convite pela variável pública do build", async () => {
+  const override = "https://chat.whatsapp.com/AnotherGroup123";
+  vi.stubEnv("NEXT_PUBLIC_WHATSAPP_SUPORTE_URL", override);
+  vi.resetModules();
+  expect((await import("./whatsappSupport")).whatsappSupportUrl).toBe(override);
+});
 
 describe("getWhatsAppSupportUrl", () => {
   it("accepts an HTTPS group invite with query parameters", () => {
-    const url = "https://chat.whatsapp.com/Lcst3TQ4wwAD8fWuoArfkT?mode=gi_t";
+    const url = DEFAULT_WHATSAPP_SUPPORT_URL;
     expect(getWhatsAppSupportUrl(url)).toBe(url);
   });
 
@@ -11,7 +27,7 @@ describe("getWhatsAppSupportUrl", () => {
     expect(getWhatsAppSupportUrl("https://chat.whatsapp.com/invite/GroupCode_123")).toBe("https://chat.whatsapp.com/invite/GroupCode_123");
   });
 
-  it.each(["", "  ", undefined])("hides the card when the invite is not configured (%s)", (value) => {
+  it.each(["", "  ", undefined])("returns null for an unconfigured override (%s)", (value) => {
     expect(getWhatsAppSupportUrl(value)).toBeNull();
   });
 
