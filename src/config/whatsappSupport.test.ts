@@ -19,7 +19,7 @@ describe("getWhatsAppSupportUrl", () => {
     "http://chat.whatsapp.com/GroupCode123",
     "https://example.com/GroupCode123",
     "https://chat.whatsapp.com.evil.example/GroupCode123",
-    "https://chat.whatsapp.com/settings",
+    "https://chat.whatsapp.com/settings/general",
     "https://user@chat.whatsapp.com/GroupCode123",
   ])("rejects a non-group or non-HTTPS URL: %s", (value) => {
     expect(getWhatsAppSupportUrl(value)).toBeNull();
