@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import type { PropsWithChildren } from "react";
 import { AthleteScoresPage } from "./AthleteScoresPage";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import type { CartolaScoredAthletesResponse } from "@/types/cartola";
 
 vi.mock("@/hooks/useCartolaDashboard", () => ({ useCartolaDashboard: vi.fn() }));
-vi.mock("next/link", () => ({ default: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <a {...props}>{children}</a> }));
+vi.mock("next/link", () => ({ default: ({ children, href }: PropsWithChildren<{ href: string }>) => <a href={href}>{children}</a> }));
 
 const club = { id: 10, nome: "Clube do Norte", abreviacao: "NOR", escudos: { "45x45": "https://example.test/nor.png" } };
 const athleteData: CartolaScoredAthletesResponse = {
@@ -34,52 +35,55 @@ describe("AthleteScoresPage", () => {
   it("ordena pela pontuação e preserva a precisão decimal exibida", () => {
     renderPage();
     const rows = screen.getAllByRole("button", { name: /Ver detalhes de/ });
-    expect(rows[0]).toHaveAccessibleName(/Atacante Ágil.*15,75 pontos/);
-    expect(rows[1]).toHaveAccessibleName(/Meia Central.*9,20 pontos/);
+    expect(rows[0].getAttribute("aria-label")).toMatch(/Atacante Ágil.*15,75 pontos/);
+    expect(rows[1].getAttribute("aria-label")).toMatch(/Meia Central.*9,20 pontos/);
   });
 
   it("mostra scouts textuais prioritários e resume os que excedem o limite", () => {
     renderPage();
     const row = screen.getByRole("button", { name: /Atacante Ágil/ });
-    expect(within(row).getByText("2 G")).toBeInTheDocument();
-    expect(within(row).getByText("1 A")).toBeInTheDocument();
-    expect(within(row).getByText("SG")).toBeInTheDocument();
-    expect(within(row).getByText("+3")).toBeInTheDocument();
+    expect(within(row).getByText("2 G")).not.toBeNull();
+    expect(within(row).getByText("1 A")).not.toBeNull();
+    expect(within(row).getByText("SG")).not.toBeNull();
+    expect(within(row).getByText("+3")).not.toBeNull();
     expect(row.textContent).not.toMatch(/[⚽👟🟨🟥]/u);
   });
 
-  it("busca nome e clube e filtra por posição sem sair da paginação local", () => {
+  it("busca pelo nome do clube ou sigla e filtra por posição", () => {
     renderPage();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar atleta ou clube" }), { target: { value: "norte" } });
+    const search = screen.getByRole("searchbox", { name: "Buscar atleta ou clube" });
+    fireEvent.change(search, { target: { value: "norte" } });
     expect(screen.getAllByRole("button", { name: /Ver detalhes de/ })).toHaveLength(3);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar atleta ou clube" }), { target: { value: "" } });
+    fireEvent.change(search, { target: { value: "nor" } });
+    expect(screen.getAllByRole("button", { name: /Ver detalhes de/ })).toHaveLength(3);
+    fireEvent.change(search, { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "MEI" }));
     expect(screen.getAllByRole("button", { name: /Ver detalhes de/ })).toHaveLength(1);
-    expect(screen.getByRole("button", { name: /Meia Central/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Meia Central/ })).not.toBeNull();
   });
 
-  it("abre, fecha e apresenta todos os scouts no painel de detalhes", () => {
+  it("abre, fecha e apresenta os scouts completos no painel de detalhes", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Ver detalhes de Atacante Ágil/ }));
     const dialog = screen.getByRole("dialog", { name: "Atacante Ágil" });
-    expect(within(dialog).getByText("15,75")).toBeInTheDocument();
-    expect(within(dialog).getByText("2", { selector: "li strong" })).toBeInTheDocument();
-    expect(within(dialog).getByText("Cartões vermelhos")).toBeInTheDocument();
-    expect(within(dialog).getByText("Defesas")).toBeInTheDocument();
+    expect(within(dialog).getByText("15,75")).not.toBeNull();
+    expect(within(dialog).getByText("Cartões vermelhos")).not.toBeNull();
+    expect(within(dialog).getByText("Defesas")).not.toBeNull();
+    expect(within(dialog).getAllByText("2", { selector: "li strong" })).toHaveLength(2);
     expect(document.body.style.overflow).toBe("hidden");
     fireEvent.click(screen.getByRole("button", { name: "Fechar detalhes" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.body.style.overflow).toBe("");
   });
 
   it("usa estado vazio verdadeiro quando scouts e informações opcionais não existem", () => {
     renderPage({ atletas: { "8": { apelido: "Atleta sem dados opcionais", pontuacao: 0, posicao_id: 99 } }, clubes: {} });
     fireEvent.click(screen.getByRole("button", { name: /Atleta sem dados opcionais/ }));
-    expect(screen.getByText("Nenhum scout disponível para este atleta nesta rodada.")).toBeInTheDocument();
-    expect(screen.getByText("Clube não informado")).toBeInTheDocument();
+    expect(screen.getByText("Nenhum scout disponível para este atleta nesta rodada.")).not.toBeNull();
+    expect(screen.getByText("Clube não informado")).not.toBeNull();
   });
 
-  it("mantém o atleta selecionado atualizado quando a pontuação recebida muda", () => {
+  it("mantém a pontuação atualizada no painel enquanto ele está aberto", () => {
     const view = renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Atacante Ágil/ }));
     const updated = structuredClone(athleteData);
