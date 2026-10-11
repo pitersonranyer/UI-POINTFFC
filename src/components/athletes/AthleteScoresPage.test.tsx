@@ -13,7 +13,7 @@ const athleteData: CartolaScoredAthletesResponse = {
   total_atletas: 3,
   clubes: { "10": club },
   atletas: {
-    "1": { apelido: "Atacante Ágil", pontuacao: 15.75, posicao_id: 5, clube_id: 10, entrou_em_campo: true, scout: { G: 2, A: 1, SG: 1, CA: 1, CV: 1, DS: 2 } },
+    "1": { apelido: "Atacante Ágil", pontuacao: 15.75, posicao_id: 5, clube_id: 10, entrou_em_campo: true, scout: { G: 2, A: 1, SG: 1, CA: 1, CV: 1, DS: 2, DE: 5, ZZ: 3, FF: 0, RB: -1 } },
     "2": { apelido: "Meia Central", pontuacao: 9.2, posicao_id: 4, clube_id: 10, scout: {} },
     "3": { apelido: "Goleiro Seguro", pontuacao: 4.1, posicao_id: 1, clube_id: 10, entrou_em_campo: false },
   },
@@ -43,13 +43,16 @@ describe("AthleteScoresPage", () => {
     expect(rows[1].getAttribute("aria-label")).toMatch(/Meia Central.*9,20 pontos/);
   });
 
-  it("mostra scouts textuais prioritários e resume os que excedem o limite", () => {
+  it("mostra todos os scouts válidos em ordem de prioridade, sem resumir os demais", () => {
     renderPage();
     const row = screen.getByRole("button", { name: /Atacante Ágil/ });
     expect(within(row).getByText("2 G")).not.toBeNull();
     expect(within(row).getByText("1 A")).not.toBeNull();
     expect(within(row).getByText("SG")).not.toBeNull();
-    expect(within(row).getByText("+3")).not.toBeNull();
+    expect(within(row).getByText("2 DS")).not.toBeNull();
+    expect(within(row).getByText("5 DE")).not.toBeNull();
+    expect(within(row).queryByText(/\+/)).toBeNull();
+    expect(within(row).queryByText(/ZZ|0 FF|-1 RB/)).toBeNull();
     expect(row.textContent).not.toMatch(/[⚽👟🟨🟥]/u);
   });
 
@@ -70,7 +73,9 @@ describe("AthleteScoresPage", () => {
     const dialog = screen.getByRole("dialog", { name: "Atacante Ágil" });
     expect(within(dialog).getByText("15,75")).not.toBeNull();
     expect(within(dialog).getByText("Cartões vermelhos")).not.toBeNull();
-    expect(within(dialog).getByText("Defesas")).not.toBeNull();
+    expect(within(dialog).getByText("Desarmes")).not.toBeNull();
+    expect(within(dialog).getByText("Defesa do goleiro")).not.toBeNull();
+    expect(within(dialog).getByText("DE").getAttribute("title")).toBe("Defesa do goleiro: 5");
     expect(within(dialog).getAllByText("2", { selector: "li strong" })).toHaveLength(2);
     expect(document.body.style.overflow).toBe("hidden");
     fireEvent.click(screen.getByRole("button", { name: "Fechar detalhes" }));

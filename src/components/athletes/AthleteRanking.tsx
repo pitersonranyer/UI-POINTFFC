@@ -6,28 +6,26 @@ import type { CartolaClub, CartolaScoredAthlete } from "@/types/cartola";
 import styles from "./AthleteScoresPage.module.css";
 const positionNames: Record<number, string> = { 1: "GOL", 2: "LAT", 3: "ZAG", 4: "MEI", 5: "ATA", 6: "TEC" };
 const scoreFormat = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const SCOUT_LIMIT = 3;
-
 type ScoutInfo = { code: string; count: number; description: string };
 
 const scoutDescriptions: Record<string, string> = {
   G: "Gols", A: "Assistências", SG: "Saldo de gols", GC: "Gol contra",
-  CA: "Cartões amarelos", CV: "Cartões vermelhos", DS: "Defesas",
-  DP: "Defesas difíceis", DD: "Defesas de pênalti", GS: "Gols sofridos",
+  CA: "Cartões amarelos", CV: "Cartões vermelhos", DS: "Desarmes",
+  DP: "Defesas difíceis", DD: "Defesas de pênalti", DE: "Defesa do goleiro", GS: "Gols sofridos",
   FS: "Faltas sofridas", FC: "Faltas cometidas", FT: "Finalizações na trave",
   FD: "Finalizações defendidas", FF: "Finalizações para fora", I: "Impedimentos",
   PE: "Passes errados", RB: "Roubadas de bola", PC: "Pênaltis cometidos",
   PP: "Pênaltis perdidos",
 };
-const scoutPriority = ["G", "A", "SG", "CA", "CV", "DS", "DP", "DD", "GC"];
+const scoutPriority = ["G", "A", "SG", "CA", "CV", "DS", "DP", "DD", "DE", "GC"];
 const negativeScouts = new Set(["GC", "CA", "CV", "GS", "FC", "I", "PE", "PC", "PP"]);
 
 function getScouts(athlete: CartolaScoredAthlete): ScoutInfo[] {
   const scout = athlete.scout;
   if (!scout || typeof scout !== "object") return [];
   return Object.entries(scout)
-    .filter(([code, count]) => code.trim() && typeof count === "number" && Number.isFinite(count) && count !== 0)
-    .map(([code, count]) => ({ code, count, description: scoutDescriptions[code] ?? `Scout ${code}` }))
+    .filter(([code, count]) => Object.prototype.hasOwnProperty.call(scoutDescriptions, code) && typeof count === "number" && Number.isFinite(count) && count > 0)
+    .map(([code, count]) => ({ code, count, description: scoutDescriptions[code] }))
     .sort((a, b) => {
       const aPriority = scoutPriority.indexOf(a.code);
       const bPriority = scoutPriority.indexOf(b.code);
@@ -65,17 +63,14 @@ export function AthleteRow({ athlete, club, rank, onOpen }: { athlete: CartolaSc
 function ScoutSummary({ athlete }: { athlete: CartolaScoredAthlete }) {
   const scouts = getScouts(athlete);
   if (!scouts.length) return null;
-  const visible = scouts.slice(0, SCOUT_LIMIT);
-  const hiddenCount = scouts.length - visible.length;
   return <span className={styles.scoutSummary} aria-label={`Scouts: ${scouts.map(item => `${item.count} ${item.code}`).join(", ")}`}>
-    {visible.map(item => <ScoutTag key={item.code} item={item} compact />)}
-    {hiddenCount > 0 && <span className={styles.moreScouts} aria-label={`${hiddenCount} scouts adicionais`}>+{hiddenCount}</span>}
+    {scouts.map(item => <ScoutTag key={item.code} item={item} compact />)}
   </span>;
 }
 
 function ScoutTag({ item, compact = false }: { item: ScoutInfo; compact?: boolean }) {
-  const tone = negativeScouts.has(item.code) ? styles.scoutNegative : ["G", "A", "SG", "DS", "DP", "DD"].includes(item.code) ? styles.scoutPositive : styles.scoutNeutral;
-  return <span className={`${styles.scoutTag} ${tone}`} title={`${item.description}: ${item.count}`}>
+  const tone = negativeScouts.has(item.code) ? styles.scoutNegative : ["G", "A", "SG", "DS", "DE", "DP", "DD"].includes(item.code) ? styles.scoutPositive : styles.scoutNeutral;
+  return <span className={`${styles.scoutTag} ${tone}`} aria-label={`${item.count} ${item.description}`} title={`${item.description}: ${item.count}`}>
     {compact && item.code !== "SG" ? <>{item.count} {item.code}</> : item.code}
   </span>;
 }

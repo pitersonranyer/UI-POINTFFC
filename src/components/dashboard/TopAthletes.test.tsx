@@ -18,7 +18,7 @@ it("ordena os cinco destaques, usa scouts textuais e compartilha o painel acess�
   vi.stubGlobal("React", React);
   const atletas = Object.fromEntries(Array.from({ length: 8 }, (_, index) => [String(index + 1), {
     apelido: `Atleta ${index + 1}`, pontuacao: index + 0.75, posicao_id: 5,
-    entrou_em_campo: true, scout: { G: 2, A: 1, SG: 1, CA: 1, CV: 1, DE: 5, FF: 0 },
+    entrou_em_campo: true, scout: { G: 2, A: 1, SG: 1, CA: 1, CV: 1, DS: 2, DE: 5, FF: 0, INVALIDO: 2 },
   }]));
   render(<TopAthletes data={{ atletas }} round={27} live={false} loading={false} error={null} firstRound={false} />);
   const rows = screen.getAllByRole("button", { name: /Ver detalhes de/ });
@@ -27,7 +27,11 @@ it("ordena os cinco destaques, usa scouts textuais e compartilha o painel acess�
   expect(within(rows[0]).getByText("2 G")).toBeTruthy();
   expect(within(rows[0]).getByText("1 A")).toBeTruthy();
   expect(within(rows[0]).getByText("SG")).toBeTruthy();
-  expect(within(rows[0]).getByText("+3")).toBeTruthy();
+  expect(within(rows[0]).getByText("2 DS")).toBeTruthy();
+  expect(within(rows[0]).getByText("5 DE")).toBeTruthy();
+  expect(within(rows[0]).queryByText(/\+/)).toBeNull();
+  expect(within(rows[0]).queryByText(/INVALIDO|0 FF/)).toBeNull();
+  expect(Array.from(rows[0].querySelectorAll("[title]")).filter(node => /: \d+$/.test(node.getAttribute("title") ?? "")).map(node => node.getAttribute("title"))).toEqual(["Gols: 2", "Assistências: 1", "Saldo de gols: 1", "Cartões amarelos: 1", "Cartões vermelhos: 1", "Desarmes: 2", "Defesa do goleiro: 5"]);
   expect(rows[0].textContent).not.toMatch(/[⚽👟🟨🟥]/u);
   expect(within(rows[0]).queryByText("0 FF")).toBeNull();
   rows[0].focus();
@@ -38,7 +42,8 @@ it("ordena os cinco destaques, usa scouts textuais e compartilha o painel acess�
   expect(within(dialog).getByText("7,75")).toBeTruthy();
   expect(within(dialog).getByText("CA")).toBeTruthy();
   expect(within(dialog).getByText("CV")).toBeTruthy();
-  expect(within(dialog).getByText("DE")).toBeTruthy();
+  expect(within(dialog).getByText("DE").getAttribute("title")).toBe("Defesa do goleiro: 5");
+  expect(within(dialog).getByText("Defesa do goleiro")).toBeTruthy();
   expect(within(dialog).getByText("Já entrou em campo")).toBeTruthy();
   expect(document.body.style.overflow).toBe("hidden");
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "Fechar detalhes" }));
