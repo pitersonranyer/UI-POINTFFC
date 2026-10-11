@@ -24,7 +24,7 @@ export function CartolaDashboard(){
  <DashboardGames />
  <MagoDashboardCard data={magoRodada30} />
  <GeneralRanking season={dashboard.mercado.temporada ?? new Date().getFullYear()} round={rankingRound} marketOpen={dashboard.mercadoAberto}/>
- <TopAthletes data={athletes} round={dashboard.mercadoAberto?Math.max(1,round-1):round} live={!dashboard.mercadoAberto&&dashboard.bolaRolando} loading={athletesLoading} error={athletesError} firstRound={dashboard.mercadoAberto&&round===1}/>
+ <TopAthletes clubs={dashboard.clubes} matches={statsMatches} data={athletes} round={dashboard.mercadoAberto?Math.max(1,round-1):round} live={!dashboard.mercadoAberto&&dashboard.bolaRolando} loading={athletesLoading} error={athletesError} firstRound={dashboard.mercadoAberto&&round===1}/>
  <section className={styles.statsSection}><div className={styles.sectionHead}><h2>Estatísticas da rodada {statsRound}</h2></div><div className={styles.stats}>{realRoundStatistics.map((x,i)=><article key={x.label}>{i===0?<Trophy/>:<Users/>}<div><strong>{x.value}</strong><small>{x.label}</small></div></article>)}</div></section></div>;
 }
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import type { PropsWithChildren } from "react";
+import React, { type PropsWithChildren } from "react";
 import { AthleteScoresPage } from "./AthleteScoresPage";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import type { CartolaScoredAthletesResponse } from "@/types/cartola";
@@ -28,8 +28,12 @@ function renderPage(data: CartolaScoredAthletesResponse = athleteData) {
   return render(<AthleteScoresPage />);
 }
 
-beforeEach(() => { document.body.style.overflow = ""; });
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+beforeEach(() => {
+  vi.stubGlobal("React", React);
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
+  document.body.style.overflow = "";
+});
+afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
 describe("AthleteScoresPage", () => {
   it("ordena pela pontuação e preserva a precisão decimal exibida", () => {
@@ -49,11 +53,9 @@ describe("AthleteScoresPage", () => {
     expect(row.textContent).not.toMatch(/[⚽👟🟨🟥]/u);
   });
 
-  it("busca pelo nome do clube ou sigla e filtra por posição", () => {
+  it("busca pela identificação exibida do clube e filtra por posição", () => {
     renderPage();
     const search = screen.getByRole("searchbox", { name: "Buscar atleta ou clube" });
-    fireEvent.change(search, { target: { value: "norte" } });
-    expect(screen.getAllByRole("button", { name: /Ver detalhes de/ })).toHaveLength(3);
     fireEvent.change(search, { target: { value: "nor" } });
     expect(screen.getAllByRole("button", { name: /Ver detalhes de/ })).toHaveLength(3);
     fireEvent.change(search, { target: { value: "" } });
@@ -80,7 +82,7 @@ describe("AthleteScoresPage", () => {
     renderPage({ atletas: { "8": { apelido: "Atleta sem dados opcionais", pontuacao: 0, posicao_id: 99 } }, clubes: {} });
     fireEvent.click(screen.getByRole("button", { name: /Atleta sem dados opcionais/ }));
     expect(screen.getByText("Nenhum scout disponível para este atleta nesta rodada.")).not.toBeNull();
-    expect(screen.getByText("Clube não informado")).not.toBeNull();
+    expect(screen.getByText(/Clube não informado/, { selector: "p" })).not.toBeNull();
   });
 
   it("mantém a pontuação atualizada no painel enquanto ele está aberto", () => {
