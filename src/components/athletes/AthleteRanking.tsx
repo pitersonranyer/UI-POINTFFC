@@ -1,6 +1,7 @@
 "use client";
 import { ChevronRight, ImageOff, Sparkles, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AthletePerformance } from "./AthletePerformance";
 import { escudoClube, nomeClube } from "@/lib/cartola";
 import type { CartolaClub, CartolaScoredAthlete } from "@/types/cartola";
 import styles from "./AthleteScoresPage.module.css";
@@ -75,7 +76,9 @@ function ScoutTag({ item, compact = false }: { item: ScoutInfo; compact?: boolea
   </span>;
 }
 
-export function AthleteDetails({ athlete, club, clubs, matches, round, onClose }: {
+export function AthleteDetails({ athlete, athleteId, season, club, clubs, matches, round, onClose }: {
+  athleteId?: string;
+  season?: number;
   athlete: CartolaScoredAthlete;
   club?: CartolaClub;
   clubs: Record<string, CartolaClub>;
@@ -83,6 +86,7 @@ export function AthleteDetails({ athlete, club, clubs, matches, round, onClose }
   round?: number;
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<"current" | "performance">("current");
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
@@ -92,8 +96,10 @@ export function AthleteDetails({ athlete, club, clubs, matches, round, onClose }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeRef.current();
       if (event.key === "Tab") {
-        event.preventDefault();
-        document.getElementById("athlete-details-close")?.focus();
+        const elements = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"] button, [role="dialog"] select, [role="dialog"] [tabindex="0"]'));
+        const first = elements[0], last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -129,7 +135,12 @@ export function AthleteDetails({ athlete, club, clubs, matches, round, onClose }
           {typeof athlete.entrou_em_campo === "boolean" && <span className={athlete.entrou_em_campo ? styles.played : styles.waiting}>{athlete.entrou_em_campo ? "Já entrou em campo" : "Ainda não entrou em campo"}</span>}
         </div>
       </header>
+      <div className={styles.detailTabs} role="group" aria-label="Conteúdo do detalhe">
+        <button type="button" aria-pressed={tab === "current"} onClick={() => setTab("current")}>Rodada atual</button>
+        <button type="button" aria-pressed={tab === "performance"} onClick={() => setTab("performance")}>Desempenho</button>
+      </div>
       <div className={styles.detailsScroll}>
+        {tab === "performance" ? <AthletePerformance key={athleteId} athleteId={athleteId ?? ""} season={season} round={round} /> : <>
         <section className={styles.roundScore} aria-label="Pontuação na rodada atual">
           <span>Pontuação na rodada atual</span>
           <strong className={athlete.pontuacao < 0 ? styles.negative : ""}>{scoreFormat.format(athlete.pontuacao)}<small> pts</small></strong>
@@ -146,6 +157,7 @@ export function AthleteDetails({ athlete, club, clubs, matches, round, onClose }
             <strong>{item.count}</strong>
           </li>)}</ul> : <p className={styles.emptyScouts}>Nenhum scout disponível para este atleta nesta rodada.</p>}
         </section>
+        </>}
       </div>
     </section>
   </div>;

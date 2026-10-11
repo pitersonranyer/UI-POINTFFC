@@ -4,8 +4,10 @@ import React, { type PropsWithChildren } from "react";
 import { AthleteScoresPage } from "./AthleteScoresPage";
 import { useCartolaDashboard } from "@/hooks/useCartolaDashboard";
 import type { CartolaScoredAthletesResponse } from "@/types/cartola";
+import { fetchAthleteHistory } from "@/services/athleteHistoryService";
 
 vi.mock("@/hooks/useCartolaDashboard", () => ({ useCartolaDashboard: vi.fn() }));
+vi.mock("@/services/athleteHistoryService", () => ({ fetchAthleteHistory: vi.fn() }));
 vi.mock("next/link", () => ({ default: ({ children, href }: PropsWithChildren<{ href: string }>) => <a href={href}>{children}</a> }));
 
 const club = { id: 10, nome: "Clube do Norte", abreviacao: "NOR", escudos: { "45x45": "https://example.test/nor.png" } };
@@ -18,7 +20,7 @@ const athleteData: CartolaScoredAthletesResponse = {
     "3": { apelido: "Goleiro Seguro", pontuacao: 4.1, posicao_id: 1, clube_id: 10, entrou_em_campo: false },
   },
 };
-const dashboard = { rodada: 8, mercadoAberto: false, bolaRolando: true, partidas: [], clubes: { "10": club } };
+const dashboard = { rodada: 8, mercado: { temporada: 2025 }, mercadoAberto: false, bolaRolando: true, partidas: [], clubes: { "10": club } };
 const updateMock = vi.fn();
 function renderPage(data: CartolaScoredAthletesResponse = athleteData) {
   vi.mocked(useCartolaDashboard).mockReturnValue({
@@ -36,6 +38,15 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
 describe("AthleteScoresPage", () => {
+  it("integra o histórico com o id selecionado e contexto da página", async () => {
+    vi.mocked(fetchAthleteHistory).mockResolvedValue({ atletaId: 1, temporada: 2025, rodadaReferencia: 8, historico: [], indicadores: { mediaGeralDisponivel: null, mediaUltimas5: null, maior: null, menor: null, desvioPadrao: null, amostraGeral: 0, amostraUltimas5: 0 }, cobertura: { rodadasSemSnapshot: [], rodadasSemPontuacaoDoAtleta: [], rodadasParciais: [], rodadasComSnapshotInvalidoOuIncompleto: [], temporadaComSnapshotsCompletosAteReferencia: false } });
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /Ver detalhes de Atacante Ágil/ }));
+    expect(fetchAthleteHistory).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Desempenho" }));
+    await screen.findByText("Nenhuma pontuação disponível neste histórico.");
+    expect(fetchAthleteHistory).toHaveBeenCalledWith("1", 2025, 8, 5);
+  });
   it("ordena pela pontuação e preserva a precisão decimal exibida", () => {
     renderPage();
     const rows = screen.getAllByRole("button", { name: /Ver detalhes de/ });

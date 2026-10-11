@@ -115,6 +115,8 @@ export function AthleteScoresPage() {
       {selected && selectedId && (
         <AthleteDetails
           key={selectedId}
+          athleteId={selectedId}
+          season={dashboard.mercado.temporada}
           athlete={selected}
           club={selectedClub}
           clubs={dashboard.clubes}
