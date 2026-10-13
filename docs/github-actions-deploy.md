@@ -6,7 +6,7 @@
 - Branch auditada: `main`.
 - Commit auditado: `786a7234fdb5c19c048854c1474655a1fd0d0f69` (11/10/2026 18:43 UTC), igual ao commit do diagnóstico anterior.
 - O repositório não tinha workflows em `.github/workflows`; `main` está sem proteção.
-- Acesso de escrita ao repositório está disponível. Os arquivos desta fase foram preparados em `codex/pointffc-github-actions-phase-2`, branch separada do commit auditado. Nenhum PR foi criado, nenhum commit foi feito em `main` e nada foi publicado.
+- Acesso de escrita ao repositório está disponível. Os arquivos foram preparados em `codex/pointffc-github-actions-phase-2`, branch separada do commit auditado. Esta Fase 2B revisa e propõe a integração por PR, sem merge, sem commit em `main` e sem publicação.
 - Não há ferramenta Firebase/Google Cloud conectada nesta sessão. A tela do Console informada anteriormente prova que o domínio personalizado está conectado, mas não expõe aqui o identificador do Hosting Site via API/CLI.
 - **Hosting Site ID ainda pendente de confirmação.** `app-pointdojogador` é o valor esperado, não confirmado nesta sessão. O .firebaserc aponta apenas o Firebase Project ID, o que não substitui uma consulta de Hosting Site ID.
 
@@ -27,7 +27,7 @@ Todas as variáveis abaixo são configurações cliente `NEXT_PUBLIC_*` e entram
 | --- | --- | --- |
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase Web SDK; necessária para inicializar o app Firebase. | Firebase Console → configuração do app Web deste projeto. Não disponível nesta sessão. |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Domínio do Firebase Auth usado pelo SDK. O valor esperado informado para o projeto é `pointffc.com.br`; o workflow falha se outro valor estiver configurado. | Confirmar na configuração real do app Web / Firebase Authentication antes de cadastrar. |
-| `NEXT_PUBLIC_FIREBASE_DATABASE_URL` | Realtime Database; o app instancia `getDatabase(firebaseApp)`. | Firebase Console → Realtime Database / configuração do app Web. Não disponível nesta sessão. |
+| `NEXT_PUBLIC_FIREBASE_DATABASE_URL` | Opcional no build e no workflow: `src/lib/firebase.ts` passa `undefined` quando não configurada. O app instancia o Realtime Database padrão do projeto. | Se o projeto usar uma URL explícita, obter em Firebase Console → Realtime Database. Não cadastrar se não houver valor confirmado. |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase Web SDK. Deve ser o ID do projeto, esperado como `app-pointdojogador`. | Configuração real do app Web; comparar com .firebaserc. |
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase Web SDK / Storage. | Configuração real do app Web. |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase Web SDK. | Configuração real do app Web. |
@@ -38,7 +38,7 @@ Todas as variáveis abaixo são configurações cliente `NEXT_PUBLIC_*` e entram
 | `NEXT_PUBLIC_CARTOLA_ADMIN_SEASONS` | Opcional; temporadas adicionais no seletor administrativo. Sem valor, lista somente a temporada configurada. | Configuração aprovada do produto, se aplicável. |
 | `NEXT_PUBLIC_WHATSAPP_SUPORTE_URL` | Opcional. `src/config/whatsappSupport.ts` valida convites HTTPS de grupo e tem fallback versionado para o convite atual; sem Actions Variable o build ainda tem URL definida. | Link de suporte aprovado. Não é necessário cadastrar nesta fase. |
 
-O arquivo `.env.example` deixa em branco as variáveis Firebase e traz valores de exemplo de temporada/rodada; nenhum valor de exemplo foi copiado para o workflow. As configurações Firebase reais precisam ser fornecidas pelo Console autorizado. A variável `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` será validada contra `pointffc.com.br`, mas não foi confirmada por consulta live nesta execução.
+O arquivo `.env.example` deixa em branco as variáveis Firebase e traz valores de exemplo de temporada/rodada; nenhum valor de exemplo foi copiado para o workflow. As configurações Firebase reais requeridas pelo gate precisam ser fornecidas pelo Console autorizado. `NEXT_PUBLIC_FIREBASE_DATABASE_URL` é opcional e não bloqueia o workflow. A variável `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` será validada contra `pointffc.com.br`, mas não foi confirmada por consulta live nesta execução.
 
 ## Workflow de validação preparado
 
