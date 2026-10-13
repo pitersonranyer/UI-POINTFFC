@@ -1,4 +1,4 @@
-name: POINT FFC — Validação
+name: POINT FFC — Validate
 
 on:
   workflow_dispatch:
