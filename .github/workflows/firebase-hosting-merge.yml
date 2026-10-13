@@ -1,0 +1,50 @@
+
+name: Deploy POINT FFC to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Configure environment
+        env:
+          POINTFFC_ENV_FILE: ${{ secrets.POINTFFC_ENV_FILE }}
+        run: |
+          if [ -z "$POINTFFC_ENV_FILE" ]; then
+            echo "::error::POINTFFC_ENV_FILE não configurado"
+            exit 1
+          fi
+          printf '%s\n' "$POINTFFC_ENV_FILE" > .env.local
+          chmod 600 .env.local
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build POINT FFC
+        run: npm run build
+
+      - name: Deploy Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_APP_POINTDOJOGADOR }}
+          channelId: live
+          projectId: app-pointdojogador
