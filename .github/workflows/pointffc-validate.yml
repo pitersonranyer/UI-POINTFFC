@@ -1,0 +1,90 @@
+name: POINT FFC — Validate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pointffc-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Testes, lint, typecheck e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+      NEXT_PUBLIC_CARTOLA_SEASON: ${{ vars.NEXT_PUBLIC_CARTOLA_SEASON }}
+      NEXT_PUBLIC_CARTOLA_ROUND: ${{ vars.NEXT_PUBLIC_CARTOLA_ROUND }}
+      NEXT_PUBLIC_CARTOLA_ADMIN_SEASONS: ${{ vars.NEXT_PUBLIC_CARTOLA_ADMIN_SEASONS }}
+      NEXT_PUBLIC_WHATSAPP_SUPORTE_URL: ${{ vars.NEXT_PUBLIC_WHATSAPP_SUPORTE_URL }}
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22 e cache npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências travadas
+        run: npm ci
+
+      - name: Executar testes
+        run: npm test
+
+      - name: Executar lint
+        run: npm run lint
+
+      - name: Verificar tipos TypeScript
+        run: npm run typecheck
+
+      - name: Validar configuração necessária para o build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required=(
+            NEXT_PUBLIC_FIREBASE_API_KEY
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+            NEXT_PUBLIC_FIREBASE_APP_ID
+            NEXT_PUBLIC_CARTOLA_SEASON
+            NEXT_PUBLIC_CARTOLA_ROUND
+          )
+          missing=()
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("$name")
+            fi
+          done
+
+          if (("${#missing[@]}" > 0)); then
+            printf 'Build não executado: configure as GitHub Actions Variables obrigatórias: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+          if [[ "$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" != "pointffc.com.br" ]]; then
+            echo "Build não executado: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN precisa corresponder ao domínio validado do POINT FFC."
+            exit 1
+          fi
+
+          if [[ ! "$NEXT_PUBLIC_CARTOLA_SEASON" =~ ^[1-9][0-9]*$ || ! "$NEXT_PUBLIC_CARTOLA_ROUND" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Build não executado: temporada e rodada precisam ser inteiros positivos."
+            exit 1
+          fi
+
+      - name: Gerar build estático de produção
+        run: npm run build
