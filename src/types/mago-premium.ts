@@ -13,6 +13,15 @@ export interface MagoTeam {
 
 export interface MagoRound {
   rodada: number;
+  fechamento?: {
+    titulo: string;
+    subtitulo: string;
+    texto: string[];
+    veredito: string;
+    resultados: { mandante: string; visitante: string; golsMandante: number; golsVisitante: number }[];
+    indicadores: { tendenciasCorretas: number; placaresExatos: number; sgPelotao1: number; totalPelotao1: number; sgPlanejado: number; totalTimes: number };
+    comparativoR29: { tendenciasCorretas: number; placaresExatos: number; sgPelotao1: number; totalPelotao1: number; sgPlanejado: number; totalTimes: number; comprovacao: string };
+  };
   editorial?: { titulo: string; subtitulo: string; visao: string[]; mercado: string; veredito: string[]; estrategia: { clube: string; quantidade: number }[] };
   pelotoesDoMago?: boolean;
   ataquesTexto?: string;

@@ -33,6 +33,31 @@ it("mostra os dez placares e horários no HTML, com fonte e limites estatístico
   expect(screen.getByRole("region", { name: "O Mago está de olho" }).textContent).toContain("às 18h");
 });
 
+it("presta contas da R30 sem substituir as previsões pré-rodada", () => {
+  render(<MagoPage data={data} />);
+  const closing = screen.getByRole("region", { name: "O Mago presta contas — Rodada 30" });
+  expect(closing.textContent).toContain("80% de acerto nas tendências");
+  expect(closing.textContent).toContain("3/10");
+  expect(closing.textContent).toContain("Atlético-MG2 × 1Santos");
+  expect(closing.textContent).toContain("Tendência não acertada");
+  expect(closing.textContent).toContain("3/5 confirmaram SG");
+  expect(closing.textContent).toContain("15/30 — 50% teórico");
+  expect(closing.textContent).toContain("As escalações reais dos 30 times não foram auditadas");
+  expect(closing.textContent).toContain("15/20 · 75%");
+  expect(closing.textContent).toContain("R29: registro histórico resumido disponível");
+  const matches = within(closing).getAllByRole("article").filter(card => card.textContent?.includes("Previsão:"));
+  expect(matches).toHaveLength(10);
+  expect(within(closing).getAllByText("Tendência correta")).toHaveLength(8);
+  expect(within(closing).getAllByText("Placar exato")).toHaveLength(3);
+  expect(matches.find(card => card.textContent?.includes("Chapecoense"))?.textContent).toContain("Tendência não acertada");
+  expect(matches.find(card => card.textContent?.includes("Vasco"))?.textContent).toContain("Tendência não acertada");
+  expect(screen.getByText(/As previsões e a análise a seguir foram publicadas antes dos jogos/)).toBeTruthy();
+  expect(data.placares.map(game => [game.mandante, game.golsMandante, game.golsVisitante, game.visitante])).toEqual([
+    ["Vasco",2,0,"Remo"], ["São Paulo",2,0,"Vitória"], ["Atlético-MG",2,1,"Santos"], ["Flamengo",2,0,"Fluminense"], ["Palmeiras",2,0,"Corinthians"],
+    ["Grêmio",1,1,"Internacional"], ["Bahia",2,0,"Mirassol"], ["Coritiba",1,1,"Botafogo"], ["Chapecoense",1,1,"Athletico-PR"], ["Bragantino",2,1,"Cruzeiro"],
+  ]);
+});
+
 it("resume a R30 no Dashboard com Palmeiras, São Paulo, Flamengo e alerta de escalações", () => {
   render(<MagoDashboardCard data={data} />);
   const card = screen.getByRole("region", { name: "Mago do Point Fantasy" });
@@ -42,5 +67,7 @@ it("resume a R30 no Dashboard com Palmeiras, São Paulo, Flamengo e alerta de es
   expect(within(card).getByRole("article", { name: "1 de 4: SG do Mago" }).textContent).toContain("Palmeiras40,93%");
   expect(within(card).getAllByRole("listitem").slice(0,3).map(t => t.textContent)).toEqual(["Palmeiras40,93%","São Paulo40,51%","Flamengo39,29%"]);
   expect(card.textContent).toContain("Escalações sob observação");
-  expect(within(card).getByRole("link", { name: /Ver análise completa/ }).getAttribute("href")).toBe("/mago");
+  expect(card.textContent).toContain("O Mago presta contas: 80% de acerto nas tendências da R30.");
+  expect(card.textContent).toContain("Três placares exatos e análise completa do desempenho defensivo.");
+  expect(within(card).getByRole("link", { name: /Ver fechamento completo/ }).getAttribute("href")).toBe("/mago");
 });

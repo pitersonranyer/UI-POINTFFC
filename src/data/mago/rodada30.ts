@@ -55,6 +55,34 @@ const alertas: NonNullable<MagoRound["alertas"]> = [
 
 export const magoRodada30: MagoRound = {
   rodada: 30, pelotoesDoMago: true, indicadores, topSg, alternativas, alerta: alertas[0], alertas,
+  fechamento: {
+    titulo: "O Mago presta contas — Rodada 30",
+    subtitulo: "80% de acerto nas tendências, três placares exatos e lições importantes para a defesa.",
+    texto: [
+      "A Rodada 30 trouxe um bom desempenho do Placar Imaginário do Mago. Acertamos a tendência de oito dos dez confrontos e cravamos três resultados exatos.",
+      "Na análise defensiva, Flamengo, Vasco e Bahia confirmaram o saldo de gols, enquanto Palmeiras e São Paulo venceram seus confrontos, mas não conseguiram sair sem sofrer gols.",
+      "O resultado reforça uma das principais lições do futebol fantasy: identificar o vencedor de uma partida não significa garantir o SG.",
+      "A estratégia do Mago segue combinando indicadores, contexto e diversificação, sempre acompanhada de uma prestação de contas transparente.",
+    ],
+    veredito: "O Mago acertou o caminho de oito jogos. Na defesa, três das cinco prioridades confirmaram o SG. Seguimos ajustando a estratégia, porque bons números orientam decisões, mas não eliminam a imprevisibilidade do futebol.",
+    resultados: [
+      { mandante: "Vasco", visitante: "Remo", golsMandante: 0, golsVisitante: 0 },
+      { mandante: "São Paulo", visitante: "Vitória", golsMandante: 2, golsVisitante: 1 },
+      { mandante: "Atlético-MG", visitante: "Santos", golsMandante: 2, golsVisitante: 1 },
+      { mandante: "Flamengo", visitante: "Fluminense", golsMandante: 1, golsVisitante: 0 },
+      { mandante: "Palmeiras", visitante: "Corinthians", golsMandante: 4, golsVisitante: 1 },
+      { mandante: "Grêmio", visitante: "Internacional", golsMandante: 1, golsVisitante: 1 },
+      { mandante: "Bahia", visitante: "Mirassol", golsMandante: 1, golsVisitante: 0 },
+      { mandante: "Coritiba", visitante: "Botafogo", golsMandante: 1, golsVisitante: 1 },
+      { mandante: "Chapecoense", visitante: "Athletico-PR", golsMandante: 1, golsVisitante: 4 },
+      { mandante: "Bragantino", visitante: "Cruzeiro", golsMandante: 4, golsVisitante: 2 },
+    ],
+    indicadores: { tendenciasCorretas: 8, placaresExatos: 3, sgPelotao1: 3, totalPelotao1: 5, sgPlanejado: 15, totalTimes: 30 },
+    comparativoR29: {
+      tendenciasCorretas: 7, placaresExatos: 1, sgPelotao1: 2, totalPelotao1: 5, sgPlanejado: 15, totalTimes: 30,
+      comprovacao: "R29: registro histórico resumido disponível. R30: previsões preservadas comparadas diretamente aos resultados informados.",
+    },
+  },
   editorial: {
     titulo: "Rodada 30: a rodada da incerteza",
     subtitulo: "Números fortes, três clássicos e escalações sob observação.",

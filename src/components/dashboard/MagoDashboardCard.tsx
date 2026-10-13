@@ -30,6 +30,10 @@ export function MagoDashboardCard({ data }: { data: MagoRound }) {
       <div className={styles.identity}><h2 id="dashboard-mago-title">Mago do Point Fantasy</h2><p>Inteligência para sua rodada</p></div>
       <span className={styles.badge}>Rodada {data.rodada}</span>
     </header>
+    {data.fechamento && <div className={styles.closingTeaser}>
+      <strong>O Mago presta contas: {Math.round(data.fechamento.indicadores.tendenciasCorretas / data.fechamento.resultados.length * 100)}% de acerto nas tendências da R30.</strong>
+      <span>Três placares exatos e análise completa do desempenho defensivo.</span>
+    </div>}
     <div ref={carousel} id={carouselId} className={styles.carousel} role="region" aria-label="Insights do Mago" aria-roledescription="carrossel" tabIndex={0}
       onScroll={event => setActive(Math.max(0, Math.min(3, Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))))}
       onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "ArrowLeft" || event.key === "ArrowRight")) { event.preventDefault(); goTo(Math.max(0, Math.min(3, active + (event.key === "ArrowRight" ? 1 : -1)))); } }}>
@@ -54,6 +58,6 @@ export function MagoDashboardCard({ data }: { data: MagoRound }) {
       </article>
     </div>
     <div className={styles.dots} aria-label="Selecionar insight">{labels.map((label, index) => <button key={label} type="button" aria-label={`Ir para ${label}`} aria-controls={carouselId} aria-current={active === index ? "true" : undefined} onClick={() => goTo(index)} />)}</div>
-    <footer className={styles.footer}><Link href="/mago">Ver análise completa <ArrowRight size={17} aria-hidden="true" /></Link></footer>
+    <footer className={styles.footer}><Link href="/mago/">{data.fechamento ? "Ver fechamento completo" : "Ver análise completa"} <ArrowRight size={17} aria-hidden="true" /></Link></footer>
   </section>;
 }

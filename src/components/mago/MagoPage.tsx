@@ -80,6 +80,71 @@ export function MagoSummary({ data }: { data: MagoRound }) {
   return <section className={styles.summary} aria-labelledby="resumo"><SectionTitle id="resumo" icon={<WandSparkles />} title={`Resumo do Mago — R${data.rodada}`} subtitle="A leitura da rodada, em um só lugar." /><dl>{data.resumo.map(item => <div key={item.rotulo}><dt>{item.rotulo}</dt><dd>{item.valor}</dd></div>)}</dl><div className={styles.convergence}><h3>{data.pelotoesDoMago ? "Convergência dos dados e contexto" : "Convergência com especialistas"}</h3><dl>{data.convergencia.map(item => <div key={item.rotulo}><dt>{item.rotulo}</dt><dd>{item.valor}</dd></div>)}</dl></div></section>;
 }
 
+function MagoClosing({ data }: { data: MagoRound }) {
+  const closing = data.fechamento;
+  if (!closing) return null;
+  const getTrend = (home: number, away: number) => home === away ? "empate" : home > away ? "mandante" : "visitante";
+  const predictions = closing.resultados.map(result => {
+    const prediction = data.placares.find(item => item.mandante === result.mandante && item.visitante === result.visitante);
+    const predictedSgTeam = prediction?.golsVisitante === 0 ? result.mandante : prediction?.golsMandante === 0 ? result.visitante : null;
+    const actualSgTeam = result.golsVisitante === 0 ? result.mandante : result.golsMandante === 0 ? result.visitante : null;
+    return {
+      ...result,
+      prediction,
+      trendCorrect: !!prediction && getTrend(prediction.golsMandante, prediction.golsVisitante) === getTrend(result.golsMandante, result.golsVisitante),
+      exact: !!prediction && prediction.golsMandante === result.golsMandante && prediction.golsVisitante === result.golsVisitante,
+      sgTeam: predictedSgTeam,
+      sgCorrect: !!predictedSgTeam && predictedSgTeam === actualSgTeam,
+    };
+  });
+  const summary = closing.indicadores;
+  const comparative = [
+    ["Tendências corretas", `${closing.comparativoR29.tendenciasCorretas}/10`, `${summary.tendenciasCorretas}/10`],
+    ["Placares exatos", `${closing.comparativoR29.placaresExatos}/10`, `${summary.placaresExatos}/10`],
+    ["SG no Pelotão 1", `${closing.comparativoR29.sgPelotao1}/${closing.comparativoR29.totalPelotao1}`, `${summary.sgPelotao1}/${summary.totalPelotao1}`],
+    ["SG da estratégia planejada", `${closing.comparativoR29.sgPlanejado}/${closing.comparativoR29.totalTimes} planejados`, `${summary.sgPlanejado}/${summary.totalTimes} planejados`],
+  ];
+  return <section className={styles.closing} aria-labelledby="fechamento-title">
+    <div className={styles.closingHeader}><span className={styles.closingStatus}><Trophy size={15} aria-hidden="true" /> FECHAMENTO DA RODADA 30</span><h2 id="fechamento-title">{closing.titulo}</h2><p>{closing.subtitulo}</p></div>
+    <div className={styles.closingCopy}>{closing.texto.map(text => <p key={text}>{text}</p>)}</div>
+    <div className={styles.closingStats} aria-label="Indicadores finais da Rodada 30">
+      <article><strong>{summary.tendenciasCorretas}/{closing.resultados.length}</strong><span>Tendências corretas · {Math.round(summary.tendenciasCorretas / closing.resultados.length * 100)}%</span></article>
+      <article><strong>{summary.placaresExatos}/{closing.resultados.length}</strong><span>Placares exatos · {Math.round(summary.placaresExatos / closing.resultados.length * 100)}%</span></article>
+      <article><strong>{summary.sgPelotao1}/{summary.totalPelotao1}</strong><span>SG confirmado no Pelotão 1 · {Math.round(summary.sgPelotao1 / summary.totalPelotao1 * 100)}%</span></article>
+      <article><strong>{summary.sgPlanejado}/{summary.totalTimes}</strong><span>SG da estratégia planejada · 50%</span></article>
+    </div>
+    <section className={styles.closingSection} aria-labelledby="comparacao-jogos"><SectionTitle id="comparacao-jogos" icon={<Orbit />} title="Previsão x resultado" subtitle="Tendência, placar exato e indicação de SG são avaliados separadamente." />
+      <div className={styles.resultGrid}>{predictions.map(item => <article className={styles.resultCard} key={item.mandante}>
+        <div className={styles.resultTeams}><strong>{item.mandante}</strong><span>{item.golsMandante} × {item.golsVisitante}</span><strong>{item.visitante}</strong></div>
+        <p>Previsão: {item.prediction ? `${item.prediction.golsMandante} × ${item.prediction.golsVisitante}` : "não informada"}</p>
+        <div className={styles.resultBadges}><span className={item.trendCorrect ? styles.hit : styles.miss}>{item.trendCorrect ? "Tendência correta" : "Tendência não acertada"}</span>{item.exact && <span className={styles.hit}>Placar exato</span>}{item.sgTeam && <span className={item.sgCorrect ? styles.hit : styles.miss}>{item.sgTeam}: {item.sgCorrect ? "SG confirmado" : "SG não confirmado"}</span>}</div>
+      </article>)}</div>
+    </section>
+    <div className={styles.closingColumns}>
+      <section className={styles.closingSection} aria-labelledby="desempenho-pelotoes"><SectionTitle id="desempenho-pelotoes" icon={<ShieldCheck />} title="Desempenho dos pelotões" subtitle="Resultado defensivo dos clubes priorizados antes dos jogos." />
+        <ul className={styles.outcomeList}>{data.topSg.map(team => {
+          const match = closing.resultados.find(item => item.mandante === team.clube || item.visitante === team.clube);
+          const conceded = !!match && (match.mandante === team.clube ? match.golsVisitante : match.golsMandante) > 0;
+          const score = match ? `${match.golsMandante} × ${match.golsVisitante}` : "Resultado não informado";
+          return <li key={team.clube}><strong>{team.clube}</strong><span>{score} · {conceded ? "SG não confirmado" : "SG confirmado"}</span></li>;
+        })}<li><strong>Bragantino · Pelotão 2</strong><span>4 × 2 · sofreu gol · SG não confirmado</span></li></ul>
+        <p className={styles.note}>Pelotão 1: {summary.sgPelotao1}/{summary.totalPelotao1} confirmaram SG ({Math.round(summary.sgPelotao1 / summary.totalPelotao1 * 100)}%).</p>
+      </section>
+      <section className={styles.closingSection} aria-labelledby="distribuicao-planejada"><SectionTitle id="distribuicao-planejada" icon={<Target />} title="Distribuição dos 30 times" subtitle="SG da estratégia planejada." />
+        <ul className={styles.outcomeList}>{data.editorial?.estrategia.map(team => <li key={team.clube}><strong>{team.clube}</strong><span>{team.quantidade} times planejados</span></li>)}</ul>
+        <p className={styles.planCaveat}><strong>15/30 — 50% teórico.</strong> Flamengo (5), Vasco (5) e Bahia (5) confirmaram SG. Esse indicador representa a distribuição planejada e depende da utilização efetiva dos defensores e das regras de pontuação do Cartola. As escalações reais dos 30 times não foram auditadas.</p>
+      </section>
+    </div>
+    <section className={styles.closingSection} aria-labelledby="comparativo-r29"><SectionTitle id="comparativo-r29" icon={<ArrowUpRight />} title="Comparativo R29 x R30" subtitle="Resultados comparados com níveis diferentes de comprovação." />
+      <div className={styles.tableScroll}><table className={styles.closingTable}><thead><tr><th scope="col">Indicador</th><th scope="col">R29</th><th scope="col">R30</th></tr></thead><tbody>{comparative.map(([label, r29, r30]) => <tr key={label}><th scope="row">{label}</th><td>{r29}</td><td>{r30}</td></tr>)}</tbody></table></div>
+      <p className={styles.note}>{closing.comparativoR29.comprovacao}</p>
+      <p className={styles.accumulated}>Acumulado de tendências: <strong>{closing.comparativoR29.tendenciasCorretas + summary.tendenciasCorretas}/20 · {Math.round((closing.comparativoR29.tendenciasCorretas + summary.tendenciasCorretas) / 20 * 100)}%</strong> · Placares exatos: <strong>{closing.comparativoR29.placaresExatos + summary.placaresExatos}/20 · {Math.round((closing.comparativoR29.placaresExatos + summary.placaresExatos) / 20 * 100)}%</strong> · Escolhas de SG no Pelotão 1: <strong>{closing.comparativoR29.sgPelotao1 + summary.sgPelotao1}/{closing.comparativoR29.totalPelotao1 + summary.totalPelotao1} · {Math.round((closing.comparativoR29.sgPelotao1 + summary.sgPelotao1) / (closing.comparativoR29.totalPelotao1 + summary.totalPelotao1) * 100)}%</strong>.</p>
+      <p className={styles.planCaveat}>A distribuição de SG dos 30 times permanece teórica para a R30 e não é apresentada como pontuação real consolidada.</p>
+    </section>
+    <div className={styles.closingVerdict}><h3>Veredito final</h3><p>{closing.veredito}</p></div>
+  </section>;
+}
+
 export function MagoExpertGroups({ data }: { data: MagoRound }) {
   const teams = [...data.topSg, ...data.alternativas, ...(data.alertas?.length ? data.alertas : [data.alerta])];
   return <section className={styles.section} aria-labelledby="pelotoes">
@@ -108,6 +173,8 @@ export function MagoPage({ data }: { data: MagoRound }) {
   if (data.editorial) return <div className={styles.page}><div className={styles.shell}>
     <MagoHero rodada={data.rodada} pelotoesDoMago={data.pelotoesDoMago} editorial={data.editorial} />
     <p className={styles.preview}>Análise do Mago · Temporada 2026 · Curadoria editorial: POINT FFC</p>
+    <MagoClosing data={data} />
+    <div className={styles.archiveLabel}><strong>Arquivo da prévia da R30</strong><span>As previsões e a análise a seguir foram publicadas antes dos jogos e permanecem preservadas.</span></div>
     <section className={styles.crossing} aria-labelledby="visao-mago"><h2 id="visao-mago">A visão do Mago</h2>{data.editorial.visao.map(text => <p key={text}>{text}</p>)}</section>
     <MagoSgRanking teams={data.topSg.map(withGroup)} /><MagoAlternatives teams={data.alternativas.map(withGroup)} />
     <section className={styles.section} aria-labelledby="de-olho"><SectionTitle id="de-olho" icon={<TriangleAlert />} title="O Mago está de olho" /><MagoAlerts data={data} /><article className={styles.crossing}><h3>Jogos de segunda-feira e fechamento do mercado</h3><p>{data.editorial.mercado}</p></article></section>
