@@ -91,10 +91,16 @@ it("consulta um vínculo existente e desconecta somente após nova confirmação
   expect(await screen.findByLabelText("Código recebido no Telegram")).toBeTruthy();
 });
 
-it("mostra falha ao carregar o status sem exibir detalhes internos", async () => {
+it("não mostra formulário após falha no status e recupera ao tentar novamente", async () => {
   auth.isAuthenticated = true;
   vi.mocked(telegramLinkService.status).mockRejectedValueOnce(new Error("diagnóstico interno"));
   render(<ConnectTelegramPage />);
   expect((await screen.findByRole("alert")).textContent).toContain("Não foi possível concluir a solicitação");
   expect(document.body.textContent).not.toContain("diagnóstico interno");
+  expect(screen.queryByLabelText("Código recebido no Telegram")).toBeNull();
+  expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
+  await waitFor(() => expect(telegramLinkService.status).toHaveBeenCalledTimes(2));
+  expect(await screen.findByLabelText("Código recebido no Telegram")).toBeTruthy();
 });

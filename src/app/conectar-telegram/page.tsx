@@ -37,7 +37,9 @@ function formatDate(value?: string): string | null {
 export default function ConnectTelegramPage() {
   const { firebaseUser, isAuthenticated, isLoading: authLoading } = useAuth();
   const [linkStatus, setLinkStatus] = useState<TelegramLinkStatus | null>(null);
-  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [statusState, setStatusState] = useState<"idle" | "loading" | "ready" | "error">("loading");
+  const [statusError, setStatusError] = useState("");
+  const [statusRetry, setStatusRetry] = useState(0);
   const [code, setCode] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -52,20 +54,32 @@ export default function ConnectTelegramPage() {
     if (authLoading) return;
     if (!isAuthenticated) {
       setLinkStatus(null);
-      setLoadingStatus(false);
+      setStatusState("idle");
+      setStatusError("");
       return;
     }
 
     let current = true;
-    setLoadingStatus(true);
-    setError("");
+    setStatusState("loading");
+    setStatusError("");
+    setLinkStatus(null);
     telegramLinkService.status()
-      .then((status) => { if (current) setLinkStatus(status); })
-      .catch((requestError: unknown) => { if (current) setError(errorMessage(requestError)); })
-      .finally(() => { if (current) setLoadingStatus(false); });
+      .then((status) => {
+        if (!status || typeof status.linked !== "boolean") throw new Error("Resposta de status inválida");
+        if (current) {
+          setLinkStatus(status);
+          setStatusState("ready");
+        }
+      })
+      .catch((requestError: unknown) => {
+        if (current) {
+          setStatusError(errorMessage(requestError));
+          setStatusState("error");
+        }
+      });
 
     return () => { current = false; };
-  }, [authLoading, isAuthenticated]);
+  }, [authLoading, isAuthenticated, statusRetry]);
 
   function normalizeCode(value: string): string {
     return value.replace(/\s/g, "").slice(0, 48).toLowerCase();
@@ -89,6 +103,7 @@ export default function ConnectTelegramPage() {
       setCode("");
       setConfirmed(false);
       setLinkStatus(result);
+      setStatusState("ready");
       setNotice("Sua conta POINT FFC foi conectada ao Telegram.");
     } catch (requestError) {
       setError(errorMessage(requestError));
@@ -107,6 +122,7 @@ export default function ConnectTelegramPage() {
     try {
       await telegramLinkService.disconnect();
       setLinkStatus({ linked: false });
+      setStatusState("ready");
       setDisconnectPrompt(false);
       setNotice("A conexão com o Telegram foi removida.");
     } catch (requestError) {
@@ -155,9 +171,16 @@ export default function ConnectTelegramPage() {
             </>
           )}
         </div>
-      ) : loadingStatus ? (
+      ) : statusState === "loading" || statusState === "idle" ? (
         <p className={styles.loading} role="status"><span className={styles.spinner} />Consultando o vínculo...</p>
-      ) : linkStatus?.linked ? (
+      ) : statusState === "error" || !linkStatus ? (
+        <div className={styles.field}>
+          <p className={styles.error} role="alert">{statusError || "Não foi possível confirmar o status da conexão. Tente novamente."}</p>
+          <button className={styles.secondary} type="button" onClick={() => setStatusRetry((retry) => retry + 1)}>
+            Tentar novamente
+          </button>
+        </div>
+      ) : linkStatus.linked === true ? (
         <section aria-labelledby="linked-heading">
           <h2 id="linked-heading">Conta conectada ao Telegram</h2>
           {linkedDate && <p className={styles.date}>Conectada em {linkedDate}</p>}
@@ -177,7 +200,7 @@ export default function ConnectTelegramPage() {
             </div>
           )}
         </section>
-      ) : (
+      ) : linkStatus.linked === false ? (
         <form className={styles.field} onSubmit={confirmLink} noValidate>
           <label htmlFor="telegram-link-code">Código recebido no Telegram</label>
           <input
@@ -205,6 +228,13 @@ export default function ConnectTelegramPage() {
             {submitting ? "Conectando..." : "Confirmar vínculo"}
           </button>
         </form>
+      ) : (
+        <div className={styles.field}>
+          <p className={styles.error} role="alert">Não foi possível confirmar o status da conexão. Tente novamente.</p>
+          <button className={styles.secondary} type="button" onClick={() => setStatusRetry((retry) => retry + 1)}>
+            Tentar novamente
+          </button>
+        </div>
       )}
     </AuthLayout>
   );
