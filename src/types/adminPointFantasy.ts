@@ -5,6 +5,17 @@ export interface MarketStatus {
   bola_rolando: boolean;
 }
 
+export interface PointFantasyCatalog {
+  id: number;
+  temporada: number;
+  rodada: number;
+  versao: number;
+  status: string;
+  capturadoEm: string;
+  congeladoEm: string | null;
+  criadoEm: string;
+}
+
 export interface SnapshotMatch {
   partidaIdExterno: number;
   clubeMandanteId: number;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/services/apiClient", () => ({ apiFetch: vi.fn() }));
-vi.mock("@/services/pointFantasyService", () => ({ loadFantasyPages: vi.fn() }));
+vi.mock("@/services/pointFantasyService", () => ({ loadFantasyPages: vi.fn(), sortFantasyCatalogs: vi.fn(items => items) }));
 
 import { apiFetch } from "@/services/apiClient";
 import { loadFantasyPages } from "@/services/pointFantasyService";
@@ -9,6 +9,7 @@ import {
   captureFantasyCatalog,
   createFantasyCompetition,
   freezeFantasyCatalog,
+  listFantasyCatalogs,
   loadCapturedCatalogAthletes,
   publishFantasyCompetition,
 } from "@/services/adminPointFantasyService";
@@ -62,5 +63,12 @@ describe("adminPointFantasyService", () => {
     const signal = new AbortController().signal;
     await loadCapturedCatalogAthletes(42, signal);
     expect(loadFantasyPages).toHaveBeenCalledWith("/point-fantasy/catalogos/42/atletas", signal);
+  });
+
+  it("lista catálogos existentes pelo endpoint público paginado", async () => {
+    const signal = new AbortController().signal;
+    vi.mocked(loadFantasyPages).mockReturnValue(Promise.resolve([]));
+    await listFantasyCatalogs(signal);
+    expect(loadFantasyPages).toHaveBeenCalledWith("/point-fantasy/catalogos", signal);
   });
 });

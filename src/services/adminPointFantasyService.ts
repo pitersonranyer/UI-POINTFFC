@@ -1,17 +1,21 @@
 import { apiFetch } from "@/services/apiClient";
-import { loadFantasyPages } from "@/services/pointFantasyService";
+import { loadFantasyPages, sortFantasyCatalogs } from "@/services/pointFantasyService";
 import type {
   CaptureCatalogPayload,
   CapturedCatalog,
   CreateFantasyCompetitionPayload,
   FantasyCompetition,
   MarketStatus,
+  PointFantasyCatalog,
 } from "@/types/adminPointFantasy";
 
 const authenticated = { authenticated: true, preserveSessionOnForbidden: true };
 
 export const getFantasyMarketStatus = () =>
   apiFetch<MarketStatus>("/cartola/mercado/status", { cache: "no-store" });
+
+export const listFantasyCatalogs = (signal: AbortSignal) =>
+  loadFantasyPages<PointFantasyCatalog>("/point-fantasy/catalogos", signal).then(sortFantasyCatalogs);
 
 export const captureFantasyCatalog = (payload: CaptureCatalogPayload) =>
   apiFetch<CapturedCatalog>("/admin/point-fantasy/catalogos/capturar", {
