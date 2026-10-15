@@ -1,0 +1,42 @@
+.hero { padding:28px 24px; border-radius:18px; background:linear-gradient(120deg,#111b17,#173b2b); color:white; border-top:3px solid var(--gold); }
+.hero p:first-child { color:#e5c96f; }
+.hero h1 { margin:0; font-size:clamp(1.5rem,5vw,2.3rem); letter-spacing:-.04em; }
+.hero p:last-child { margin-bottom:0; color:#d8e7dd; line-height:1.6; }
+.catalog { margin-top:24px; border:1px solid var(--line); border-radius:16px; background:white; overflow:hidden; }
+.catalogHeader { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; padding:22px 18px; }
+.catalogHeader h2 { margin:0; font-size:1.25rem; }
+.catalog label { display:flex; flex-direction:column; gap:7px; font-size:.75rem; font-weight:700; color:#49564e; }
+.catalog select,.catalog input[type="search"] { width:100%; min-width:0; min-height:44px; padding:10px; border:1px solid #cdd5d0; border-radius:8px; color:#19251e; background:white; font:inherit; font-size:.85rem; }
+.metadata { display:flex; flex-wrap:wrap; gap:10px 20px; padding:14px 18px; background:#f1f6f2; color:#405148; font-size:.78rem; }
+.filters { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:20px 18px; border-bottom:1px solid var(--line); }
+.search { grid-column:1/-1; }
+.catalog .checkbox { flex-direction:row; align-items:center; font-weight:500; }
+.checkbox input { width:18px; height:18px; accent-color:#14753b; }
+.catalog button { min-height:42px; border-radius:8px; padding:10px 15px; font-size:.8rem; font-weight:700; background:#eaf5ee; color:#146336; cursor:pointer; }
+.results { padding:0 18px; color:#59675f; font-size:.78rem; }
+.list { padding:0; margin:0; list-style:none; }
+.row { display:grid; grid-template-columns:54px minmax(0,1fr) auto; gap:5px 10px; align-items:center; padding:12px 14px; border-top:1px solid var(--line); }
+.row>svg { grid-row:1/3; width:54px; height:auto; }
+.identity { min-width:0; }
+.identity strong { display:block; font-size:.88rem; overflow-wrap:anywhere; }
+.identity>span { display:flex; align-items:center; gap:5px; color:#59675f; font-size:.72rem; margin-top:4px; }
+.position { grid-column:2; font-size:.72rem; color:#536259; }
+.category { grid-column:2; font-size:.65rem; font-weight:700; justify-self:start; padding:4px 7px; border-radius:5px; color:#536259; background:#f1f3f2; }
+.category[data-category="Bronze"] { color:#77431e; background:#f9eada; }
+.category[data-category="Prata"] { color:#435365; background:#e9edf3; }
+.category[data-category="Ouro"] { color:#755407; background:#faf0cb; }
+.coins { grid-column:3; grid-row:1/4; text-align:right; }
+.coins strong { display:block; font-size:1.25rem; color:#19673d; }
+.coins small { font-size:.55rem; font-weight:800; letter-spacing:.03em; }
+.pagination { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:18px; border-top:1px solid var(--line); font-size:.8rem; }
+.state { padding:35px 20px; text-align:center; color:#526057; line-height:1.6; }
+.note { margin:0; padding:18px; font-size:.72rem; line-height:1.6; color:#5c685f; background:#f8faf8; }
+@media(min-width:768px) {
+  .hero { padding:36px; }
+  .filters { grid-template-columns:2fr repeat(3,minmax(0,1fr)); }
+  .search { grid-column:auto; }
+  .row { grid-template-columns:70px minmax(0,1fr) 110px 115px 105px; gap:12px; padding:9px 24px; }
+  .row>svg { grid-row:auto; width:62px; }
+  .position,.category,.coins { grid-column:auto; grid-row:auto; }
+  .identity strong { font-size:.95rem; }
+}
