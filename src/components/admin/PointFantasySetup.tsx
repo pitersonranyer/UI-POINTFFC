@@ -83,6 +83,7 @@ export function PointFantasySetup() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const lock = useRef(false);
+  const initializedCatalogId = useRef<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -122,12 +123,13 @@ export function PointFantasySetup() {
   const matches = useMemo(() => workspace?.catalog.referencias.partidas ?? [], [workspace]);
   const selectedMatches = useMemo(() => matches.filter(m => selectedMatchIds.includes(m.partidaIdExterno)), [matches, selectedMatchIds]);
   useEffect(() => {
-    if (!workspace || selectedMatchIds.length) return;
+    if (!workspace || initializedCatalogId.current === workspace.catalog.id) return;
+    initializedCatalogId.current = workspace.catalog.id;
     setSelectedMatchIds(matches.map(m => m.partidaIdExterno));
     const dates = newCompetitionDates(matches);
     setInicioInscricao(dates.start);
     setFimInscricao(dates.end);
-  }, [workspace, selectedMatchIds.length, matches]);
+  }, [workspace, matches]);
 
   const storeWorkspace = useCallback((next: CapturedCatalogWorkspace) => {
     setWorkspace(next);
@@ -236,6 +238,7 @@ export function PointFantasySetup() {
     <header className={styles.intro}><div><p>POINT FFC FANTASY · HOMOLOGAÇÃO</p><h1>Preparar competição</h1><span>Capture um catálogo, escolha partidas e publique uma competição gratuita.</span></div></header>
     {error && <p className={styles.error} role="alert">{error}</p>}
     {message && <p className={styles.success} role="status">{message}</p>}
+    {!market && !error && <p className={styles.notice} role="status">Consultando o estado do mercado Cartola…</p>}
 
     <section className={styles.step} aria-labelledby="step-catalog">
       <div className={styles.stepHead}><span className={styles.stepNumber}>1</span><div><h2 id="step-catalog">Catálogo de atletas</h2><p>Capture o snapshot oficial da rodada e congele os dados para a competição.</p></div></div>
