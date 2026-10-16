@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "@/services/apiClient";
 import { createFantasyLineup, deleteFantasyLineup, duplicateFantasyLineup, getFantasyLineup, lineupError, listMyFantasyLineups, loadLineupContext, updateFantasyLineup } from "@/services/pointFantasyLineupService";
 import type { FantasyLineup, LineupContext, LineupPickerSession, LineupSelection, LineupSlot, LineupSlotPlacements } from "@/types/pointFantasyLineup";
-import { athleteInSlot, blockingReason, buildSlotPlacements, defaultPickerFilters, emptySelection, selectIntoLineupSlot, selectionOf } from "./lineupPresentation";
+import { athleteInSlot, blockingReason, buildSlotPlacements, defaultPickerFilters, emptySelection, removeAthlete, selectIntoLineupSlot, selectionOf } from "./lineupPresentation";
 
 export function useLineupEditor(competitionId: number) {
   const [context, setContext] = useState<LineupContext | null>(null);
@@ -37,6 +37,16 @@ export function useLineupEditor(competitionId: number) {
     if (!next) return;
     selectionCursor.current = { value:next.selection, slot:next.nextSlot, placements:next.placements };
     setValue(next.selection); setPlacements(next.placements); setSlot(next.nextSlot);
+  }
+  function sellAthlete(id: number) {
+    if (running.current || conflict || serverBlocked) return;
+    const current = selectionCursor.current;
+    const nextValue = removeAthlete(current.value, id);
+    const activeAthlete = context && current.slot ? athleteInSlot(current.value, context.athletes, current.slot, current.placements) : undefined;
+    const nextSlot = current.slot && activeAthlete?.id === id ? { ...current.slot, mode:"fill" as const } : current.slot;
+    const nextPlacements = buildSlotPlacements(nextValue, context?.athletes ?? [], current.placements);
+    selectionCursor.current = { value:nextValue, slot:nextSlot, placements:nextPlacements };
+    setSelection(nextValue); setPlacements(nextPlacements); setSlot(nextSlot);
   }
   const dirty = JSON.stringify(value) !== JSON.stringify(saved ? selectionOf(saved) : emptySelection());
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
@@ -106,5 +116,5 @@ export function useLineupEditor(competitionId: number) {
       if (active.current) { setContext(latestContext); setDrafts(latestDrafts); if (latest) accept(latest); else setConflict(false); setNotice("Versão atual recarregada do servidor."); }
     });
   }
-  return { context, drafts, saved, value, setValue, slot, setSlot, openSlot, selectAthlete, slotPlacements, pickerFilters, setPickerFilters, loading, busy, error, notice, conflict, serverBlocked, dirty, save, duplicate, remove, reload, newDraft, openDraft, retry:() => setRetry(n => n + 1) };
+  return { context, drafts, saved, value, setValue, slot, setSlot, openSlot, selectAthlete, sellAthlete, slotPlacements, pickerFilters, setPickerFilters, loading, busy, error, notice, conflict, serverBlocked, dirty, save, duplicate, remove, reload, newDraft, openDraft, retry:() => setRetry(n => n + 1) };
 }

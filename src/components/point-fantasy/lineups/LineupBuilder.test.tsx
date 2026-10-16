@@ -34,7 +34,7 @@ async function chooseTeam(id: number) { fireEvent.change(await screen.findByRole
 describe("Pitch and formations", () => {
   it.each(Object.keys(formationCounts) as Formation[])("renders %s with 11 starters, separate coach and five reserves", formation => {
     const { context, selection } = completeTestSelection(formation);
-    const { container } = render(<LineupPitch value={selection} athletes={context.athletes} disabled={false} onOpen={vi.fn()} onRemove={vi.fn()} onCaptain={vi.fn()} onMago={vi.fn()} />);
+    const { container } = render(<LineupPitch value={selection} athletes={context.athletes} disabled={false} onOpen={vi.fn()} onRemove={vi.fn()} onCaptain={vi.fn()} onPowerReserve={vi.fn()} />);
     const pitch = screen.getByRole("region",{ name:`Campinho ${formation}` });
     expect(pitch.querySelectorAll('[data-line] [data-position]')).toHaveLength(11);
     expect(screen.getByTestId("coach-slot").querySelector('[data-position="6"]')).not.toBeNull();
@@ -43,10 +43,10 @@ describe("Pitch and formations", () => {
     const benchPositions = [...screen.getByRole("region",{name:"Banco de reservas"}).querySelectorAll("[data-position]")].map(n => Number(n.getAttribute("data-position")));
     expect(benchPositions).toEqual(formation.startsWith("3") ? [1,3,3,4,5] : [1,2,3,4,5]);
     expect(container.querySelectorAll('[aria-label="Capitão"]')).toHaveLength(1);
-    expect(screen.getByRole("img",{name:"Reserva do Mago"})).toBeTruthy();
+    expect(screen.getByRole("img",{name:"Reserva Power"})).toBeTruthy();
   });
   it("opens position-specific slots using keyboard accessible buttons", () => {
-    const onOpen = vi.fn(); render(<LineupPitch value={emptySelection()} athletes={[]} disabled={false} onOpen={onOpen} onRemove={vi.fn()} onCaptain={vi.fn()} onMago={vi.fn()} />);
+    const onOpen = vi.fn(); render(<LineupPitch value={emptySelection()} athletes={[]} disabled={false} onOpen={onOpen} onRemove={vi.fn()} onCaptain={vi.fn()} onPowerReserve={vi.fn()} />);
     fireEvent.click(screen.getAllByRole("button",{ name:"Adicionar Goleiro 1" })[0]);
     expect(onOpen).toHaveBeenCalledWith({ role:"titulares",position:1,index:0 });
   });
@@ -54,37 +54,38 @@ describe("Pitch and formations", () => {
 describe("Athlete picker", () => {
   function picker(context = testContext(), value = emptySelection(), role: "titulares" | "reservas" = "titulares") {
     const onSelect = vi.fn();
-    function PickerHarness() { const [filters,setFilters] = useState(defaultPickerFilters); return <LineupAthletePicker context={context} value={value} slot={{ role,position:1,index:0 }} filters={filters} onFiltersChange={setFilters} onSelect={onSelect} onClose={vi.fn()} />; }
+    function PickerHarness() { const [filters,setFilters] = useState(defaultPickerFilters); return <LineupAthletePicker context={context} value={value} slot={{ role,position:1,index:0 }} filters={filters} onFiltersChange={setFilters} onSelect={onSelect} onSell={vi.fn()} onClose={vi.fn()} />; }
     render(<PickerHarness />); return onSelect;
   }
-  it("defaults to probable OR doubt, combines search/club/category and hides used players", () => {
+  it("defaults to probable OR doubt, combines search/club/category and keeps selected athletes visible", () => {
     picker(testContext(),{ ...emptySelection(), titulares:[1] });
-    expect(screen.getByRole("checkbox",{name:"Provável"}).getAttribute("checked")).not.toBeNull();
-    expect(screen.getByRole("button",{name:"Selecionar João Dúvida"})).toBeTruthy();
-    expect(screen.queryByRole("button",{name:"Selecionar Jogador 1"})).toBeNull();
+    fireEvent.click(screen.getByRole("button",{name:/^Situação/}));
+    for (const name of ["Provável","Dúvida"]) expect((screen.getByRole("checkbox",{name}) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("button",{name:"Comprar João Dúvida"})).toBeTruthy();
+    expect(screen.getByRole("button",{name:"Vender Jogador 1"})).toBeTruthy(); expect(screen.getByText("Escalado")).toBeTruthy();
     expect(screen.queryByText("Suspenso Teste")).toBeNull();
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:" joao "}});
-    expect(screen.getByRole("button",{name:"Selecionar João Dúvida"})).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Clube"),{target:{value:"263"}}); expect(screen.getByText(/Nenhum atleta corresponde/)).toBeTruthy();
+    expect(screen.getByRole("button",{name:"Comprar João Dúvida"})).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Clube"),{target:{value:"263"}}); expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Clube"),{target:{value:""}});
-    fireEvent.change(screen.getByLabelText("Categoria"),{target:{value:"3"}}); expect(screen.getByText(/Nenhum atleta corresponde/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Categoria"),{target:{value:"3"}}); expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
   });
   it("offers all, none, restoration and explicit unknown statuses", () => {
-    picker(); fireEvent.click(screen.getByText("Limpar situações")); expect(screen.getByText(/Nenhuma situação selecionada/)).toBeTruthy();
-    fireEvent.click(screen.getByText("Selecionar todas")); expect(screen.getByText("Sem situação")).toBeTruthy(); expect(screen.getByText("Suspenso Teste")).toBeTruthy();
-    fireEvent.click(screen.getByText("Restaurar Provável + Dúvida")); expect(screen.queryByText("Sem situação")).toBeNull();
-    fireEvent.click(screen.getByRole("checkbox",{name:"Desconhecida / sem situação"})); expect(screen.getByText("Sem situação")).toBeTruthy();
+    picker(); fireEvent.click(screen.getByText("Filtros avançados")); fireEvent.click(screen.getByText("Limpar situações")); expect(screen.getByRole("button",{name:"Situação · 0"})).toBeTruthy();
+    fireEvent.click(screen.getByText("Selecionar todas")); expect(screen.getByRole("button",{name:"Comprar Sem situação"})).toBeTruthy(); expect(screen.getByRole("button",{name:"Comprar Suspenso Teste"})).toBeTruthy();
+    fireEvent.click(screen.getByText("Restaurar Provável + Dúvida")); expect(screen.queryByRole("button",{name:"Comprar Sem situação"})).toBeNull();
+    fireEvent.click(screen.getByRole("button",{name:/^Situação/})); fireEvent.click(screen.getByRole("checkbox",{name:"Sem situação"})); expect(screen.getByRole("button",{name:"Comprar Sem situação"})).toBeTruthy();
   });
   it("preserves status filters between pages and selects the internal athlete", () => {
     const c = testContext(); c.athletes = Array.from({length:30},(_,i) => testAthlete(i+1,1,{statusId:2}));
-    const onSelect = picker(c); fireEvent.click(screen.getByRole("checkbox",{name:"Provável"}));
+    const onSelect = picker(c); fireEvent.click(screen.getByRole("button",{name:/^Situação/})); fireEvent.click(screen.getByRole("checkbox",{name:"Provável"}));
     fireEvent.click(screen.getByText("Próxima")); expect((screen.getByRole("checkbox",{name:"Provável"}) as HTMLInputElement).checked).toBe(false);
-    fireEvent.click(screen.getByRole("button",{name:"Selecionar Jogador 30"})); expect(onSelect).toHaveBeenCalledWith(c.athletes[29]);
+    fireEvent.click(screen.getByRole("button",{name:"Comprar Jogador 30"})); expect(onSelect).toHaveBeenCalledWith(c.athletes[29]);
   });
   it("prevents high category reserves and allows incomplete positional references", () => {
     const c = testContext(); c.athletes = [testAthlete(1,1,{categoriaId:1}),testAthlete(2,1,{categoriaId:3})];
     picker(c,{...emptySelection(),titulares:[1]},"reservas");
-    expect((screen.getByRole("button",{name:"Selecionar Jogador 2"}) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button",{name:"Comprar Jogador 2"}) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(/Categoria superior/)).toBeTruthy();
   });
 });
@@ -113,17 +114,17 @@ describe("Private journey", () => {
     const button = await screen.findByText("Salvar rascunho"); expect((button as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole("region",{name:"Campinho 4-3-3"})).toBeTruthy(); expect(screen.getByText(/Edição bloqueada pelo início/)).toBeTruthy();
   });
-  it("allows captain only from starters and Mago only from reserves", async () => {
+  it("allows captain only from starters and Reserva Power only from reserves", async () => {
     const { context, selection } = completeTestSelection("4-3-3"); vi.mocked(service.loadLineupContext).mockResolvedValue(context);
     vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup(selection)]); vi.mocked(service.getFantasyLineup).mockResolvedValue(testLineup(selection));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
-    expect(screen.queryByRole("combobox",{name:"Capitão"})).toBeNull(); expect(screen.queryByRole("combobox",{name:"Reserva do Mago"})).toBeNull();
+    expect(screen.queryByRole("combobox",{name:"Capitão"})).toBeNull(); expect(screen.queryByRole("combobox",{name:"Reserva Power"})).toBeNull();
     fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"}));
-    expect(screen.queryByRole("button",{name:"Tornar Reserva do Mago"})).toBeNull(); fireEvent.click(screen.getByRole("button",{name:"Tornar capitão"}));
+    expect(screen.queryByRole("button",{name:"Ativar Reserva Power"})).toBeNull(); fireEvent.click(screen.getByRole("button",{name:"Tornar capitão"}));
     expect(screen.getByLabelText("Capitão escolhido").textContent).toBe("Jogador 2");
     fireEvent.click(screen.getByRole("button",{name:`Ações de Jogador ${selection.tecnico}`}));
-    expect(screen.queryByRole("button",{name:/capitão/})).toBeNull(); expect(screen.queryByRole("button",{name:/Reserva do Mago/})).toBeNull();
+    expect(screen.queryByRole("button",{name:/capitão/})).toBeNull(); expect(screen.queryByRole("button",{name:/Reserva Power/})).toBeNull();
   });
 });
 describe("Draft editing state and concurrency", () => {
@@ -187,19 +188,20 @@ describe("Phase 2B.1 lineup UX", () => {
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Zagueiro 1"}))[0]);
     fireEvent.change(screen.getByLabelText("Clube"),{target:{value:"262"}}); fireEvent.change(screen.getByLabelText("Categoria"),{target:{value:"2"}});
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Preferido"}});
-    fireEvent.click(screen.getByRole("button",{name:"Selecionar Preferido A"}));
+    fireEvent.click(screen.getByRole("button",{name:"Comprar Preferido A"}));
     fireEvent.click(screen.getByRole("button",{name:"Concluir"}));
     fireEvent.click(screen.getByRole("button",{name:"Adicionar Zagueiro 2"}));
     expect((screen.getByLabelText("Clube") as HTMLSelectElement).value).toBe("262"); expect((screen.getByLabelText("Categoria") as HTMLSelectElement).value).toBe("2");
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Preferido");
+    fireEvent.click(screen.getByRole("button",{name:/^Situação/}));
     for (const name of ["Provável","Dúvida"]) expect((screen.getByRole("checkbox",{name}) as HTMLInputElement).checked).toBe(true);
-    fireEvent.click(screen.getByRole("button",{name:"Selecionar Preferido B"}));
+    fireEvent.click(screen.getByRole("button",{name:"Comprar Preferido B"}));
     fireEvent.click(screen.getAllByRole("button",{name:"Adicionar Meia 1"})[0]);
-    expect((screen.getByLabelText("Posição") as HTMLSelectElement).value).toBe("4"); expect(screen.getByRole("button",{name:"Selecionar Preferido Meia"})).toBeTruthy();
+    expect(screen.getByText("MEI · 0/3")).toBeTruthy(); expect(screen.getByRole("button",{name:"Comprar Preferido Meia"})).toBeTruthy();
     fireEvent.click(screen.getByRole("button",{name:"Fechar seletor"}));
     fireEvent.click(screen.getByRole("button",{name:"Adicionar Técnico 1"}));
     expect((screen.getByLabelText("Categoria") as HTMLSelectElement).value).toBe("2");
-    expect(screen.getByRole("button",{name:"Selecionar Preferido Técnico"})).toBeTruthy();
+    expect(screen.getByRole("button",{name:"Comprar Preferido Técnico"})).toBeTruthy();
   });
   it("keeps custom empty statuses and zero-result filters until explicit restore", async () => {
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
@@ -207,10 +209,10 @@ describe("Phase 2B.1 lineup UX", () => {
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Sem correspondência"}});
     fireEvent.click(screen.getByText("Limpar situações")); fireEvent.click(screen.getByRole("button",{name:"Fechar seletor"}));
     fireEvent.click(screen.getAllByRole("button",{name:"Adicionar Meia 1"})[0]);
-    expect(screen.getByText(/Nenhuma situação selecionada/)).toBeTruthy(); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Sem correspondência");
-    fireEvent.click(screen.getByText("Restaurar Provável + Dúvida")); expect(screen.getByText(/Nenhum atleta corresponde/)).toBeTruthy();
+    expect(screen.getByRole("button",{name:"Situação · 0"})).toBeTruthy(); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Sem correspondência");
+    fireEvent.click(screen.getByText("Filtros avançados")); fireEvent.click(screen.getByText("Restaurar Provável + Dúvida")); expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
     fireEvent.click(screen.getByText("Limpar filtros")); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("");
-    expect((screen.getByRole("checkbox",{name:"Suspenso"}) as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(screen.getByRole("button",{name:/^Situação/})); expect((screen.getByRole("checkbox",{name:"Suspenso"}) as HTMLInputElement).checked).toBe(true);
     fireEvent.click(screen.getByText("Restaurar filtros padrão")); expect((screen.getByRole("checkbox",{name:"Suspenso"}) as HTMLInputElement).checked).toBe(false);
   });
   it("preserves filters through saving, duplicating, removing and new drafts without marking edits dirty", async () => {
@@ -227,7 +229,7 @@ describe("Phase 2B.1 lineup UX", () => {
   it("changes captain from a starter, replaces the previous badge and sends the same versioned contract", async () => {
     const {selection} = await filledEditor();
     fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"}));
-    expect(screen.queryByRole("button",{name:"Tornar Reserva do Mago"})).toBeNull();
+    expect(screen.queryByRole("button",{name:"Ativar Reserva Power"})).toBeNull();
     fireEvent.click(screen.getByRole("button",{name:"Tornar capitão"}));
     expect(screen.queryByRole("dialog")).toBeNull(); expect(screen.getByLabelText("Capitão escolhido").textContent).toBe("Jogador 2");
     expect(document.querySelectorAll('[aria-label="Capitão"]')).toHaveLength(1);
@@ -237,49 +239,50 @@ describe("Phase 2B.1 lineup UX", () => {
     fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"})); fireEvent.click(screen.getByRole("button",{name:"Remover capitão"}));
     expect(screen.getByLabelText("Capitão escolhido").textContent).toBe("Não definido"); expect(document.querySelector('[aria-label="Capitão"]')).toBeNull();
   });
-  it("assigns one Mago badge, replaces it, allows reserve goalkeeper and removes the title", async () => {
+  it("assigns one Reserva Power badge, replaces it, allows reserve goalkeeper and removes the title", async () => {
     const {selection} = await filledEditor();
     fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 13"}));
     expect(screen.queryByRole("button",{name:"Tornar capitão"})).toBeNull();
-    fireEvent.click(screen.getByRole("button",{name:"Tornar Reserva do Mago"}));
-    expect(screen.getAllByRole("img",{name:"Reserva do Mago"})).toHaveLength(1);
-    expect(screen.getByRole("button",{name:"Ações de Jogador 13"}).contains(screen.getByRole("img",{name:"Reserva do Mago"}))).toBe(true);
-    expect(screen.getByRole("img",{name:"Reserva do Mago"}).tagName.toLowerCase()).toBe("svg");
-    expect(screen.getByRole("img",{name:"Reserva do Mago"}).querySelector("path")).not.toBeNull();
+    fireEvent.click(screen.getByRole("button",{name:"Ativar Reserva Power"}));
+    expect(screen.getAllByRole("img",{name:"Reserva Power"})).toHaveLength(1);
+    expect(screen.getByRole("button",{name:"Ações de Jogador 13"}).contains(screen.getByRole("img",{name:"Reserva Power"}))).toBe(true);
+    expect(screen.getByRole("img",{name:"Reserva Power"}).tagName.toLowerCase()).toBe("svg");
+    expect(screen.getByRole("img",{name:"Reserva Power"}).querySelector("path")).not.toBeNull();
     fireEvent.click(screen.getByRole("button",{name:"Salvar rascunho"})); await screen.findByText("Rascunho #12 · v2");
     expect(service.updateFantasyLineup).toHaveBeenCalledWith(12,1,{...selection,reservaMagoAtletaId:13});
-    fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 12"})); fireEvent.click(screen.getByRole("button",{name:"Tornar Reserva do Mago"}));
-    expect(screen.getByRole("button",{name:"Ações de Jogador 12"}).contains(screen.getByRole("img",{name:"Reserva do Mago"}))).toBe(true);
+    fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 12"})); fireEvent.click(screen.getByRole("button",{name:"Ativar Reserva Power"}));
+    expect(screen.getByRole("button",{name:"Ações de Jogador 12"}).contains(screen.getByRole("img",{name:"Reserva Power"}))).toBe(true);
     fireEvent.click(screen.getByRole("button",{name:"Salvar rascunho"})); await screen.findByText("Rascunho #12 · v3");
     expect(service.updateFantasyLineup).toHaveBeenCalledWith(12,2,{...selection,reservaMagoAtletaId:12});
-    fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 12"})); fireEvent.click(screen.getByRole("button",{name:"Remover título de Reserva do Mago"}));
-    expect(screen.queryByRole("img",{name:"Reserva do Mago"})).toBeNull(); expect(screen.getByLabelText("Reserva do Mago escolhido").textContent).toBe("Não definido");
+    fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 12"})); fireEvent.click(screen.getByRole("button",{name:"Remover Reserva Power"}));
+    expect(screen.queryByRole("img",{name:"Reserva Power"})).toBeNull(); expect(screen.getByLabelText("Reserva Power escolhido").textContent).toBe("Não definido");
   });
   it.each(["captain","mago"])("removing the %s athlete clears its title and closes the action dialog", async role => {
     await filledEditor(); const id = role === "captain" ? 1 : 12;
-    fireEvent.click(screen.getByRole("button",{name:`Ações de Jogador ${id}`})); fireEvent.click(screen.getByRole("button",{name:"Remover atleta"}));
+    fireEvent.click(screen.getByRole("button",{name:`Ações de Jogador ${id}`})); fireEvent.click(screen.getByRole("button",{name:"Vender"}));
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByLabelText(role === "captain" ? "Capitão escolhido" : "Reserva do Mago escolhido").textContent).toBe("Não definido");
+    expect(screen.getByLabelText(role === "captain" ? "Capitão escolhido" : "Reserva Power escolhido").textContent).toBe("Não definido");
     expect(screen.queryByRole("button",{name:`Ações de Jogador ${id}`})).toBeNull();
   });
   it("coach offers only replace/remove; menus close on Escape or backdrop and never stack", async () => {
     await filledEditor(); fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 17"}));
-    expect(screen.queryByRole("button",{name:/capitão/})).toBeNull(); expect(screen.queryByRole("button",{name:/Reserva do Mago/})).toBeNull();
-    expect(screen.getByRole("button",{name:"Trocar atleta"})).toBeTruthy();
-    const first = screen.getByRole("button",{name:"Fechar ações"}); const last = screen.getByRole("button",{name:"Remover atleta"});
+    expect(screen.queryByRole("button",{name:/capitão/})).toBeNull(); expect(screen.queryByRole("button",{name:/Reserva Power/})).toBeNull();
+    expect(screen.getByRole("button",{name:"Trocar jogador"})).toBeTruthy(); expect(screen.getByRole("button",{name:"Vender"})).toBeTruthy();
+    fireEvent.click(screen.getByText("Ver informações do atleta")); expect(screen.getByText("Situação no catálogo")).toBeTruthy(); expect(screen.getByText("Clube")).toBeTruthy();
+    const first = screen.getByRole("button",{name:"Fechar ações"}); const last = screen.getByText("Ver informações do atleta");
     last.focus(); fireEvent.keyDown(last,{key:"Tab"}); expect(document.activeElement).toBe(first);
     fireEvent.keyDown(first,{key:"Tab",shiftKey:true}); expect(document.activeElement).toBe(last);
     fireEvent(screen.getByRole("dialog"),new Event("cancel",{cancelable:true})); expect(screen.queryByRole("dialog")).toBeNull();
     const trigger = screen.getByRole("button",{name:"Ações de Jogador 2"}); trigger.focus(); fireEvent.click(trigger);
     expect(trigger.getAttribute("aria-haspopup")).toBe("dialog"); expect(trigger.getAttribute("aria-expanded")).toBe("true"); expect(screen.getAllByRole("dialog")).toHaveLength(1);
     fireEvent.click(screen.getByRole("dialog")); expect(screen.queryByRole("dialog")).toBeNull(); expect(document.activeElement).toBe(trigger);
-    fireEvent.click(trigger); fireEvent.click(screen.getByRole("button",{name:"Trocar atleta"}));
+    fireEvent.click(trigger); fireEvent.click(screen.getByRole("button",{name:"Trocar jogador"}));
     expect(screen.getAllByRole("dialog")).toHaveLength(1); expect(screen.getByRole("heading",{name:"Escolher Lateral"})).toBeTruthy();
   });
   it("keeps filters after removing an athlete and starts a fresh editor with defaults", async () => {
-    await filledEditor(); fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"})); fireEvent.click(screen.getByRole("button",{name:"Trocar atleta"}));
+    await filledEditor(); fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"})); fireEvent.click(screen.getByRole("button",{name:"Trocar jogador"}));
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Preservar busca"}}); fireEvent.click(screen.getByRole("button",{name:"Fechar seletor"}));
-    fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"})); fireEvent.click(screen.getByRole("button",{name:"Remover atleta"}));
+    fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"})); fireEvent.click(screen.getByRole("button",{name:"Vender"}));
     fireEvent.click(screen.getByRole("button",{name:"Adicionar Lateral 1"})); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Preservar busca");
     cleanup(); const {result} = renderHook(() => useLineupEditor(8)); expect(result.current.pickerFilters).toEqual(defaultPickerFilters());
   });
@@ -325,16 +328,16 @@ describe("Team navigation refinements", () => {
     vi.mocked(service.loadLineupContext).mockResolvedValue(context);
     vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup(selection)]); vi.mocked(service.getFantasyLineup).mockResolvedValue(testLineup(selection));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />); await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
-    expect(screen.queryByRole("combobox",{name:"Capitão"})).toBeNull(); expect(screen.queryByRole("combobox",{name:"Reserva do Mago"})).toBeNull();
-    const crown = screen.getByRole("img",{name:"Reserva do Mago"}); expect(crown.tagName.toLowerCase()).toBe("svg");
-    expect(crown.querySelector('path[fill="#e9bd42"]')).not.toBeNull(); expect(crown.querySelector("text")).toBeNull();
-    expect(screen.getByLabelText("Capitão escolhido").textContent).toBe("Jogador 1"); expect(screen.getByLabelText("Reserva do Mago escolhido").textContent).toBe("Jogador 12");
+    expect(screen.queryByRole("combobox",{name:"Capitão"})).toBeNull(); expect(screen.queryByRole("combobox",{name:"Reserva Power"})).toBeNull();
+    const bolt = screen.getByRole("img",{name:"Reserva Power"}); expect(bolt.tagName.toLowerCase()).toBe("svg");
+    expect(bolt.querySelector('path[fill="#e9bd42"]')).not.toBeNull(); expect(bolt.querySelector("text")).toBeNull();
+    expect(screen.getByLabelText("Capitão escolhido").textContent).toBe("Jogador 1"); expect(screen.getByLabelText("Reserva Power escolhido").textContent).toBe("Jogador 12");
     expect(screen.getByRole("button",{name:"Ações de Jogador 1"}).querySelector('[aria-label="Capitão"]')?.textContent).toBe("C");
   });
   it("new time keeps filters and confirms dirty state, without creating an anonymous or automatic draft", async () => {
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Goleiro 1"}))[0]);
-    fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Jogador"}}); fireEvent.click(screen.getByRole("button",{name:"Selecionar Jogador 1"}));
+    fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Jogador"}}); fireEvent.click(screen.getByRole("button",{name:"Comprar Jogador 1"}));
     vi.mocked(window.confirm).mockReturnValueOnce(false); fireEvent.click(screen.getByRole("button",{name:"+ Novo time"})); expect(screen.getByRole("button",{name:"Ações de Jogador 1"})).toBeTruthy();
     fireEvent.click(screen.getByRole("button",{name:"+ Novo time"})); expect(screen.queryByRole("button",{name:"Ações de Jogador 1"})).toBeNull();
     fireEvent.click(screen.getAllByRole("button",{name:"Adicionar Goleiro 1"})[0]); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Jogador");
