@@ -107,5 +107,15 @@
   .pickSlot svg { width:53px; height:auto; }
   .slot small { font-size:.66rem; }
 }
-@media(max-width:767px) { .builder { padding-bottom:calc(132px + env(safe-area-inset-bottom)); } }
+@media(max-width:767px) {
+  .builder { padding-bottom:calc(132px + env(safe-area-inset-bottom)); }
+  .editor { gap:12px; }
+  .workspace { gap:12px; }
+  .pitch { grid-template-rows:repeat(4,minmax(80px,auto)); row-gap:6px; padding:14px 5px 10px; min-height:408px; }
+  .pitch .slot { width:calc((100% - 8px)/5); }
+  .builder .pickSlot { gap:3px; min-height:76px; padding:1px; }
+  .pitch .pickSlot strong { display:-webkit-box; width:100%; max-width:100%; padding:2px 3px; line-height:1.1; white-space:normal; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .benchSection { margin-top:8px; padding:12px 8px; }
+  .bench { gap:8px 2px; }
+}
 @media(max-width:360px) { .builder { width:calc(100% - 20px); }.pickSlot strong { font-size:.58rem; }.pickerList { margin-inline:-6px; }.pickerList li { gap:5px; } }
