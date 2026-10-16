@@ -61,10 +61,15 @@ describe("Pitch and formations", () => {
     expect(within(section).getAllByText("Gratuita")).toHaveLength(2);
     expect(screen.getByRole("textbox",{name:"Nome-base do time"})).toBeTruthy();
     expect(screen.getByText("#ID · Meu Time 01")).toBeTruthy();
-    expect(screen.getByText(/backend ainda não recebe nem salva nomes personalizados/)).toBeTruthy();
+    expect(screen.getByText("Este será o nome público do seu time.")).toBeTruthy();
+    expect(screen.queryByText(/backend ainda não recebe nem salva nomes personalizados/)).toBeNull();
     fireEvent.click(screen.getByRole("button",{name:"Sobre o nome público do time"}));
-    expect(screen.getByRole("note").textContent).toContain("exclusividade e o bloqueio ainda dependem do backend");
+    expect(screen.getByRole("note").textContent).toContain("exclusivo dentro da competição e ficar bloqueado após o primeiro salvamento");
+    expect(screen.getByRole("note").textContent).toContain("dependem do backend e ainda não estão disponíveis");
     expect(section.compareDocumentPosition(screen.getByRole("region",{name:"Campinho 4-3-3"})) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const save = screen.getByRole("button",{name:"Salvar rascunho"});
+    expect(save.closest(".toolbar")).toBeNull();
+    expect(screen.getByRole("region",{name:"Campinho 4-3-3"}).compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
   it("opens position-specific slots using keyboard accessible buttons", () => {
     const onOpen = vi.fn(); render(<LineupPitch value={emptySelection()} athletes={[]} disabled={false} onOpen={onOpen} onRemove={vi.fn()} onCaptain={vi.fn()} onPowerReserve={vi.fn()} />);
@@ -255,7 +260,7 @@ describe("Draft editing state and concurrency", () => {
     expect(result.current.saved?.id).toBe(13);
     vi.mocked(service.deleteFantasyLineup).mockResolvedValue({id:13,excluida:true});
     vi.mocked(window.confirm).mockReturnValueOnce(false); await act(() => result.current.remove()); expect(service.deleteFantasyLineup).not.toHaveBeenCalled();
-    await act(() => result.current.remove()); expect(service.deleteFantasyLineup).toHaveBeenCalledWith(13,1); expect(result.current.saved).toBeNull();
+    await act(() => result.current.remove()); expect(service.deleteFantasyLineup).toHaveBeenCalledWith(13,1); expect(result.current.saved?.id).toBe(12);
   });
   it("preserves local edits on 409 and requires confirmation before loading current version", async () => {
     const {result} = await hook(); await act(() => result.current.openDraft(12));
@@ -437,9 +442,43 @@ describe("Team navigation refinements", () => {
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
     fireEvent.click(screen.getByRole("button",{name:"Duplicar time"})); await screen.findByText("Rascunho #99 · v1");
     expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("99"); expect(service.duplicateFantasyLineup).toHaveBeenCalledWith(12,1);
-    fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"})); await screen.findByText("Rascunho excluído.");
+    fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"})); await screen.findByText("Rascunho excluído. Time #12 selecionado.");
     expect(screen.queryByRole("option",{name:"Time #99 · Rascunho"})).toBeNull(); expect(screen.getByRole("option",{name:"Time #80 · Rascunho"})).toBeTruthy();
+    expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("12");
     expect(service.deleteFantasyLineup).toHaveBeenCalledWith(99,1);
+    expect(window.confirm).toHaveBeenCalledWith("Excluir definitivamente o Time #99 (rascunho)?");
+  });
+  it("keeps the selected draft visible if deletion fails", async () => {
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup()]);
+    vi.mocked(service.deleteFantasyLineup).mockRejectedValueOnce(new Error("Falha temporária"));
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
+    await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
+    fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"}));
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.getByRole("option",{name:"Time #12 · Rascunho"})).toBeTruthy();
+    expect(screen.getByText("Rascunho #12 · v1")).toBeTruthy();
+  });
+  it("does not offer deletion for a non-draft status", async () => {
+    const nonDraft = testLineup(undefined,{status:"CONFIRMADA" as "RASCUNHO"});
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([nonDraft]);
+    vi.mocked(service.getFantasyLineup).mockResolvedValue(nonDraft);
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
+    await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
+    expect((screen.getByRole("button",{name:"Excluir rascunho"}) as HTMLButtonElement).disabled).toBe(true);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(service.deleteFantasyLineup).not.toHaveBeenCalled();
+  });
+  it("sends only one delete request while the first deletion is pending", async () => {
+    let resolveDelete!: (value: { id:number; excluida:boolean }) => void;
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup()]);
+    vi.mocked(service.deleteFantasyLineup).mockImplementation(() => new Promise(resolve => { resolveDelete = resolve; }));
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
+    await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
+    fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"}));
+    fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"}));
+    expect(service.deleteFantasyLineup).toHaveBeenCalledTimes(1);
+    await act(async () => resolveDelete({id:12,excluida:true}));
+    expect(await screen.findByText("Rascunho excluído. Você pode montar uma nova escalação.")).toBeTruthy();
   });
   it("restores captain and crown from the saved selection without role selects", async () => {
     const {context,selection} = completeTestSelection("4-3-3");

@@ -102,11 +102,19 @@ export function useLineupEditor(competitionId: number) {
     await run(async () => { const result = await duplicateFantasyLineup(saved.id, saved.versao); if (active.current) { accept(result); setNotice("Novo rascunho independente criado no servidor."); } });
   }
   async function remove() {
-    if (!saved || conflict || serverBlocked || running.current || !window.confirm(`Excluir definitivamente o rascunho #${saved.id}${dirty ? " e descartar as alterações locais" : ""}?`)) return;
+    if (!saved || saved.status !== "RASCUNHO" || conflict || serverBlocked || running.current || !window.confirm(`Excluir definitivamente o Time #${saved.id} (rascunho)${dirty ? " e descartar as alterações locais" : ""}?`)) return;
     await run(async () => {
       const result = await deleteFantasyLineup(saved.id, saved.versao);
       if (!result.excluida || result.id !== saved.id) throw new Error("O servidor não confirmou a exclusão.");
-      if (active.current) { setDrafts(items => items.filter(item => item.id !== result.id)); setSaved(null); setValue(emptySelection()); setNotice("Rascunho excluído."); }
+      if (active.current) {
+        const remaining = drafts.filter(item => item.id !== result.id).sort((a,b) => a.id - b.id);
+        setDrafts(remaining);
+        const next = remaining[0] ?? null;
+        setSaved(next);
+        setValue(next ? selectionOf(next) : emptySelection());
+        setSlot(null); setPlacements({}); setConflict(false);
+        setNotice(next ? `Rascunho excluído. Time #${next.id} selecionado.` : "Rascunho excluído. Você pode montar uma nova escalação.");
+      }
     });
   }
   async function reload() {
