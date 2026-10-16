@@ -8,6 +8,7 @@ import { LineupPitch } from "./LineupPitch";
 import { LineupAthletePicker } from "./LineupAthletePicker";
 import { useLineupEditor } from "./useLineupEditor";
 import { LineupTeamNavigation } from "./LineupTeamNavigation";
+import { FirstLineupSaveDialog } from "./FirstLineupSaveDialog";
 import { formatMatchupDate, sortLineupMatchups } from "./lineupMatchups";
 import styles from "./LineupBuilder.module.css";
 
@@ -17,15 +18,13 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
   const { user } = useAuth();
   const [now, setNow] = useState(Date.now);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [identityHelpOpen, setIdentityHelpOpen] = useState(false);
-  const [teamNameBase, setTeamNameBase] = useState("Meu Time");
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   const { context, value, saved, dirty, busy } = editor;
   if (editor.loading) return <p className={styles.empty} role="status">Carregando competição, atletas elegíveis e seus rascunhos…</p>;
   if (!context) return <div className={styles.empty} role="alert"><p>{editor.error}</p><button onClick={editor.retry}>Tentar novamente</button><button onClick={onBack}>Voltar às competições</button></div>;
   const reason = blockingReason(context, now);
   const blocked = !!reason || editor.serverBlocked || user?.status !== "ATIVO";
-  const disabled = busy || blocked || editor.conflict;
+  const disabled = busy || blocked || editor.conflict || editor.pendingCreation;
   const warnings = selectionWarnings(value, context.athletes);
   const competition = context.competition;
   const lockTimes = [...competition.partidas.map(m => Date.parse(m.inicioPrevisto)), ...(competition.fechamentoDefinitivoEm ? [Date.parse(competition.fechamentoDefinitivoEm)] : [])].filter(Number.isFinite);
@@ -34,14 +33,10 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
   const byId = new Map(context.athletes.map(a => [a.id, a]));
   const lineupLimit = competition.limiteEscalacoesUsuario;
   const atLineupLimit = lineupLimit !== null && editor.drafts.length >= lineupLimit;
-  const orderedDrafts = [...editor.drafts].sort((a, b) => a.id - b.id);
-  const currentDraftIndex = saved ? orderedDrafts.findIndex(d => d.id === saved.id) : -1;
-  const suggestedSequence = currentDraftIndex >= 0 ? currentDraftIndex + 1 : editor.drafts.length + 1;
-  const safeTeamNameBase = teamNameBase.trim() || "Meu Time";
-  const namePreview = `#${saved?.id ?? "ID"} · ${safeTeamNameBase} ${String(suggestedSequence).padStart(2, "0")}`;
-  function back() { if (!busy && (!dirty || window.confirm("Descartar alterações não salvas e voltar às competições?"))) onBack(); }
+  const showNavigation = editor.drafts.length > 0 || editor.identityState?.estadoIdentidade === "DEFINIDA";
+  function back() { if (!busy && !editor.pendingCreation && (!dirty || window.confirm("Descartar alterações não salvas e voltar às competições?"))) onBack(); }
   return <div className={styles.editor}>
-    <button className={styles.back} type="button" disabled={busy} onClick={back}>← Competições</button>
+    <button className={styles.back} type="button" disabled={busy || editor.pendingCreation} onClick={back}>← Competições</button>
     <section className={styles.competitionSummary} aria-label="Competição selecionada">
       <div className={styles.competitionHeadline}><div><h2>{competition.nome}</h2><p>{competition.temporada} · Rodada {competition.rodada}</p></div><span className={styles.accessBadge}>{competition.tipoAcesso === "FREE" ? "Gratuita" : `Paga · ${Number(competition.valorInscricao).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}`}</span><button type="button" aria-expanded={detailsOpen} aria-controls="competition-details" onClick={() => setDetailsOpen(open => !open)}>{detailsOpen ? "Fechar" : "Detalhes"}</button></div>
       <div className={styles.competitionFacts}><span>{competition.partidas.length} {competition.partidas.length === 1 ? "confronto" : "confrontos"}</span><span>{context.athletes.length} atletas elegíveis</span><span>Bloqueio: {lockTime ? formatFantasyDate(lockTime) + " (Brasília)" : "Horário indisponível"}</span></div>
@@ -52,18 +47,12 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
       </div>
     </section>
     {blocked && <div className={styles.alert} role="status">{reason ?? (user?.status !== "ATIVO" ? "Sua conta precisa estar ativa para editar." : "O servidor bloqueou as ações de escrita. A visualização foi preservada.")} O horário do servidor é a referência final.</div>}
-    {editor.error && <div className={styles.alert} role="alert">{editor.error}</div>}
+    {editor.error && !editor.nameAction && <div className={styles.alert} role="alert">{editor.error}</div>}
+    {editor.pendingCreation && !editor.nameAction && <div className={styles.alert}><p>A confirmação está pendente. Consulte seus times e confirme a mesma operação antes de continuar.</p><button type="button" disabled={busy || blocked} onClick={() => void editor.retryCreation()}>Tentar novamente</button></div>}
     {editor.conflict && <div className={styles.alert}><p>Suas alterações locais foram preservadas. Recarregue a versão atual para continuar; o descarte exige confirmação.</p><button type="button" disabled={busy} onClick={() => void editor.reload()}>Recarregar versão atual</button></div>}
     {editor.notice && <p role="status" className={styles.notice}>{editor.notice}</p>}
     <div className={styles.lineupControls}>
-      <LineupTeamNavigation drafts={editor.drafts} currentId={saved?.id ?? null} busy={busy} canCreate={!blocked && !atLineupLimit} canDuplicate={!disabled && !!saved && !dirty && !atLineupLimit} dirty={dirty} limit={lineupLimit} onOpen={id => void editor.openDraft(id)} onNew={editor.newDraft} onDuplicate={() => void editor.duplicate()} />
-      <div className={styles.teamIdentity}>
-        <div className={styles.identityHeading}><label htmlFor="team-name-base">Nome-base</label></div>
-        <input id="team-name-base" aria-label="Nome-base do time" maxLength={32} value={teamNameBase} onChange={e => setTeamNameBase(e.target.value)} />
-        <output className={styles.namePreview}>{namePreview}</output>
-        <div className={styles.identityPublicHelp}><span>Este será o nome público do seu time.</span><button type="button" className={styles.infoButton} aria-label="Sobre o nome público do time" aria-expanded={identityHelpOpen} aria-controls="team-name-help" onClick={() => setIdentityHelpOpen(open => !open)}>i</button></div>
-        {identityHelpOpen && <p id="team-name-help" className={styles.identityHelp} role="note">O padrão sugerido é #ID · Meu Time 01; outros times usam a sequência 02, 03 e assim por diante. O nome deve ser exclusivo dentro da competição e ficar bloqueado após o primeiro salvamento. Essas garantias dependem do backend e ainda não estão disponíveis; esta tela mostra apenas uma prévia.</p>}
-      </div>
+      {showNavigation && <LineupTeamNavigation drafts={editor.drafts} currentId={saved?.id ?? null} busy={busy || editor.pendingCreation} canCreate={!disabled && !atLineupLimit} canDuplicate={!disabled && !!saved && !dirty && !atLineupLimit} dirty={dirty} limit={lineupLimit} onOpen={id => void editor.openDraft(id)} onNew={editor.newDraft} onDuplicate={() => void editor.duplicate()} canDelete={!disabled && saved?.status === "RASCUNHO"} onDelete={() => void editor.remove()} />}
       {atLineupLimit && <p role="status" className={styles.limitNotice}>Limite de times da competição atingido ({editor.drafts.length}/{lineupLimit}).</p>}
       <div className={styles.toolbar}>
         <label>Formação<select aria-label="Formação tática" value={value.formacao} disabled={disabled} onChange={e => { editor.setSlot(null); editor.setValue({ ...value, formacao:e.target.value as Formation }); }}>{Object.keys(formationCounts).map(f => <option key={f}>{f}</option>)}</select></label>
@@ -79,13 +68,13 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
         <p className={styles.note}>Toque em um titular para definir o capitão ou em um reserva para ativar o Reserva Power.</p>
         {warnings.length > 0 && <div className={styles.alert}><strong>Ajustes antes de salvar</strong><ul>{warnings.map(w => <li key={w}>{w}</li>)}</ul><p>A formação mudou sem remover atletas. Use os controles de remoção para ajustar os excedentes.</p></div>}
         {dirty || !saved ? <p className={styles.note}>Pendências serão conferidas ao salvar.</p> : saved.validacao.completa ? <p className={styles.notice}>Escalação completa — rascunho salvo</p> : <div><h4>Pendências do rascunho salvo</h4><ul className={styles.pending}>{saved.validacao.pendencias.map((p, i) => <li key={i}>{friendlyPending(p)}</li>)}</ul></div>}
-        <div className={styles.saveActions}><button className={styles.danger} type="button" disabled={disabled || saved?.status !== "RASCUNHO"} onClick={() => void editor.remove()}>Excluir rascunho</button></div>
         <p className={styles.note}>Salvar rascunho não confirma inscrição.</p>
       </aside>
     </div>
     <div className={styles.saveActions}>
       <button className={styles.primary} type="button" disabled={disabled || warnings.length > 0 || (!!saved && !dirty)} onClick={() => void editor.save()}>{busy ? "Salvando…" : "Salvar rascunho"}</button>
     </div>
+    {editor.nameAction && <FirstLineupSaveDialog busy={busy} pending={editor.pendingCreation} conflict={editor.conflict} error={editor.error} onCancel={editor.cancelName} onSave={name => void editor.confirmName(name)} onRetry={() => void editor.retryCreation()} />}
     {editor.slot && !disabled && <LineupAthletePicker context={context} value={value} slot={editor.slot} mode={editor.slot.mode} filters={editor.pickerFilters} onFiltersChange={editor.setPickerFilters} onClose={() => editor.setSlot(null)} onSelect={athlete => editor.selectAthlete(athlete.id)} onSell={athlete => editor.sellAthlete(athlete.id)} />}
   </div>;
 }

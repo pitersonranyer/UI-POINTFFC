@@ -17,11 +17,13 @@ function AthleteSlot({ slot, excess, expanded, onActions, ...props }: Props & { 
   const invalid = excess || (athlete && ceiling != null && (athlete.categoriaId ?? 0) > ceiling);
   return <div className={styles.slot} data-position={slot.position} data-excess={excess || undefined}>
     <button type="button" className={styles.pickSlot} disabled={props.disabled} onClick={() => athlete ? onActions(slot, athlete.id, !!excess) : props.onOpen(slot)} aria-label={athlete ? `Ações de ${athlete.apelido}` : `Adicionar ${positionLabels[slot.position]} ${slot.index + 1}`} aria-haspopup={athlete ? "dialog" : undefined} aria-expanded={athlete ? expanded : undefined}>
-      {athlete ? <ClubJersey clubId={athlete.clubeIdExterno} size={45} decorative /> : <span className={styles.emptyShirt} aria-hidden="true">+</span>}
-      <strong>{athlete?.apelido ?? positionLabels[slot.position]}</strong>
-      {athlete && <AthleteStatusIndicator statusId={athlete.statusId} size={13} />}
+      {athlete ? <span className={styles.athleteVisual}>
+        <ClubJersey clubId={athlete.clubeIdExterno} size={45} decorative />
+        <span className={styles.athleteCondition}><AthleteStatusIndicator statusId={athlete.statusId} size={13} /></span>
       {captain && <span className={styles.roleBadge} aria-label="Capitão">C</span>}
       {powerReserve && <svg className={styles.powerBolt} viewBox="0 0 24 24" width="23" height="24" role="img" aria-label="Reserva Power" focusable="false"><title>Reserva Power</title><path d="M13.2 2.5 4.5 13h6.1l-.7 8.5L19.5 11h-6.2l-.1-8.5Z" fill="#e9bd42" stroke="#795719" strokeWidth="1.2" strokeLinejoin="round"/></svg>}
+      </span> : <span className={styles.emptyShirt} aria-hidden="true">+</span>}
+      <strong>{athlete?.apelido ?? positionLabels[slot.position]}</strong>
     </button>
     {slot.role === "reservas" && athlete && <div className={styles.reserveMeta}><small>{positionLabels[slot.position]}</small><ReserveCategoryMedal categoryId={athlete.categoriaId} /></div>}
     {invalid && <small className={styles.invalid}>Ajuste necessário</small>}

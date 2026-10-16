@@ -4,14 +4,14 @@ import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } 
 import { LineupEditor } from "./LineupEditor";
 import { useLineupEditor } from "./useLineupEditor";
 import { emptySelection, selectIntoLineupSlot, slotKey } from "./lineupPresentation";
-import { testAthlete, testContext, testLineup } from "./lineupTestFixtures";
+import { testAthlete, testContext, testLineup, testMyLineups } from "./lineupTestFixtures";
 import * as service from "@/services/pointFantasyLineupService";
 import type { Formation, LineupPickerSession } from "@/types/pointFantasyLineup";
 vi.mock("@/contexts/AuthContext", () => ({ useAuth:() => ({ user:{idUsuario:"test-only",status:"ATIVO"} }) }));
 vi.mock("@/services/pointFantasyLineupService", async original => ({ ...await original<typeof import("@/services/pointFantasyLineupService")>(), loadLineupContext:vi.fn(), listMyFantasyLineups:vi.fn(), createFantasyLineup:vi.fn(), updateFantasyLineup:vi.fn() }));
 beforeEach(() => {
   vi.mocked(service.loadLineupContext).mockReset().mockResolvedValue(testContext());
-  vi.mocked(service.listMyFantasyLineups).mockReset().mockResolvedValue([]);
+  vi.mocked(service.listMyFantasyLineups).mockReset().mockResolvedValue(testMyLineups([]));
   vi.mocked(service.createFantasyLineup).mockReset().mockImplementation(async (_id, value) => testLineup(value));
   vi.mocked(service.updateFantasyLineup).mockReset();
   vi.spyOn(window,"confirm").mockReturnValue(true);
@@ -65,7 +65,7 @@ describe("Continuous lineup selection", () => {
     expect(screen.getByRole("button",{name:/Ordenar por PointCoins: PC\$ ↑/})).toBeTruthy();
     expect(screen.getByRole("button",{name:"Vender Alvo A"})).toBeTruthy(); expect(screen.getByRole("button",{name:"Vender Alvo B"})).toBeTruthy(); expect(document.activeElement).toBe(screen.getByRole("button",{name:"Concluir"}));
     fireEvent.click(screen.getByRole("button",{name:"Concluir"})); fireEvent.click(screen.getByRole("button",{name:"Salvar rascunho"}));
-    await screen.findByText("Rascunho salvo no servidor."); expect(service.createFantasyLineup).toHaveBeenCalledWith(8,expect.objectContaining({titulares:[1,2]}));
+    await screen.findByText("Rascunho salvo no servidor."); expect(service.createFantasyLineup).toHaveBeenCalledWith(8,expect.objectContaining({titulares:[1,2]}),expect.objectContaining({chaveIdempotencia:expect.any(String)}));
   });
   it("sells from the open list without advancing the active slot", async () => {
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
@@ -100,7 +100,7 @@ describe("Continuous lineup selection", () => {
     expect(service.createFantasyLineup).not.toHaveBeenCalled();
   });
   it("renders and announces progress with already selected athletes", async () => {
-    const selection = {...emptySelection(),titulares:[5]}; vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup(selection)]);
+    const selection = {...emptySelection(),titulares:[5]}; vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup(selection)]));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     // Start from a local partial draft; the first pick already exists before reopening.
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Atacante 1"}))[0]); fireEvent.click(screen.getByRole("button",{name:"Comprar Jogador 5"})); fireEvent.click(screen.getByRole("button",{name:"Concluir"}));

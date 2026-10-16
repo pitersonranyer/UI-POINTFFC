@@ -8,7 +8,7 @@ import { LineupAthletePicker } from "./LineupAthletePicker";
 import { useLineupEditor } from "./useLineupEditor";
 import { ApiError } from "@/services/apiClient";
 import * as service from "@/services/pointFantasyLineupService";
-import { completeTestSelection, testAthlete, testContext, testLineup } from "./lineupTestFixtures";
+import { completeTestSelection, testAthlete, testContext, testLineup, testMyLineups } from "./lineupTestFixtures";
 import { defaultPickerFilters, emptySelection, formationCounts } from "./lineupPresentation";
 import type { Formation } from "@/types/pointFantasyLineup";
 
@@ -17,7 +17,7 @@ vi.mock("@/contexts/AuthContext", () => ({ useAuth:() => ({ isAuthenticated:auth
 vi.mock("@/services/pointFantasyLineupService", async original => ({ ...await original<typeof import("@/services/pointFantasyLineupService")>(), loadLineupContext:vi.fn(), listMyFantasyLineups:vi.fn(), listFantasyCompetitions:vi.fn(), getFantasyLineup:vi.fn(), createFantasyLineup:vi.fn(), updateFantasyLineup:vi.fn(), duplicateFantasyLineup:vi.fn(), deleteFantasyLineup:vi.fn() }));
 beforeEach(() => {
   vi.mocked(service.loadLineupContext).mockReset().mockResolvedValue(testContext());
-  vi.mocked(service.listMyFantasyLineups).mockReset().mockResolvedValue([]);
+  vi.mocked(service.listMyFantasyLineups).mockReset().mockResolvedValue(testMyLineups([]));
   vi.mocked(service.listFantasyCompetitions).mockReset().mockResolvedValue([testContext().competition]);
   vi.mocked(service.getFantasyLineup).mockReset().mockResolvedValue(testLineup());
   vi.mocked(service.createFantasyLineup).mockReset().mockResolvedValue(testLineup());
@@ -57,15 +57,8 @@ describe("Pitch and formations", () => {
     expect(within(section).getByRole("heading",{name:"Confrontos e horários"})).toBeTruthy();
     expect(within(section).getByText(/FLA × BOT/)).toBeTruthy();
     expect(screen.getByRole("combobox",{name:"Formação tática"})).toBeTruthy();
-    expect(screen.getByRole("button",{name:"+ Novo time"})).toBeTruthy();
-    expect(within(section).getAllByText("Gratuita")).toHaveLength(2);
-    expect(screen.getByRole("textbox",{name:"Nome-base do time"})).toBeTruthy();
-    expect(screen.getByText("#ID · Meu Time 01")).toBeTruthy();
-    expect(screen.getByText("Este será o nome público do seu time.")).toBeTruthy();
-    expect(screen.queryByText(/backend ainda não recebe nem salva nomes personalizados/)).toBeNull();
-    fireEvent.click(screen.getByRole("button",{name:"Sobre o nome público do time"}));
-    expect(screen.getByRole("note").textContent).toContain("exclusivo dentro da competição e ficar bloqueado após o primeiro salvamento");
-    expect(screen.getByRole("note").textContent).toContain("dependem do backend e ainda não estão disponíveis");
+    expect(screen.getByRole("navigation",{name:"Meus times"})).toBeTruthy();
+    expect(screen.queryByRole("textbox",{name:"Nome do time"})).toBeNull();
     expect(section.compareDocumentPosition(screen.getByRole("region",{name:"Campinho 4-3-3"})) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const save = screen.getByRole("button",{name:"Salvar rascunho"});
     expect(save.closest(".toolbar")).toBeNull();
@@ -216,7 +209,7 @@ describe("Private journey", () => {
     render(<FantasyLineupBuilder />); fireEvent.click(await screen.findByText("Montar escalação"));
     fireEvent.click(await screen.findByText("Salvar rascunho"));
     await screen.findByText("Rascunho salvo no servidor.");
-    expect(service.createFantasyLineup).toHaveBeenCalledWith(8,emptySelection());
+    expect(service.createFantasyLineup).toHaveBeenCalledWith(8,emptySelection(),expect.objectContaining({chaveIdempotencia:expect.any(String)}));
     expect(screen.getByText("Escolha o técnico")).toBeTruthy(); expect(screen.queryByText(/Escalação completa/)).toBeNull();
   });
   it("uses only the backend complete flag", async () => {
@@ -233,7 +226,7 @@ describe("Private journey", () => {
   });
   it("allows captain only from starters and Reserva Power only from reserves", async () => {
     const { context, selection } = completeTestSelection("4-3-3"); vi.mocked(service.loadLineupContext).mockResolvedValue(context);
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup(selection)]); vi.mocked(service.getFantasyLineup).mockResolvedValue(testLineup(selection));
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup(selection)])); vi.mocked(service.getFantasyLineup).mockResolvedValue(testLineup(selection));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
     expect(screen.queryByRole("combobox",{name:"Capitão"})).toBeNull(); expect(screen.queryByRole("combobox",{name:"Reserva Power"})).toBeNull();
@@ -256,7 +249,7 @@ describe("Draft editing state and concurrency", () => {
   it("duplicates on the server, confirms deletion and prevents duplicate submissions", async () => {
     const {result} = await hook(); await act(() => result.current.openDraft(12));
     await act(async () => { await Promise.all([result.current.duplicate(),result.current.duplicate()]); });
-    expect(service.duplicateFantasyLineup).toHaveBeenCalledTimes(1); expect(service.duplicateFantasyLineup).toHaveBeenCalledWith(12,1);
+    expect(service.duplicateFantasyLineup).toHaveBeenCalledTimes(1); expect(service.duplicateFantasyLineup).toHaveBeenCalledWith(12,1,expect.objectContaining({chaveIdempotencia:expect.any(String)}));
     expect(result.current.saved?.id).toBe(13);
     vi.mocked(service.deleteFantasyLineup).mockResolvedValue({id:13,excluida:true});
     vi.mocked(window.confirm).mockReturnValueOnce(false); await act(() => result.current.remove()); expect(service.deleteFantasyLineup).not.toHaveBeenCalled();
@@ -283,7 +276,7 @@ describe("Phase 2B.1 lineup UX", () => {
   async function filledEditor() {
     const { context, selection } = completeTestSelection("4-3-3");
     vi.mocked(service.loadLineupContext).mockResolvedValue(context);
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup(selection)]);
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup(selection)]));
     vi.mocked(service.getFantasyLineup).mockResolvedValue(testLineup(selection));
     vi.mocked(service.updateFantasyLineup).mockImplementation(async (_id, version, next) => testLineup(next,{versao:version+1}));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
@@ -347,7 +340,7 @@ describe("Phase 2B.1 lineup UX", () => {
     act(() => result.current.newDraft()); expect(result.current.pickerFilters).toEqual(filters);
     await act(() => result.current.openDraft(12)); expect(result.current.pickerFilters).toEqual(filters);
     await act(() => result.current.remove()); expect(result.current.pickerFilters).toEqual(filters);
-    expect(service.createFantasyLineup).toHaveBeenCalledWith(8,emptySelection());
+    expect(service.createFantasyLineup).toHaveBeenCalledWith(8,emptySelection(),expect.objectContaining({chaveIdempotencia:expect.any(String)}));
   });
   it("changes captain from a starter, replaces the previous badge and sends the same versioned contract", async () => {
     const {selection} = await filledEditor();
@@ -391,8 +384,8 @@ describe("Phase 2B.1 lineup UX", () => {
     await filledEditor(); fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 17"}));
     expect(screen.queryByRole("button",{name:/capitão/})).toBeNull(); expect(screen.queryByRole("button",{name:/Reserva Power/})).toBeNull();
     expect(screen.getByRole("button",{name:"Trocar jogador"})).toBeTruthy(); expect(screen.getByRole("button",{name:"Vender"})).toBeTruthy();
-    fireEvent.click(screen.getByText("Ver informações do atleta")); expect(screen.getByText("Situação no catálogo")).toBeTruthy(); expect(screen.getByText("Clube")).toBeTruthy();
-    const first = screen.getByRole("button",{name:"Fechar ações"}); const last = screen.getByText("Ver informações do atleta");
+    fireEvent.click(screen.getByText("Informações do atleta")); expect(screen.getByText("Situação no catálogo")).toBeTruthy(); expect(screen.getByText("Clube")).toBeTruthy();
+    const first = screen.getByRole("button",{name:"Fechar ações"}); const last = screen.getByRole("button",{name:"Vender"});
     last.focus(); fireEvent.keyDown(last,{key:"Tab"}); expect(document.activeElement).toBe(first);
     fireEvent.keyDown(first,{key:"Tab",shiftKey:true}); expect(document.activeElement).toBe(last);
     fireEvent(screen.getByRole("dialog"),new Event("cancel",{cancelable:true})); expect(screen.queryByRole("dialog")).toBeNull();
@@ -413,7 +406,7 @@ describe("Phase 2B.1 lineup UX", () => {
 
 describe("Team navigation refinements", () => {
   it("switches across the complete flat list with discard confirmation and no visual paging", async () => {
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([12,25,42,80].map(id => testLineup(undefined,{id})));
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([12,25,42,80].map(id => testLineup(undefined,{id}))));
     vi.mocked(service.getFantasyLineup).mockImplementation(async id => testLineup(undefined,{id}));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />); await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
     fireEvent.change(screen.getByLabelText("Formação tática"),{target:{value:"4-4-2"}});
@@ -423,7 +416,7 @@ describe("Team navigation refinements", () => {
     expect(service.getFantasyLineup).toHaveBeenLastCalledWith(80); expect(screen.queryByRole("button",{name:/página de times/i})).toBeNull();
   });
   it("loads the real API ID and confirms before discarding unsaved edits", async () => {
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup(),testLineup(undefined,{id:80})]);
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup(),testLineup(undefined,{id:80})]));
     vi.mocked(service.getFantasyLineup).mockImplementation(async id => testLineup(undefined,{id}));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
@@ -435,32 +428,32 @@ describe("Team navigation refinements", () => {
     expect(screen.getByText("Salvar rascunho não confirma inscrição.")).toBeTruthy();
   });
   it("selects the duplicated draft and updates the combo after confirmed deletion", async () => {
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([12,25,80].map(id => testLineup(undefined,{id})));
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([12,25,80].map(id => testLineup(undefined,{id}))));
     vi.mocked(service.duplicateFantasyLineup).mockResolvedValue(testLineup(undefined,{id:99}));
     vi.mocked(service.deleteFantasyLineup).mockResolvedValue({id:99,excluida:true});
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
     fireEvent.click(screen.getByRole("button",{name:"Duplicar time"})); await screen.findByText("Rascunho #99 · v1");
-    expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("99"); expect(service.duplicateFantasyLineup).toHaveBeenCalledWith(12,1);
+    expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("99"); expect(service.duplicateFantasyLineup).toHaveBeenCalledWith(12,1,expect.objectContaining({chaveIdempotencia:expect.any(String)}));
     fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"})); await screen.findByText("Rascunho excluído. Time #12 selecionado.");
-    expect(screen.queryByRole("option",{name:"Time #99 · Rascunho"})).toBeNull(); expect(screen.getByRole("option",{name:"Time #80 · Rascunho"})).toBeTruthy();
+    expect(screen.queryByRole("option",{name:"Time #99 · Rascunho antigo"})).toBeNull(); expect(screen.getByRole("option",{name:"Time #80 · Rascunho antigo"})).toBeTruthy();
     expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("12");
     expect(service.deleteFantasyLineup).toHaveBeenCalledWith(99,1);
     expect(window.confirm).toHaveBeenCalledWith("Excluir definitivamente o Time #99 (rascunho)?");
   });
   it("keeps the selected draft visible if deletion fails", async () => {
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup()]);
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup()]));
     vi.mocked(service.deleteFantasyLineup).mockRejectedValueOnce(new Error("Falha temporária"));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
     fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"}));
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect(screen.getByRole("option",{name:"Time #12 · Rascunho"})).toBeTruthy();
+    expect(screen.getByRole("option",{name:"Time #12 · Rascunho antigo"})).toBeTruthy();
     expect(screen.getByText("Rascunho #12 · v1")).toBeTruthy();
   });
   it("does not offer deletion for a non-draft status", async () => {
     const nonDraft = testLineup(undefined,{status:"CONFIRMADA" as "RASCUNHO"});
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([nonDraft]);
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([nonDraft]));
     vi.mocked(service.getFantasyLineup).mockResolvedValue(nonDraft);
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
@@ -470,7 +463,7 @@ describe("Team navigation refinements", () => {
   });
   it("sends only one delete request while the first deletion is pending", async () => {
     let resolveDelete!: (value: { id:number; excluida:boolean }) => void;
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup()]);
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup()]));
     vi.mocked(service.deleteFantasyLineup).mockImplementation(() => new Promise(resolve => { resolveDelete = resolve; }));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
@@ -483,7 +476,7 @@ describe("Team navigation refinements", () => {
   it("restores captain and crown from the saved selection without role selects", async () => {
     const {context,selection} = completeTestSelection("4-3-3");
     vi.mocked(service.loadLineupContext).mockResolvedValue(context);
-    vi.mocked(service.listMyFantasyLineups).mockResolvedValue([testLineup(selection)]); vi.mocked(service.getFantasyLineup).mockResolvedValue(testLineup(selection));
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup(selection)])); vi.mocked(service.getFantasyLineup).mockResolvedValue(testLineup(selection));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />); await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
     expect(screen.queryByRole("combobox",{name:"Capitão"})).toBeNull(); expect(screen.queryByRole("combobox",{name:"Reserva Power"})).toBeNull();
     const bolt = screen.getByRole("img",{name:"Reserva Power"}); expect(bolt.tagName.toLowerCase()).toBe("svg");
@@ -492,6 +485,7 @@ describe("Team navigation refinements", () => {
     expect(screen.getByRole("button",{name:"Ações de Jogador 1"}).querySelector('[aria-label="Capitão"]')?.textContent).toBe("C");
   });
   it("new time keeps filters and confirms dirty state, without creating an anonymous or automatic draft", async () => {
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup()]));
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Goleiro 1"}))[0]);
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Jogador"}}); fireEvent.click(screen.getByRole("button",{name:"Comprar Jogador 1"}));

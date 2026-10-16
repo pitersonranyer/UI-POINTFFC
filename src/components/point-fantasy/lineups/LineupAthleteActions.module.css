@@ -1,0 +1,40 @@
+/* Own the entire dialog surface. Do not inherit the builder/picker button skin. */
+.athleteActions { box-sizing:border-box; width:min(360px,calc(100% - 24px)); max-height:calc(100dvh - 24px); padding:0; overflow:auto; border:1px solid #dce4de; border-top:2px solid #c9a84c; border-radius:16px; background:#fff; color:#213d2c; box-shadow:none; }
+.athleteActions::backdrop { background:#0c1c1675; }
+.athleteActions .actionContent { padding:16px; }
+.athleteActions .actionHeader { display:grid; grid-template-columns:48px minmax(0,1fr) 44px; align-items:center; gap:8px; margin:0 0 12px; padding:0; }
+.actionJersey { position:relative; display:flex; align-items:center; justify-content:center; width:48px; height:50px; }
+.actionCondition { position:absolute; bottom:1px; left:0; display:flex; width:15px; height:15px; }
+.actionIdentity { min-width:0; }
+.actionIdentity p { margin:0 0 4px; color:#6a796f; font-size:10px; line-height:1.4; font-weight:600; letter-spacing:.055em; text-transform:uppercase; }
+.actionName { display:flex; align-items:center; flex-wrap:wrap; gap:5px; }
+.actionName h2 { min-width:0; margin:0; font-size:17px; font-weight:750; line-height:1.25; overflow-wrap:anywhere; color:#1f3829; }
+.actionRoleSeal { display:inline-flex; flex:none; align-items:center; justify-content:center; width:18px; height:18px; border:1px solid #dfc97e; border-radius:50%; color:#886816; background:#faf4dc; }
+.actionRoleSeal>svg { width:11px; height:11px; fill:#ead17e; }
+.captainSeal { background:#f6d36b; color:#29250a; border-color:#e2be57; font-size:11px; font-weight:800; line-height:1; }
+.captainActionMark { box-sizing:border-box; display:inline-flex; flex:0 0 17px; align-items:center; justify-content:center; width:17px; height:17px; border:1px solid currentColor; border-radius:50%; font-size:11px; font-weight:800; line-height:1; }
+.activeAthleteRole .captainActionMark { background:#f6d36b; color:#29250a; border-color:#e2be57; }
+.athleteActions .actionClose { appearance:none; display:grid; place-items:center; align-self:start; box-sizing:border-box; width:44px; height:44px; min-height:44px; padding:0; margin:0; border:0; border-radius:50%; background:#fff; color:#6a796f; box-shadow:none; cursor:pointer; }
+.athleteActions .actionClose>svg { width:18px; height:18px; min-width:18px; max-width:18px; }
+.actionList { display:grid; gap:0; min-width:0; }
+.athleteActions .athleteActionRow { appearance:none; box-sizing:border-box; display:flex; align-items:center; justify-content:flex-start; gap:10px; width:100%; min-height:44px; padding:11px 10px; margin:0; border:0; border-radius:0; background:#fff; color:#254b34; box-shadow:none; font-family:inherit; font-size:13px; font-weight:600; line-height:20px; letter-spacing:normal; text-transform:none; text-align:left; cursor:pointer; }
+.athleteActions .athleteActionRow>svg { display:block; flex:0 0 17px; width:17px; height:17px; min-width:17px; max-width:17px; min-height:17px; max-height:17px; stroke-width:1.7; }
+.actionList>button:not(.specialAthleteAction),.athleteInfo { border-top:1px solid #edf1ed; }
+.athleteActions .specialAthleteAction { margin:0 0 6px; padding:10px 10px; border:1px solid #efeee6; border-radius:8px; background:#f7f6f2; }
+.athleteActions .activeAthleteRole { color:#896816; }
+.activeAthleteRole>svg { fill:#f1dfa1; }
+.athleteActions .removeAthlete { margin-top:5px; border-top:1px solid #e3e9e4; color:#a83b3b; background:#fff; }
+.athleteActions .athleteActionRow:hover { background:#f8faf8; }
+.athleteActions .specialAthleteAction:hover { background:#f4f2e9; }
+.athleteActions .actionClose:hover { background:#f5f7f5; }
+.athleteActions .athleteActionRow:focus-visible,.athleteActions .actionClose:focus-visible { outline:2px solid #ba9c40; outline-offset:1px; }
+.athleteInfo { min-width:0; }
+.athleteInfo summary { list-style:none; }
+.athleteInfo summary::-webkit-details-marker { display:none; }
+.athleteInfo dl { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px 12px; margin:0; padding:4px 10px 12px; font-size:12px; line-height:1.45; }
+.athleteInfo dt { color:#68776d; }
+.athleteInfo dd { margin:0; text-align:right; font-weight:600; overflow-wrap:anywhere; }
+@media(max-width:767px) {
+ .athleteActions { position:fixed; inset:auto 0 0; align-self:end; margin:0; width:100%; max-width:none; max-height:min(86dvh,680px); border-radius:16px 16px 0 0; }
+ .athleteActions .actionContent { padding:14px 14px calc(14px + env(safe-area-inset-bottom)); }
+}

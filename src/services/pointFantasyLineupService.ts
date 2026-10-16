@@ -1,7 +1,7 @@
 import { apiFetch, ApiError } from "./apiClient";
 import { loadFantasyPages } from "./pointFantasyService";
 import type { FantasyReference, PointFantasyAthlete, PointFantasyCatalog } from "@/types/pointFantasy";
-import type { CompetitionDetail, FantasyCompetition, FantasyLineup, LineupContext, LineupSelection } from "@/types/pointFantasyLineup";
+import type { CompetitionDetail, CreateLineupIdentity, FantasyCompetition, FantasyLineup, LineupContext, LineupSelection, MyFantasyLineups } from "@/types/pointFantasyLineup";
 
 const authenticated = { authenticated: true, preserveSessionOnForbidden: true };
 const base = "/point-fantasy";
@@ -19,11 +19,33 @@ export async function loadLineupContext(id: number, signal: AbortSignal): Promis
   if (!catalog || athletes.some(a => a.catalogoId !== catalog.id || !ids.has(a.clubeIdExterno))) throw new Error("Atletas incompatíveis com a competição. Recarregue os dados.");
   return { competition, catalog, athletes, clubs: clubs.items.filter(c => ids.has(c.id)), positions: positions.items };
 }
-export const listMyFantasyLineups = (competitionId: number, signal: AbortSignal) => loadFantasyPages<FantasyLineup>(`${base}/competicoes/${competitionId}/escalacoes/minhas`, signal, authenticated);
+export async function listMyFantasyLineups(competitionId: number, signal: AbortSignal): Promise<MyFantasyLineups> {
+  const items: FantasyLineup[] = [];
+  let snapshot: string | undefined;
+  for (let page = 1; ; page++) {
+    signal.throwIfAborted();
+    const result = await apiFetch<MyFantasyLineups & { total: number; page: number; limit: number }>(`${base}/competicoes/${competitionId}/escalacoes/minhas?page=${page}&limit=100`, { ...authenticated, signal });
+    signal.throwIfAborted();
+    const metadata = JSON.stringify([result?.total, result?.estadoIdentidade, result?.identidade, result?.rascunhosLegados]);
+    if (!result || !Array.isArray(result.items) || result.page !== page || !Number.isInteger(result.total) || result.total < 0
+      || !Number.isInteger(result.limit) || result.limit < 1 || result.limit > 100 || result.items.length > result.limit
+      || !["NOVO", "LEGADO", "DEFINIDA"].includes(result.estadoIdentidade)
+      || !Number.isInteger(result.rascunhosLegados) || result.rascunhosLegados < 0 || result.rascunhosLegados > result.total
+      || (result.estadoIdentidade === "DEFINIDA" ? !result.identidade || typeof result.identidade.nomeBase !== "string" || typeof result.identidade.identificadorPublico !== "string" || !Number.isInteger(result.identidade.ultimoSequencial) : result.identidade !== null)
+      || (snapshot !== undefined && snapshot !== metadata)) {
+      throw new Error("Seus times mudaram ou a resposta está incompleta. Recarregue os dados.");
+    }
+    snapshot = metadata;
+    items.push(...result.items);
+    if (items.some(item => item.competicaoId !== competitionId) || new Set(items.map(item => item.id)).size !== items.length || items.length > result.total) throw new Error("Resposta de times inconsistente. Recarregue os dados.");
+    if (items.length === result.total) return { items, estadoIdentidade:result.estadoIdentidade, identidade:result.identidade, rascunhosLegados:result.rascunhosLegados };
+    if (result.items.length !== result.limit) throw new Error("Página de times incompleta. Recarregue os dados.");
+  }
+}
 export const getFantasyLineup = (id: number, signal?: AbortSignal) => apiFetch<FantasyLineup>(`${base}/escalacoes/${id}`, { ...authenticated, signal });
-export const createFantasyLineup = (competitionId: number, selection: LineupSelection) => apiFetch<FantasyLineup>(`${base}/competicoes/${competitionId}/escalacoes`, { ...authenticated, method:"POST", body:JSON.stringify(selection) });
+export const createFantasyLineup = (competitionId: number, selection: LineupSelection, identity: CreateLineupIdentity) => apiFetch<FantasyLineup>(`${base}/competicoes/${competitionId}/escalacoes`, { ...authenticated, method:"POST", body:JSON.stringify({ ...selection, ...identity }), signal:AbortSignal.timeout(30000) });
 export const updateFantasyLineup = (id: number, versao: number, selection: LineupSelection) => apiFetch<FantasyLineup>(`${base}/escalacoes/${id}`, { ...authenticated, method:"PATCH", body:JSON.stringify({ ...selection, versao }) });
-export const duplicateFantasyLineup = (id: number, versao: number) => apiFetch<FantasyLineup>(`${base}/escalacoes/${id}/duplicar`, { ...authenticated, method:"POST", body:JSON.stringify({ versao }) });
+export const duplicateFantasyLineup = (id: number, versao: number, identity: CreateLineupIdentity) => apiFetch<FantasyLineup>(`${base}/escalacoes/${id}/duplicar`, { ...authenticated, method:"POST", body:JSON.stringify({ versao, ...identity }), signal:AbortSignal.timeout(30000) });
 export const deleteFantasyLineup = (id: number, versao: number) => apiFetch<{ id: number; excluida: boolean }>(`${base}/escalacoes/${id}?versao=${versao}`, { ...authenticated, method:"DELETE" });
 export function lineupError(error: unknown) {
   if (error instanceof ApiError) {

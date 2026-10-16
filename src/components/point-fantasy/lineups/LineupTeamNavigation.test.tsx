@@ -9,9 +9,9 @@ it("shows every real ID as a flat option and opens only the requested ID", () =>
   const onOpen = vi.fn(); const props = {drafts,currentId:null as number|null,busy:false,canCreate:true,canDuplicate:false,dirty:false,limit:8,onOpen,onNew:vi.fn(),onDuplicate:vi.fn()};
   render(<LineupTeamNavigation {...props} />);
   const select = screen.getByRole("combobox",{name:"Time em edição"});
-  expect(within(select).getAllByRole("option").map(b => b.textContent)).toEqual(["Novo time · não salvo","Time #12 · Rascunho","Time #18 · Rascunho","Time #22 · Rascunho","Time #55 · Rascunho","Time #90 · Rascunho","Time #105 · Rascunho","Time #700 · Rascunho"]);
+  expect(within(select).getAllByRole("option").map(b => b.textContent)).toEqual(["Novo time · não salvo","Time #12 · Rascunho antigo","Time #18 · Rascunho antigo","Time #22 · Rascunho antigo","Time #55 · Rascunho antigo","Time #90 · Rascunho antigo","Time #105 · Rascunho antigo","Time #700 · Rascunho antigo"]);
   fireEvent.change(select,{target:{value:"105"}}); expect(onOpen).toHaveBeenCalledWith(105);
-  expect(select.querySelector("optgroup")).toBeNull(); expect(screen.getAllByRole("button")).toHaveLength(1);
+  expect(select.querySelector("optgroup")).toBeNull(); expect(screen.getAllByRole("button")).toHaveLength(3);
   expect(screen.queryByText(/Página|Anterior|Próxima/)).toBeNull();
 });
 it("keeps the current team and stable IDs after edits and deletion", () => {
@@ -20,11 +20,11 @@ it("keeps the current team and stable IDs after edits and deletion", () => {
   expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("700");
   fireEvent.change(screen.getByRole("combobox",{name:"Time em edição"}),{target:{value:"700"}}); expect(props.onOpen).not.toHaveBeenCalled();
   rerender(<LineupTeamNavigation {...props} drafts={drafts.map(d => ({...d,versao:2}))} />);
-  expect(screen.getByRole("option",{name:"Time #700 · Rascunho"})).toBeTruthy();
+  expect(screen.getByRole("option",{name:"Time #700 · Rascunho antigo"})).toBeTruthy();
   rerender(<LineupTeamNavigation {...props} drafts={drafts.filter(d => d.id !== 12)} />);
   expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("700");
   rerender(<LineupTeamNavigation {...props} currentId={null} drafts={drafts.filter(d => d.id < 55)} />);
-  expect(screen.getByRole("option",{name:"Time #18 · Rascunho"})).toBeTruthy(); expect(screen.queryByRole("option",{name:"Time #700 · Rascunho"})).toBeNull();
+  expect(screen.getByRole("option",{name:"Time #18 · Rascunho antigo"})).toBeTruthy(); expect(screen.queryByRole("option",{name:"Time #700 · Rascunho antigo"})).toBeNull();
   expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("");
 });
 it("supports more than 30 drafts with a single native select and no visual paging", () => {
@@ -32,7 +32,7 @@ it("supports more than 30 drafts with a single native select and no visual pagin
   render(<LineupTeamNavigation drafts={many} currentId={134} busy={false} canCreate canDuplicate dirty={false} onOpen={onOpen} onNew={vi.fn()} onDuplicate={vi.fn()} />);
   const select = screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement;
   expect(select.options).toHaveLength(36); expect(select.value).toBe("134"); expect(select.multiple).toBe(false);
-  expect(select.querySelector("optgroup")).toBeNull(); expect(screen.getAllByRole("button")).toHaveLength(1);
+  expect(select.querySelector("optgroup")).toBeNull(); expect(screen.getAllByRole("button")).toHaveLength(4);
   fireEvent.change(select,{target:{value:"130"}}); expect(onOpen).toHaveBeenCalledWith(130);
 });
 it("disables writes and navigation while busy and offers explicit new time action", () => {
@@ -57,6 +57,6 @@ it("offers duplication only for a clean saved team and routes the action once", 
 it("shows actual team count and disables creation when the API limit is reached", () => {
   const props = {drafts,currentId:null as number|null,busy:false,canCreate:false,canDuplicate:false,dirty:false,limit:7,onOpen:vi.fn(),onNew:vi.fn(),onDuplicate:vi.fn()};
   render(<LineupTeamNavigation {...props} />);
-  expect(screen.getByText("7 times em rascunho · limite 7/7")).toBeTruthy();
+  expect(screen.getByText("7/7 times")).toBeTruthy();
   expect((screen.getByRole("button",{name:"+ Novo time"}) as HTMLButtonElement).disabled).toBe(true);
 });

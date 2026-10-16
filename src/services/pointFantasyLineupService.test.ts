@@ -2,28 +2,43 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiFetch, ApiError } from "./apiClient";
 import { createFantasyLineup, deleteFantasyLineup, duplicateFantasyLineup, getFantasyLineup, lineupError, listMyFantasyLineups, loadLineupContext, updateFantasyLineup } from "./pointFantasyLineupService";
 import { emptySelection } from "@/components/point-fantasy/lineups/lineupPresentation";
-import { testContext, testLineup } from "@/components/point-fantasy/lineups/lineupTestFixtures";
+import { testContext, testLineup, testMyLineups } from "@/components/point-fantasy/lineups/lineupTestFixtures";
 vi.mock("./apiClient", async original => ({ ...await original<typeof import("./apiClient")>(), apiFetch:vi.fn() }));
 beforeEach(() => { vi.mocked(apiFetch).mockReset(); });
 describe("Fantasy lineup HTTP contracts", () => {
   it("creates incomplete drafts with internal IDs and no owner", async () => {
     vi.mocked(apiFetch).mockResolvedValue(testLineup());
-    await createFantasyLineup(8, { ...emptySelection(), titulares:[1] });
+    await createFantasyLineup(8, { ...emptySelection(), titulares:[1] }, {nomeBase:"Meu Time", chaveIdempotencia:"test-create"});
     expect(apiFetch).toHaveBeenCalledWith("/point-fantasy/competicoes/8/escalacoes", expect.objectContaining({ authenticated:true, method:"POST" }));
-    expect(JSON.parse(vi.mocked(apiFetch).mock.calls[0][1]!.body as string)).toEqual({ ...emptySelection(), titulares:[1] });
+    expect(JSON.parse(vi.mocked(apiFetch).mock.calls[0][1]!.body as string)).toEqual({ ...emptySelection(), titulares:[1], nomeBase:"Meu Time", chaveIdempotencia:"test-create" });
   });
   it("sends current version on update, duplicate and delete", async () => {
     vi.mocked(apiFetch).mockResolvedValue(testLineup());
-    await updateFantasyLineup(12, 4, emptySelection()); await duplicateFantasyLineup(12, 5); await deleteFantasyLineup(12, 6); await getFantasyLineup(12);
+    await updateFantasyLineup(12, 4, emptySelection()); await duplicateFantasyLineup(12, 5, {chaveIdempotencia:"test-copy"}); await deleteFantasyLineup(12, 6); await getFantasyLineup(12);
     expect(apiFetch).toHaveBeenNthCalledWith(1,"/point-fantasy/escalacoes/12",expect.objectContaining({ method:"PATCH",body:JSON.stringify({ ...emptySelection(), versao:4 }) }));
-    expect(apiFetch).toHaveBeenNthCalledWith(2,"/point-fantasy/escalacoes/12/duplicar",expect.objectContaining({ method:"POST",body:'{"versao":5}' }));
+    expect(apiFetch).toHaveBeenNthCalledWith(2,"/point-fantasy/escalacoes/12/duplicar",expect.objectContaining({ method:"POST",body:'{"versao":5,"chaveIdempotencia":"test-copy"}' }));
     expect(apiFetch).toHaveBeenNthCalledWith(3,"/point-fantasy/escalacoes/12?versao=6",expect.objectContaining({ method:"DELETE" }));
     for (const [, options] of vi.mocked(apiFetch).mock.calls) expect(options?.authenticated).toBe(true);
   });
   it("paginates own drafts with authentication", async () => {
-    vi.mocked(apiFetch).mockResolvedValueOnce({ items:[testLineup()],total:2,page:1,limit:1 }).mockResolvedValueOnce({ items:[testLineup(undefined,{ id:13 })],total:2,page:2,limit:1 });
-    expect(await listMyFantasyLineups(8,new AbortController().signal)).toHaveLength(2);
+    vi.mocked(apiFetch).mockResolvedValueOnce({ ...testMyLineups([testLineup()]),rascunhosLegados:2,total:2,page:1,limit:1 }).mockResolvedValueOnce({ ...testMyLineups([testLineup(undefined,{ id:13 })]),rascunhosLegados:2,total:2,page:2,limit:1 });
+    const result = await listMyFantasyLineups(8,new AbortController().signal);
+    expect(result.items).toHaveLength(2); expect(result.estadoIdentidade).toBe("DEFINIDA"); expect(result.rascunhosLegados).toBe(2);
     expect(apiFetch).toHaveBeenLastCalledWith("/point-fantasy/competicoes/8/escalacoes/minhas?page=2&limit=100", expect.objectContaining({ authenticated:true, preserveSessionOnForbidden:true }));
+  });
+  it("preserves a defined identity with no drafts", async () => {
+    vi.mocked(apiFetch).mockResolvedValue({...testMyLineups(),total:0,page:1,limit:100});
+    const result=await listMyFantasyLineups(8,new AbortController().signal);
+    expect(result.estadoIdentidade).toBe("DEFINIDA"); expect(result.identidade?.nomeBase).toBe("Tropa do Mago"); expect(result.items).toEqual([]);
+  });
+  it("rejects identity changes across pages instead of mixing snapshots", async () => {
+    vi.mocked(apiFetch).mockResolvedValueOnce({...testMyLineups([testLineup()]),rascunhosLegados:2,total:2,page:1,limit:1})
+      .mockResolvedValueOnce({...testMyLineups([testLineup(undefined,{id:13})]),rascunhosLegados:2,total:2,page:2,limit:1,identidade:{nomeBase:"Outro",identificadorPublico:"ABC2345",ultimoSequencial:2}});
+    await expect(listMyFantasyLineups(8,new AbortController().signal)).rejects.toThrow("mudaram");
+  });
+  it("does not infer a new identity from an old response without metadata", async () => {
+    vi.mocked(apiFetch).mockResolvedValue({items:[],total:0,page:1,limit:100});
+    await expect(listMyFantasyLineups(8,new AbortController().signal)).rejects.toThrow("incompleta");
   });
   it("loads all eligible athletes and rejects wrong clubs/catalogs", async () => {
     const c = testContext();

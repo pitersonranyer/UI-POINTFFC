@@ -16,10 +16,19 @@ export interface LineupSelection {
   capitaoAtletaId: number | null; reservaMagoAtletaId: number | null;
 }
 export interface FantasyLineup extends LineupSelection {
+  nomePublico: string | null; sequencial: number | null; legado: boolean; identidade: FantasyTeamIdentity | null;
   id: number; competicaoId: number; status: "RASCUNHO"; versao: number; criadoEm: string; atualizadoEm: string;
   atletas: { catalogoAtletaId: number; papel: "TITULAR" | "TECNICO" | "RESERVA"; atleta: PointFantasyAthlete }[];
   validacao: { completa: boolean; pendencias: string[] };
 }
+export interface FantasyTeamIdentity {
+  nomeBase: string; identificadorPublico: string; ultimoSequencial: number;
+}
+export interface MyFantasyLineups {
+  items: FantasyLineup[]; estadoIdentidade: "NOVO" | "LEGADO" | "DEFINIDA";
+  identidade: FantasyTeamIdentity | null; rascunhosLegados: number;
+}
+export interface CreateLineupIdentity { nomeBase?: string; chaveIdempotencia: string }
 export interface LineupContext {
   competition: CompetitionDetail; catalog: PointFantasyCatalog; athletes: PointFantasyAthlete[];
   clubs: FantasyReference[]; positions: FantasyReference[];

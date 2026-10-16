@@ -31,23 +31,13 @@
 .drafts h3,.benchSection h3 { margin:0 0 12px; font-size:1rem; }
 .benchSection h3 small { color:#627066; font-size:.72rem; font-weight:500; }
 .actions,.toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
-.lineupControls { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(200px,.8fr); align-items:stretch; gap:7px; }
+.lineupControls { display:grid; grid-template-columns:minmax(0,1fr); align-items:stretch; gap:7px; }
 .toolbar { justify-content:flex-start; padding:6px 9px; border:1px solid #d7e1d9; border-radius:10px; background:#f8faf8; }
 .toolbar label { min-width:110px; flex:1; flex-direction:row; align-items:center; gap:8px; }
 .toolbar label select { flex:1; }
 .toolbar strong { display:block; flex:none; font-size:.85rem; white-space:nowrap; }
 .toolbar .draftStatus { padding:5px 8px; border-radius:999px; background:#edf4ee; color:#405c48; font-size:.68rem; font-weight:700; white-space:nowrap; }
 .toolbar .primary { min-height:38px; padding:7px 10px; white-space:nowrap; }
-.teamIdentity { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px 7px; padding:8px 10px; border:1px solid #d7e1d9; border-radius:10px; background:#fff; }
-.identityHeading { display:flex; align-items:center; gap:5px; grid-column:1/-1; }
-.identityHeading label { color:#42574a; font-size:.69rem; }
-.builder .infoButton { display:grid; place-items:center; width:44px; min-height:44px; padding:0; border-radius:50%; font-size:.72rem; }
-.teamIdentity input { min-height:36px; padding:6px 9px; font-size:.78rem; }
-.namePreview { color:#244d32; font-size:.72rem; font-weight:750; white-space:nowrap; }
-.identityPublicHelp { grid-column:1/-1; display:flex; align-items:center; gap:5px; color:#65736a; font-size:.65rem; line-height:1.4; }
-.identityPublicHelp .infoButton { flex:none; }
-.identityHelp { grid-column:1/-1; margin:0; color:#65736a; font-size:.65rem; line-height:1.4; }
-.identityHelp { padding:7px; border-radius:7px; background:#f5f7f4; }
 .limitNotice { grid-column:1/-1; margin:0; padding:6px 9px; border-radius:7px; color:#72571a; background:#fff8e8; font-size:.68rem; }
 .teamCount { margin:7px 0 0; color:#59685e; font-size:.68rem; }
 .workspace { display:grid; gap:20px; align-items:start; }
@@ -67,25 +57,12 @@
 .emptyShirt { display:grid; place-items:center; width:42px; height:46px; border:1px dashed #d5e5d8; background:#102b2240; border-radius:10px; color:inherit; font-size:1.5rem; font-weight:400; }
 .roleBadge { position:absolute; top:0; right:2px; display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#f6d36b; color:#29250a; font-size:.7rem; font-weight:800; }
 .pickSlot .powerBolt { position:absolute; top:0; right:0; width:23px; height:24px; filter:drop-shadow(0 1px 1px #ffffffa0); }
-.teamNavigation { padding:12px; border:1px solid var(--line); border-radius:10px; background:white; }
-.teamPicker { display:grid; grid-template-columns:minmax(0,1fr) max-content; align-items:flex-end; gap:8px; }
-.teamPicker label,.teamPicker select { min-width:0; width:100%; }
-.teamPicker button { white-space:nowrap; }
+.teamNavigation { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:4px 0; }
 .reserveMeta { display:flex; flex-direction:column; align-items:center; gap:3px; max-width:100%; }
 .categoryMedal { display:block; flex:none; width:18px; height:23px; }
 .teamNavigation .note { margin:9px 0 0; }
 .roleSummary { display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px 12px; margin:0; font-size:.75rem; line-height:1.5; }
 .roleSummary dt { font-weight:700; }.roleSummary dd { margin:0; color:#536158; overflow-wrap:anywhere; }
-.athleteActions { width:min(360px,calc(100% - 24px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid #c8d3cb; border-top:3px solid #d4af37; border-radius:12px; color:#17271e; background:white; }
-.athleteActions::backdrop { background:#0c1c1675; }
-.actionContent { display:grid; gap:10px; padding:18px; }
-.actionContent header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:4px; }
-.actionContent h2 { margin:0; font-size:1rem; overflow-wrap:anywhere; }
-.actionContent>button { text-align:left; }
-.athleteInfo { border-top:1px solid #e2e9e3; padding-top:10px; font-size:.78rem; }
-.athleteInfo summary { min-height:36px; display:flex; align-items:center; color:#245c38; font-weight:700; cursor:pointer; }
-.athleteInfo dl { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 14px; margin:10px 0 0; line-height:1.45; }
-.athleteInfo dt { color:#56645b; }.athleteInfo dd { margin:0; text-align:right; font-weight:650; overflow-wrap:anywhere; }
 .coach { position:absolute; right:14px; bottom:14px; left:auto; width:clamp(100px,22%,140px); }
 .coach .slot { width:100%; }
 .benchSection { margin-top:10px; padding:12px 10px; }
@@ -185,15 +162,7 @@
   .toolbar strong { font-size:.77rem; }
   .toolbar .draftStatus { padding:4px 6px; font-size:.61rem; }
   .toolbar .primary { min-height:36px; padding:6px 8px; font-size:.68rem; }
-  .teamIdentity { padding:7px 8px; }
-  .teamIdentity input { min-height:34px; }
-  .namePreview { font-size:.66rem; }
-  .identityPublicHelp,.identityHelp { font-size:.62rem; }
   .teamNavigation { padding:8px; }
-  .teamPicker { grid-template-columns:minmax(0,1fr) max-content; gap:5px; }
-  .teamPicker label { font-size:.68rem; }
-  .teamPicker select { min-height:38px; padding:6px; font-size:.67rem; }
-  .teamPicker button { min-height:38px; padding:6px 8px; font-size:.67rem; }
   .teamCount { margin-top:5px; }
   .pitch { grid-template-rows:repeat(4,minmax(80px,auto)); row-gap:6px; padding:14px 5px 10px; min-height:408px; }
   .pitch .slot { width:calc((100% - 12px)/5); flex:0 1 calc((100% - 12px)/5); }
@@ -202,10 +171,6 @@
   .pitch .pickSlot strong { display:-webkit-box; width:100%; max-width:100%; padding:2px 3px; line-height:1.1; white-space:normal; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
   .benchSection { margin-top:8px; padding:12px 8px; }
   .bench { gap:8px 2px; }
-  .athleteActions { position:fixed; inset:auto 0 0; align-self:end; margin:0; width:100%; max-width:none; max-height:min(86dvh,680px); overflow-y:auto; padding-bottom:env(safe-area-inset-bottom); border-radius:16px 16px 0 0; }
-  .actionContent { gap:9px; padding:14px 16px calc(12px + env(safe-area-inset-bottom)); }
-  .actionContent header { position:sticky; top:-14px; z-index:1; padding:8px 0; background:#fff; }
-  .actionContent>button { min-height:46px; }
   .pickerList li { gap:7px; }
   .picker { padding:12px 12px calc(14px + env(safe-area-inset-bottom)); }
   .pickerHeader { top:-12px; gap:6px; }
@@ -216,3 +181,30 @@
   .saveActions>.primary { width:100%; min-height:46px; }
 }
 @media(max-width:360px) { .builder { width:calc(100% - 20px); }.pickSlot strong { font-size:.58rem; }.competitionHeadline { flex-wrap:wrap; }.competitionHeadline>div { flex:1 1 100%; }.competitionHeadline button { margin-left:auto; }.toolbar .draftStatus { flex:1; text-align:center; }.namePreview { white-space:normal; text-align:right; }.pickerList { margin-inline:-6px; }.pickerList li { gap:5px; }.matchup { grid-template-columns:minmax(60px,1fr) 76px minmax(60px,1fr); }.matchupClub { gap:3px!important; padding-inline:2px; }.matchupClub svg { width:17px; height:auto; } }
+
+.teamActions { display:flex; flex-wrap:wrap; gap:6px; }
+.teamActions button { min-height:44px; }
+.teamNavigation .teamActions button { padding:8px 10px; font-size:.75rem; }
+.pitch .coach .slot { width:100%; max-width:none; }
+.teamSwitcher { display:flex; align-items:center; flex:1 1 260px; min-width:0; gap:4px; }
+.teamSelect { flex:1; min-width:0; }
+.teamSelect select { width:100%; text-overflow:ellipsis; }
+.srOnly { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.teamNavigation .teamCount { margin:0; font-size:.7rem; }
+.teamNavigation .note { flex-basis:100%; margin:0; }
+.identityForm { display:grid; min-width:0; gap:10px; color:#244b35; }
+.identityForm label { font-size:.85rem; font-weight:700; }
+.identityForm input { box-sizing:border-box; width:100%; min-width:0; min-height:46px; padding:10px; border:1px solid #c8d3cb; border-radius:8px; font:inherit; }
+.identityForm p { margin:0; font-size:.8rem; line-height:1.5; overflow-wrap:anywhere; }
+.identityPreview { display:block; padding:10px; border-radius:8px; background:#edf4ee; font-size:.85rem; overflow-wrap:anywhere; }
+.identityFooter { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; margin-top:8px; }
+.identityFooter button { min-height:44px; padding:10px 12px; border:1px solid #c8d3cb; border-radius:8px; background:#edf4ee; color:#185f36; cursor:pointer; font:inherit; }
+.identityFooter .primary { background:#185f36; color:white; }
+
+.athleteVisual { position:relative; display:inline-flex; flex:none; align-items:center; justify-content:center; width:45px; height:46.8px; }
+.athleteVisual>svg { display:block; filter:drop-shadow(0 1px 2px #09231680); }
+.athleteCondition { position:absolute; bottom:8%; left:18%; display:flex; width:13px; height:13px; line-height:0; pointer-events:none; }
+.athleteVisual .athleteCondition svg { width:13px; height:13px; min-width:13px; max-width:13px; }
+.athleteVisual .roleBadge { top:-8px; left:calc(100% - 5px); right:auto; width:18px; height:18px; font-size:11px; line-height:1; }
+.athleteVisual .powerBolt { top:-8px; left:calc(100% - 5px); right:auto; width:18px; height:18px; }
+@media(min-width:900px) { .athleteVisual { width:53px; height:55.12px; } }

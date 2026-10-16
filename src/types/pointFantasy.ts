@@ -13,3 +13,6 @@ export interface FantasyCatalogData { athletes: PointFantasyAthlete[]; clubs: Fa
 export interface AthleteFilters { search: string; club: string; position: string; category: string; coaches: boolean }
 export const emptyAthleteFilters: AthleteFilters = { search: "", club: "", position: "", category: "", coaches: true };
 export const categoryNames: Record<number, string> = { 1: "Bronze", 2: "Prata", 3: "Ouro" };
+// Audited Cartola status dictionary in public/data/cartola-market.json.
+// Fantasy snapshots carry statusId; absent/unknown values are not status 6 (Nulo).
+export const capturedAthleteStatuses = { 2:"Dúvida", 3:"Suspenso", 5:"Contundido", 6:"Nulo", 7:"Provável" } as const;

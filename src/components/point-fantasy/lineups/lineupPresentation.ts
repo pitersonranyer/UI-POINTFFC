@@ -1,4 +1,5 @@
 import type { PointFantasyAthlete } from "@/types/pointFantasy";
+import { capturedAthleteStatuses } from "@/types/pointFantasy";
 import type { Formation, LineupContext, LineupPickerFilters, LineupPickerSession, LineupSelection, LineupSlot, LineupSlotPlacements } from "@/types/pointFantasyLineup";
 
 // Mirrors the audited 2A contract for preventive UI checks; server validation remains authoritative.
@@ -11,7 +12,7 @@ export const formationCounts: Record<Formation, Record<number, number>> = {
 export const positionLabels: Record<number, string> = { 1:"Goleiro", 2:"Lateral", 3:"Zagueiro", 4:"Meia", 5:"Atacante", 6:"Técnico" };
 // Verified against public/data/cartola-market.json status dictionary, not inferred from numbers.
 // Fantasy does not currently expose that dictionary. 6 means Nulo, not "Não joga".
-export const capturedStatuses: Record<number, string> = { 2:"Dúvida", 3:"Suspenso", 5:"Contundido", 6:"Nulo", 7:"Provável" };
+export const capturedStatuses: Record<number, string> = capturedAthleteStatuses;
 export const defaultStatuses = ["7", "2"];
 export const defaultPickerFilters = (): LineupPickerFilters => ({ search:"", clubs:null, categories:null, statuses:[...defaultStatuses], sort:"desc" });
 export function statusKey(status: number) { return Object.hasOwn(capturedStatuses, status) ? String(status) : "unknown"; }

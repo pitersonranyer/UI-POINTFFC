@@ -1,6 +1,6 @@
 // Synthetic fixtures exclusively for automated tests. Never imported by the real flow.
 import type { PointFantasyAthlete } from "@/types/pointFantasy";
-import type { FantasyLineup, Formation, LineupContext, LineupSelection } from "@/types/pointFantasyLineup";
+import type { FantasyLineup, Formation, LineupContext, LineupSelection, MyFantasyLineups } from "@/types/pointFantasyLineup";
 import { emptySelection, formationCounts, reserveCounts } from "./lineupPresentation";
 export const testAthlete = (id: number, posicaoId = 1, extra: Partial<PointFantasyAthlete> = {}): PointFantasyAthlete => ({ id, atletaIdExterno:10000 + id, catalogoId:9, clubeIdExterno:262, posicaoId, statusId:7, apelido:`Jogador ${id}`, categoriaId:posicaoId === 6 ? null : 2, pointcoins:posicaoId === 6 ? 10 : 20, precoCartola:"8.55", ...extra });
 export function testContext(): LineupContext {
@@ -12,7 +12,9 @@ export function testContext(): LineupContext {
     positions:[1,2,3,4,5,6].map(id => ({ id, dados:{ nome:String(id), abreviacao:String(id) } })),
   };
 }
-export const testLineup = (selection: LineupSelection = emptySelection(), extra: Partial<FantasyLineup> = {}): FantasyLineup => ({ ...selection, id:12, competicaoId:8, status:"RASCUNHO", versao:1, criadoEm:"", atualizadoEm:"", atletas:[], validacao:{ completa:false, pendencias:["Selecionar tecnico", "Selecionar capitao"] }, ...extra });
+export const testLineup = (selection: LineupSelection = emptySelection(), extra: Partial<FantasyLineup> = {}): FantasyLineup => ({ ...selection, id:12, competicaoId:8, status:"RASCUNHO", versao:1, nomePublico:null, sequencial:null, legado:true, identidade:null, criadoEm:"", atualizadoEm:"", atletas:[], validacao:{ completa:false, pendencias:["Selecionar tecnico", "Selecionar capitao"] }, ...extra });
+export const testIdentity = { nomeBase:"Tropa do Mago", identificadorPublico:"K7P42AB", ultimoSequencial:1 };
+export const testMyLineups = (items: FantasyLineup[] = [], extra: Partial<MyFantasyLineups> = {}): MyFantasyLineups => ({ items, estadoIdentidade:"DEFINIDA", identidade:testIdentity, rascunhosLegados:items.filter(item => item.legado).length, ...extra });
 export function completeTestSelection(formation: Formation) {
   const context = testContext(); const selection = { ...emptySelection(), formacao:formation };
   const athletes: PointFantasyAthlete[] = []; let id = 1;
