@@ -8,6 +8,8 @@ import { LineupPitch } from "./LineupPitch";
 import { LineupAthletePicker } from "./LineupAthletePicker";
 import { useLineupEditor } from "./useLineupEditor";
 import { LineupTeamNavigation } from "./LineupTeamNavigation";
+import { FreeRegistrationPanel } from "./FreeRegistrationPanel";
+import { FreeRegistrationDialog } from "./FreeRegistrationDialog";
 import { FirstLineupSaveDialog } from "./FirstLineupSaveDialog";
 import { formatMatchupDate, sortLineupMatchups } from "./lineupMatchups";
 import styles from "./LineupBuilder.module.css";
@@ -24,7 +26,9 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
   if (!context) return <div className={styles.empty} role="alert"><p>{editor.error}</p><button onClick={editor.retry}>Tentar novamente</button><button onClick={onBack}>Voltar às competições</button></div>;
   const reason = blockingReason(context, now);
   const blocked = !!reason || editor.serverBlocked || user?.status !== "ATIVO";
-  const disabled = busy || blocked || editor.conflict || editor.pendingCreation;
+  const registered = saved?.status === "INSCRITA";
+  const writeDisabled = busy || blocked || editor.conflict || editor.pendingCreation || editor.registrationLocked;
+  const disabled = writeDisabled || registered;
   const warnings = selectionWarnings(value, context.athletes);
   const competition = context.competition;
   const lockTimes = [...competition.partidas.map(m => Date.parse(m.inicioPrevisto)), ...(competition.fechamentoDefinitivoEm ? [Date.parse(competition.fechamentoDefinitivoEm)] : [])].filter(Number.isFinite);
@@ -34,9 +38,9 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
   const lineupLimit = competition.limiteEscalacoesUsuario;
   const atLineupLimit = lineupLimit !== null && editor.drafts.length >= lineupLimit;
   const showNavigation = editor.drafts.length > 0 || editor.identityState?.estadoIdentidade === "DEFINIDA";
-  function back() { if (!busy && !editor.pendingCreation && (!dirty || window.confirm("Descartar alterações não salvas e voltar às competições?"))) onBack(); }
+  function back() { if (!busy && !editor.pendingCreation && !editor.registrationLocked && (!dirty || window.confirm("Descartar alterações não salvas e voltar às competições?"))) onBack(); }
   return <div className={styles.editor}>
-    <button className={styles.back} type="button" disabled={busy || editor.pendingCreation} onClick={back}>← Competições</button>
+    <button className={styles.back} type="button" disabled={busy || editor.pendingCreation || editor.registrationLocked} onClick={back}>← Competições</button>
     <section className={styles.competitionSummary} aria-label="Competição selecionada">
       <div className={styles.competitionHeadline}><div><h2>{competition.nome}</h2><p>{competition.temporada} · Rodada {competition.rodada}</p></div><span className={styles.accessBadge}>{competition.tipoAcesso === "FREE" ? "Gratuita" : `Paga · ${Number(competition.valorInscricao).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}`}</span><button type="button" aria-expanded={detailsOpen} aria-controls="competition-details" onClick={() => setDetailsOpen(open => !open)}>{detailsOpen ? "Fechar" : "Detalhes"}</button></div>
       <div className={styles.competitionFacts}><span>{competition.partidas.length} {competition.partidas.length === 1 ? "confronto" : "confrontos"}</span><span>{context.athletes.length} atletas elegíveis</span><span>Bloqueio: {lockTime ? formatFantasyDate(lockTime) + " (Brasília)" : "Horário indisponível"}</span></div>
@@ -52,28 +56,30 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
     {editor.conflict && <div className={styles.alert}><p>Suas alterações locais foram preservadas. Recarregue a versão atual para continuar; o descarte exige confirmação.</p><button type="button" disabled={busy} onClick={() => void editor.reload()}>Recarregar versão atual</button></div>}
     {editor.notice && <p role="status" className={styles.notice}>{editor.notice}</p>}
     <div className={styles.lineupControls}>
-      {showNavigation && <LineupTeamNavigation drafts={editor.drafts} currentId={saved?.id ?? null} busy={busy || editor.pendingCreation} canCreate={!disabled && !atLineupLimit} canDuplicate={!disabled && !!saved && !dirty && !atLineupLimit} dirty={dirty} limit={lineupLimit} onOpen={id => void editor.openDraft(id)} onNew={editor.newDraft} onDuplicate={() => void editor.duplicate()} canDelete={!disabled && saved?.status === "RASCUNHO"} onDelete={() => void editor.remove()} />}
+      {showNavigation && <LineupTeamNavigation drafts={editor.drafts} currentId={saved?.id ?? null} readOnly={registered} busy={busy || editor.pendingCreation || editor.registrationLocked} canCreate={!writeDisabled && !atLineupLimit} canDuplicate={!disabled && !!saved && !dirty && !atLineupLimit} dirty={dirty} limit={lineupLimit} onOpen={id => void editor.openDraft(id)} onNew={editor.newDraft} onDuplicate={() => void editor.duplicate()} canDelete={!disabled && saved?.status === "RASCUNHO"} onDelete={() => void editor.remove()} />}
       {atLineupLimit && <p role="status" className={styles.limitNotice}>Limite de times da competição atingido ({editor.drafts.length}/{lineupLimit}).</p>}
+      <FreeRegistrationPanel context={context} lineups={editor.drafts} selected={editor.registrationIds} currentId={saved?.id ?? null} dirty={dirty} disabled={editor.serverBlocked || user?.status !== "ATIVO" || editor.pendingCreation || ((blocked || editor.conflict) && !editor.registrationRetry)} busy={busy} locked={editor.registrationLocked} refreshRequired={editor.registrationRefreshRequired} retry={editor.registrationRetry} error={editor.registrationReview ? "" : editor.registrationError} now={now} onToggle={editor.toggleRegistration} onReview={editor.reviewRegistration} />
       <div className={styles.toolbar}>
         <label>Formação<select aria-label="Formação tática" value={value.formacao} disabled={disabled} onChange={e => { editor.setSlot(null); editor.setValue({ ...value, formacao:e.target.value as Formation }); }}>{Object.keys(formationCounts).map(f => <option key={f}>{f}</option>)}</select></label>
         <strong className={styles.rosterValue}>PC$ {lineupValue(value, context.athletes)}</strong>
-        <span className={styles.draftStatus} role="status">{busy ? "Salvando…" : dirty ? "Alterações não salvas" : saved ? "Rascunho salvo" : "Novo rascunho"}</span>
+        <span className={styles.draftStatus} role="status">{busy ? "Atualizando…" : registered ? "Inscrita" : dirty ? "Alterações não salvas" : saved ? "Rascunho salvo" : "Novo rascunho"}</span>
       </div>
     </div>
     <div className={styles.workspace}><LineupPitch value={value} athletes={context.athletes} clubs={context.clubs} placements={editor.slotPlacements} disabled={disabled} onOpen={editor.openSlot} onRemove={slot => editor.setValue(replaceSlot(value, context.athletes, slot, null, editor.slotPlacements))} onCaptain={id => editor.setValue({ ...value, capitaoAtletaId:id })} onPowerReserve={id => editor.setValue({ ...value, reservaMagoAtletaId:id })} />
       <aside className={styles.summary} aria-label="Resumo da escalação">
-        <h3>{saved ? `Rascunho #${saved.id} · v${saved.versao}` : "Novo rascunho"}</h3>
+        <h3>{registered ? `Inscrita · ${saved.nomePublico ?? `Time #${saved.id}`}` : saved ? `Rascunho #${saved.id} · v${saved.versao}` : "Novo rascunho"}</h3>
         <p className={styles.note}>Titulares: {value.titulares.length}/11 · Técnico: {value.tecnico === null ? "pendente" : "selecionado"} · Reservas: {value.reservas.length}/5</p>
         <dl className={styles.roleSummary}><dt>Capitão</dt><dd aria-label="Capitão escolhido">{byId.get(value.capitaoAtletaId ?? -1)?.apelido ?? "Não definido"}</dd><dt>Reserva Power</dt><dd aria-label="Reserva Power escolhido">{byId.get(value.reservaMagoAtletaId ?? -1)?.apelido ?? "Não definido"}</dd></dl>
-        <p className={styles.note}>Toque em um titular para definir o capitão ou em um reserva para ativar o Reserva Power.</p>
+        {!registered && <p className={styles.note}>Toque em um titular para definir o capitão ou em um reserva para ativar o Reserva Power.</p>}
         {warnings.length > 0 && <div className={styles.alert}><strong>Ajustes antes de salvar</strong><ul>{warnings.map(w => <li key={w}>{w}</li>)}</ul><p>A formação mudou sem remover atletas. Use os controles de remoção para ajustar os excedentes.</p></div>}
-        {dirty || !saved ? <p className={styles.note}>Pendências serão conferidas ao salvar.</p> : saved.validacao.completa ? <p className={styles.notice}>Escalação completa — rascunho salvo</p> : <div><h4>Pendências do rascunho salvo</h4><ul className={styles.pending}>{saved.validacao.pendencias.map((p, i) => <li key={i}>{friendlyPending(p)}</li>)}</ul></div>}
-        <p className={styles.note}>Salvar rascunho não confirma inscrição.</p>
+        {registered ? <p className={styles.notice}>Inscrita{saved.confirmadaEm ? ` em ${formatFantasyDate(saved.confirmadaEm)} (Brasília)` : ""}</p> : dirty || !saved ? <p className={styles.note}>Pendências serão conferidas ao salvar.</p> : saved.validacao.completa ? <p className={styles.notice}>Escalação completa — rascunho salvo</p> : <div><h4>Pendências do rascunho salvo</h4><ul className={styles.pending}>{saved.validacao.pendencias.map((p, i) => <li key={i}>{friendlyPending(p)}</li>)}</ul></div>}
+        {!registered && <p className={styles.note}>Salvar rascunho não confirma inscrição.</p>}
       </aside>
     </div>
-    <div className={styles.saveActions}>
+    {!registered && <div className={styles.saveActions}>
       <button className={styles.primary} type="button" disabled={disabled || warnings.length > 0 || (!!saved && !dirty)} onClick={() => void editor.save()}>{busy ? "Salvando…" : "Salvar rascunho"}</button>
-    </div>
+    </div>}
+    {editor.registrationReview && <FreeRegistrationDialog competitionName={editor.registrationCompetitionName} teams={editor.registrationTeams} busy={busy} retry={editor.registrationRetry} uncertain={editor.registrationLocked} disabled={editor.serverBlocked || user?.status !== "ATIVO" || (blocked && !editor.registrationRetry)} error={editor.registrationError} onClose={editor.closeRegistration} onConfirm={() => void editor.confirmRegistration()} />}
     {editor.nameAction && <FirstLineupSaveDialog busy={busy} pending={editor.pendingCreation} conflict={editor.conflict} error={editor.error} onCancel={editor.cancelName} onSave={name => void editor.confirmName(name)} onRetry={() => void editor.retryCreation()} />}
     {editor.slot && !disabled && <LineupAthletePicker context={context} value={value} slot={editor.slot} mode={editor.slot.mode} filters={editor.pickerFilters} onFiltersChange={editor.setPickerFilters} onClose={() => editor.setSlot(null)} onSelect={athlete => editor.selectAthlete(athlete.id)} onSell={athlete => editor.sellAthlete(athlete.id)} />}
   </div>;

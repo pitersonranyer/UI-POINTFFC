@@ -452,12 +452,12 @@ describe("Team navigation refinements", () => {
     expect(screen.getByText("Rascunho #12 · v1")).toBeTruthy();
   });
   it("does not offer deletion for a non-draft status", async () => {
-    const nonDraft = testLineup(undefined,{status:"CONFIRMADA" as "RASCUNHO"});
+    const nonDraft = testLineup(undefined,{status:"INSCRITA"});
     vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([nonDraft]));
     vi.mocked(service.getFantasyLineup).mockResolvedValue(nonDraft);
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
-    await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
-    expect((screen.getByRole("button",{name:"Excluir rascunho"}) as HTMLButtonElement).disabled).toBe(true);
+    await chooseTeam(12); await screen.findByText("Inscrita · Time #12");
+    expect(screen.queryByRole("button",{name:"Excluir rascunho"})).toBeNull();
     expect(window.confirm).not.toHaveBeenCalled();
     expect(service.deleteFantasyLineup).not.toHaveBeenCalled();
   });

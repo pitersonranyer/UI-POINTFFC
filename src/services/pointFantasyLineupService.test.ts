@@ -1,11 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiFetch, ApiError } from "./apiClient";
-import { createFantasyLineup, deleteFantasyLineup, duplicateFantasyLineup, getFantasyLineup, lineupError, listMyFantasyLineups, loadLineupContext, updateFantasyLineup } from "./pointFantasyLineupService";
+import { confirmFreeFantasyLineups, createFantasyLineup, deleteFantasyLineup, duplicateFantasyLineup, getFantasyLineup, lineupError, listMyFantasyLineups, loadLineupContext, updateFantasyLineup } from "./pointFantasyLineupService";
 import { emptySelection } from "@/components/point-fantasy/lineups/lineupPresentation";
 import { testContext, testLineup, testMyLineups } from "@/components/point-fantasy/lineups/lineupTestFixtures";
 vi.mock("./apiClient", async original => ({ ...await original<typeof import("./apiClient")>(), apiFetch:vi.fn() }));
 beforeEach(() => { vi.mocked(apiFetch).mockReset(); });
 describe("Fantasy lineup HTTP contracts", () => {
+  const registrationRequest = {escalacaoIds:[12],chaveIdempotencia:"confirmacao-001"};
+  const registrationResult = {competicao:{id:8,nome:"Competição real",tipoAcesso:"FREE"},escalacoes:[{id:12,nomePublico:"Nome real K7P42AB 01",status:"INSCRITA",confirmadaEm:"2026-10-16T18:00:00Z"}],quantidadeConfirmada:1,valorTotal:"0.00",estado:"CONFIRMADA"};
+  it("registers with existing authentication, only IDs/key and a bounded timeout", async () => {
+    vi.mocked(apiFetch).mockResolvedValue(registrationResult);
+    expect(await confirmFreeFantasyLineups(8,registrationRequest)).toEqual(registrationResult);
+    expect(apiFetch).toHaveBeenCalledWith("/point-fantasy/competicoes/8/inscricoes",expect.objectContaining({authenticated:true,preserveSessionOnForbidden:true,method:"POST",body:JSON.stringify(registrationRequest),signal:expect.any(AbortSignal)}));
+  });
+  it.each([400,401,403,404,409,500])("preserves registration HTTP %i for reconciliation", async status => {
+    const error = new ApiError(status,"Falha do backend");
+    vi.mocked(apiFetch).mockRejectedValue(error);
+    await expect(confirmFreeFantasyLineups(8,registrationRequest)).rejects.toBe(error);
+  });
+  it.each([
+    {...registrationResult,valorTotal:"10.00"},
+    {...registrationResult,escalacoes:[]},
+    {...registrationResult,competicao:{...registrationResult.competicao,id:9}},
+    {...registrationResult,escalacoes:[{...registrationResult.escalacoes[0],id:99}]},
+    {...registrationResult,escalacoes:[{...registrationResult.escalacoes[0],confirmadaEm:"invalid"}]},
+  ])("rejects unknown receipts instead of inventing confirmed teams", async result => {
+    vi.mocked(apiFetch).mockResolvedValue(result);
+    await expect(confirmFreeFantasyLineups(8,registrationRequest)).rejects.toThrow("confirmação válida");
+  });
   it("creates incomplete drafts with internal IDs and no owner", async () => {
     vi.mocked(apiFetch).mockResolvedValue(testLineup());
     await createFantasyLineup(8, { ...emptySelection(), titulares:[1] }, {nomeBase:"Meu Time", chaveIdempotencia:"test-create"});

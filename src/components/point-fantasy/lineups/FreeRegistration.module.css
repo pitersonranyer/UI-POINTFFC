@@ -1,0 +1,22 @@
+.registration { min-width:0; padding:3px 0; }
+.registration summary { display:flex; flex-wrap:wrap; align-items:center; gap:8px; min-height:44px; color:#245238; font-size:.8rem; font-weight:700; cursor:pointer; }
+.registration summary span { padding:3px 7px; border-radius:20px; background:#f2f5ed; color:#6b642c; font-size:.68rem; }
+.teamList { max-height:220px; overflow:auto; padding:0 2px; }
+.registration .team { display:flex; flex-direction:row; align-items:center; gap:9px; min-height:48px; margin:0; padding:6px 0; border-top:1px solid #e7ece7; cursor:pointer; }
+.team input { width:18px; height:18px; min-height:18px; flex:none; margin:0; accent-color:#22613c; }
+.team>span { min-width:0; }
+.team strong,.team small { display:block; overflow-wrap:anywhere; }
+.team strong { font-size:.76rem; color:#244732; }
+.team small { margin-top:3px; font-size:.67rem; font-weight:400; color:#6c776e; }
+.registration .review,.actions button { min-height:44px; padding:9px 12px; border:1px solid #cfdace; border-radius:8px; font:inherit; font-size:.8rem; font-weight:700; background:#fff; color:#245238; cursor:pointer; }
+.registration .review { margin-top:7px; }
+.note { margin:6px 0; color:#68776b; font-size:.73rem; line-height:1.45; }
+.error { padding:8px 10px; border-radius:7px; background:#fff3ef; color:#97372c; font-size:.76rem; line-height:1.45; }
+.reviewBody { min-width:0; }
+.competition { margin:0 0 10px; font-weight:700; color:#214a32; overflow-wrap:anywhere; }
+.reviewTeams { max-height:180px; overflow:auto; padding:0; margin:0; list-style:none; }
+.reviewTeams li { padding:8px 0; border-bottom:1px solid #e7ece7; font-size:.82rem; overflow-wrap:anywhere; }
+.totals { display:grid; grid-template-columns:1fr auto; gap:8px; margin:14px 0; font-size:.85rem; }
+.totals dd { margin:0; font-weight:700; color:#214a32; }
+.actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; margin-top:14px; }
+.actions .confirm { background:#205c38; color:#fff; border-color:#205c38; }

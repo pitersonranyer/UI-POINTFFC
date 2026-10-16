@@ -1,7 +1,7 @@
 import { apiFetch, ApiError } from "./apiClient";
 import { loadFantasyPages } from "./pointFantasyService";
 import type { FantasyReference, PointFantasyAthlete, PointFantasyCatalog } from "@/types/pointFantasy";
-import type { CompetitionDetail, CreateLineupIdentity, FantasyCompetition, FantasyLineup, LineupContext, LineupSelection, MyFantasyLineups } from "@/types/pointFantasyLineup";
+import type { CompetitionDetail, CreateLineupIdentity, FantasyCompetition, FantasyLineup, FreeLineupRegistrationRequest, FreeLineupRegistrationResult, LineupContext, LineupSelection, MyFantasyLineups } from "@/types/pointFantasyLineup";
 
 const authenticated = { authenticated: true, preserveSessionOnForbidden: true };
 const base = "/point-fantasy";
@@ -47,6 +47,18 @@ export const createFantasyLineup = (competitionId: number, selection: LineupSele
 export const updateFantasyLineup = (id: number, versao: number, selection: LineupSelection) => apiFetch<FantasyLineup>(`${base}/escalacoes/${id}`, { ...authenticated, method:"PATCH", body:JSON.stringify({ ...selection, versao }) });
 export const duplicateFantasyLineup = (id: number, versao: number, identity: CreateLineupIdentity) => apiFetch<FantasyLineup>(`${base}/escalacoes/${id}/duplicar`, { ...authenticated, method:"POST", body:JSON.stringify({ versao, ...identity }), signal:AbortSignal.timeout(30000) });
 export const deleteFantasyLineup = (id: number, versao: number) => apiFetch<{ id: number; excluida: boolean }>(`${base}/escalacoes/${id}?versao=${versao}`, { ...authenticated, method:"DELETE" });
+export async function confirmFreeFantasyLineups(competitionId: number, request: FreeLineupRegistrationRequest): Promise<FreeLineupRegistrationResult> {
+  const result = await apiFetch<FreeLineupRegistrationResult>(`${base}/competicoes/${competitionId}/inscricoes`, { ...authenticated, method:"POST", body:JSON.stringify(request), signal:AbortSignal.timeout(30000) });
+  const ids = Array.isArray(result?.escalacoes) ? result.escalacoes.map(item => item.id) : [];
+  if (!result || result.estado !== "CONFIRMADA" || result.valorTotal !== "0.00" || result.competicao?.id !== competitionId || result.competicao.tipoAcesso !== "FREE"
+    || typeof result.competicao.nome !== "string" || !Array.isArray(result.escalacoes) || result.quantidadeConfirmada !== request.escalacaoIds.length
+    || ids.length !== request.escalacaoIds.length || new Set(ids).size !== ids.length || ids.some(id => !request.escalacaoIds.includes(id))
+    || result.escalacoes.some(item => item.status !== "INSCRITA" || (item.nomePublico !== null && typeof item.nomePublico !== "string") || typeof item.confirmadaEm !== "string" || !Number.isFinite(Date.parse(item.confirmadaEm)))) {
+    // The server may have committed. The caller must reconcile and replay this same key.
+    throw new Error("O servidor não retornou uma confirmação válida. Atualize os times antes de tentar novamente.");
+  }
+  return result;
+}
 export function lineupError(error: unknown) {
   if (error instanceof ApiError) {
     const labels: Record<number, string> = { 400:"Seleção inválida", 401:"Entre novamente para continuar", 403:"Sua conta está bloqueada ou inativa", 404:"Escalação inexistente ou sem acesso", 409:"A escalação mudou ou a edição está bloqueada" };
