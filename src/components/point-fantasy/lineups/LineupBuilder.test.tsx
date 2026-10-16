@@ -314,7 +314,7 @@ describe("Team navigation refinements", () => {
     vi.mocked(service.deleteFantasyLineup).mockResolvedValue({id:99,excluida:true});
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
-    fireEvent.click(screen.getByRole("button",{name:"Duplicar rascunho salvo"})); await screen.findByText("Rascunho #99 · v1");
+    fireEvent.click(screen.getByRole("button",{name:"Criar variação"})); await screen.findByText("Rascunho #99 · v1");
     expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("99"); expect(service.duplicateFantasyLineup).toHaveBeenCalledWith(12,1);
     fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"})); await screen.findByText("Rascunho excluído.");
     expect(screen.queryByRole("option",{name:"Time 99"})).toBeNull(); expect(screen.getByRole("option",{name:"Time 80"})).toBeTruthy();
