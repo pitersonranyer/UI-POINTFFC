@@ -18,6 +18,6 @@ export function LineupTeamNavigation({ drafts, currentId, busy, canCreate, canDu
       : <button type="button" disabled={busy || !canCreate} onClick={onNew}>+ Novo time</button>}
     </div>
     {currentId !== null && dirty && <p className={styles.note}>Salve as alterações antes de criar uma variação.</p>}
-    <p className={styles.note}>{ordered.length ? `${ordered.length} rascunhos. ` : "Nenhum time salvo. "}Completar um rascunho não confirma inscrição.</p>
+    <p className={styles.note}>{ordered.length} {ordered.length === 1 ? "time salvo" : "times salvos"}</p>
   </nav>;
 }

@@ -5,7 +5,9 @@ import type { PointFantasyAthlete } from "@/types/pointFantasy";
 import { ClubJersey } from "../uniforms/ClubJersey";
 import { ClubShield } from "../uniforms/ClubShield";
 import { getClubUniform } from "../uniforms/clubUniforms";
+import { AthleteStatusIndicator } from "../athletes/AthleteStatusIndicator";
 import { capturedStatuses, defaultPickerFilters, defaultStatuses, positionalAthletes, positionLabels, reserveCeiling, selectedIds, slotCapacity, statusKey, statusLabel } from "./lineupPresentation";
+import { formatMatchupDate, sortLineupMatchups } from "./lineupMatchups";
 import styles from "./LineupBuilder.module.css";
 
 const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
@@ -39,6 +41,9 @@ export function LineupAthletePicker({ context, value, slot, mode = "fill", filte
   const used = useMemo(() => new Set(selectedIds(value)), [value]);
   const eligibleClubIds = new Set(context.athletes.filter(a => a.posicaoId === slot.position).map(a => a.clubeIdExterno));
   const eligibleClubs = context.clubs.filter(c => eligibleClubIds.has(c.id));
+  const matchups = sortLineupMatchups(context.competition.partidas ?? [], context.clubs);
+  const matchupClubIds = new Set(matchups.flatMap(m => [m.home?.id, m.away?.id]).filter((id): id is number => id !== undefined));
+  const filterableClubIds = [...new Set([...eligibleClubs.map(c => c.id), ...matchupClubIds])];
   const allStatuses = [...Object.keys(capturedStatuses), "unknown"];
   const filtered = context.athletes.filter(a => a.posicaoId === slot.position
     && normalize(a.apelido).includes(normalize(search.trim()))
@@ -51,7 +56,7 @@ export function LineupAthletePicker({ context, value, slot, mode = "fill", filte
   const safePage = Math.min(page, totalPages);
   function toggleStatus(id: string) { updateFilters({ statuses:statuses.includes(id) ? statuses.filter(s => s !== id) : [...statuses, id] }); }
   function toggleClub(id: number) {
-    const current = clubs === null ? eligibleClubs.map(c => String(c.id)) : clubs;
+    const current = clubs === null ? filterableClubIds.map(String) : clubs;
     updateFilters({ clubs:current.includes(String(id)) ? current.filter(value => value !== String(id)) : [...current, String(id)] });
   }
   function toggleCategory(id: string) {
@@ -89,7 +94,21 @@ export function LineupAthletePicker({ context, value, slot, mode = "fill", filte
           <div className={styles.filterActions}><button type="button" onClick={() => updateFilters({ statuses:allStatuses })}>Todos</button><button type="button" onClick={() => updateFilters({ statuses:[] })}>Limpar</button><button type="button" onClick={() => updateFilters({ statuses:[...defaultStatuses] })}>Restaurar padrão</button></div>
         </fieldset>
         <fieldset className={styles.filterGroup}><legend>Clubes</legend>
-          <div className={styles.filterChoices}>{eligibleClubs.map(c => <label key={c.id}><input type="checkbox" checked={clubs === null || clubs.includes(String(c.id))} onChange={() => toggleClub(c.id)} />{getClubUniform(c.id).name === "Clube não configurado" ? c.dados.nome : getClubUniform(c.id).name}</label>)}</div>
+          {matchups.length > 0 && <div className={styles.matchups} role="group" aria-label="Confrontos da competição">
+            {matchups.map(({ match, home, away }) => <div className={styles.matchup} key={match.id}>
+              {home ? <label className={styles.matchupClub} data-selected={clubs === null || clubs.includes(String(home.id)) || undefined}>
+                <input type="checkbox" checked={clubs === null || clubs.includes(String(home.id))} onChange={() => toggleClub(home.id)} aria-label={getClubUniform(home.id).name === "Clube não configurado" ? home.dados.nome : getClubUniform(home.id).name} />
+                <ClubShield clubId={home.id} size={21} decorative /><strong>{home.dados.abreviacao || getClubUniform(home.id).abbreviation}</strong>
+              </label> : <span className={styles.matchupUnavailable}>Mandante indisponível</span>}
+              <span className={styles.matchupTime}>{formatMatchupDate(match.inicioPrevisto)}<span aria-hidden="true">×</span></span>
+              {away ? <label className={styles.matchupClub} data-selected={clubs === null || clubs.includes(String(away.id)) || undefined}>
+                <input type="checkbox" checked={clubs === null || clubs.includes(String(away.id))} onChange={() => toggleClub(away.id)} aria-label={getClubUniform(away.id).name === "Clube não configurado" ? away.dados.nome : getClubUniform(away.id).name} />
+                <ClubShield clubId={away.id} size={21} decorative /><strong>{away.dados.abreviacao || getClubUniform(away.id).abbreviation}</strong>
+              </label> : <span className={styles.matchupUnavailable}>Visitante indisponível</span>}
+            </div>)}
+          </div>}
+          {(!matchups.length || !matchups.some(m => m.home && m.away)) && <div className={styles.filterChoices} aria-label="Clubes disponíveis">{eligibleClubs.map(c => <label key={c.id}><input type="checkbox" checked={clubs === null || clubs.includes(String(c.id))} onChange={() => toggleClub(c.id)} />{getClubUniform(c.id).name === "Clube não configurado" ? c.dados.nome : getClubUniform(c.id).name}</label>)}</div>}
+          {matchups.length > 0 && matchups.some(m => m.home && m.away) && eligibleClubs.some(c => !matchupClubIds.has(c.id)) && <div className={styles.filterChoices} aria-label="Outros clubes elegíveis">{eligibleClubs.filter(c => !matchupClubIds.has(c.id)).map(c => <label key={c.id}><input type="checkbox" checked={clubs === null || clubs.includes(String(c.id))} onChange={() => toggleClub(c.id)} />{c.dados.nome}</label>)}</div>}
           <div className={styles.filterActions}><button type="button" onClick={() => updateFilters({ clubs:null })}>Todos</button><button type="button" onClick={() => updateFilters({ clubs:[] })}>Limpar</button></div>
         </fieldset>
         <fieldset className={styles.filterGroup} disabled={slot.position === 6}><legend>Categoria</legend>
@@ -106,7 +125,7 @@ export function LineupAthletePicker({ context, value, slot, mode = "fill", filte
       const club = context.clubs.find(c => c.id === a.clubeIdExterno);
       return <li key={a.id} data-selected={selected || undefined}>
         <ClubJersey clubId={a.clubeIdExterno} size={46} decorative />
-        <div><strong>{a.apelido}</strong><span><ClubShield clubId={a.clubeIdExterno} size={16} decorative />{club?.dados.abreviacao ?? "Clube"} · {positionLabels[a.posicaoId]}</span><small>{a.posicaoId !== 6 && `${a.categoriaId ? categoryNames[a.categoriaId] ?? "Categoria inválida" : "Sem categoria"} · `}PC$ {a.pointcoins}</small><span className={styles.situation}>{statusLabel(a.statusId)}</span>{selected && <small className={styles.selectedLabel}>Escalado</small>}{tooHigh && <small className={styles.invalid}>Categoria superior à permitida para este reserva</small>}</div>
+        <div><strong>{a.apelido}</strong><span><ClubShield clubId={a.clubeIdExterno} size={16} decorative />{club?.dados.abreviacao ?? "Clube"} · {positionLabels[a.posicaoId]}</span><small>{a.posicaoId !== 6 && `${a.categoriaId ? categoryNames[a.categoriaId] ?? "Categoria inválida" : "Sem categoria"} · `}PC$ {a.pointcoins}</small><span className={styles.situation}>{statusLabel(a.statusId)}</span>{(a.statusId === 3 || a.statusId === 5) && <span className={styles.statusIndicator}><AthleteStatusIndicator statusId={a.statusId} />{statusLabel(a.statusId)}</span>}{selected && <small className={styles.selectedLabel}>Escalado</small>}{tooHigh && <small className={styles.invalid}>Categoria superior à permitida para este reserva</small>}</div>
         {selected
           ? <button type="button" className={styles.sellButton} onClick={() => onSell(a)} aria-label={`Vender ${a.apelido}`}>Vender</button>
           : <button type="button" disabled={tooHigh || invalidCategory} onClick={e => {

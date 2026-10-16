@@ -45,10 +45,40 @@ describe("Pitch and formations", () => {
     expect(container.querySelectorAll('[aria-label="Capitão"]')).toHaveLength(1);
     expect(screen.getByRole("img",{name:"Reserva Power"})).toBeTruthy();
   });
+  it("keeps the competition details collapsed and places lineup controls before the pitch", async () => {
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
+    const section = await screen.findByRole("region",{name:"Competição selecionada"});
+    const details = within(section).getByRole("button",{name:"Detalhes"});
+    expect(details.getAttribute("aria-expanded")).toBe("false");
+    expect(within(section).queryByRole("heading",{name:"Confrontos e horários"})).toBeNull();
+    expect(within(section).getByText("1 partida")).toBeTruthy();
+    expect(within(section).getByText("85 atletas elegíveis")).toBeTruthy();
+    fireEvent.click(details);
+    expect(within(section).getByRole("heading",{name:"Confrontos e horários"})).toBeTruthy();
+    expect(within(section).getByText(/FLA × BOT/)).toBeTruthy();
+    expect(screen.getByRole("combobox",{name:"Formação tática"})).toBeTruthy();
+    expect(screen.getByRole("button",{name:"+ Novo time"})).toBeTruthy();
+    expect(section.compareDocumentPosition(screen.getByRole("region",{name:"Campinho 4-3-3"})) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
   it("opens position-specific slots using keyboard accessible buttons", () => {
     const onOpen = vi.fn(); render(<LineupPitch value={emptySelection()} athletes={[]} disabled={false} onOpen={onOpen} onRemove={vi.fn()} onCaptain={vi.fn()} onPowerReserve={vi.fn()} />);
     fireEvent.click(screen.getAllByRole("button",{ name:"Adicionar Goleiro 1" })[0]);
     expect(onOpen).toHaveBeenCalledWith({ role:"titulares",position:1,index:0 });
+  });
+  it("shows suspended and injured indicators without replacing captain or Reserva Power badges", () => {
+    const { context, selection } = completeTestSelection("4-3-3");
+    context.athletes[0].statusId = 3;
+    context.athletes[11].statusId = 5;
+    render(<LineupPitch value={selection} athletes={context.athletes} clubs={context.clubs} disabled={false} onOpen={vi.fn()} onRemove={vi.fn()} onCaptain={vi.fn()} onPowerReserve={vi.fn()} />);
+    expect(screen.getByRole("img",{name:"Suspenso"})).toBeTruthy();
+    expect(screen.getByRole("img",{name:"Contundido"})).toBeTruthy();
+    expect(screen.getByRole("img",{name:"Reserva Power"})).toBeTruthy();
+    expect(screen.getByRole("button",{name:"Ações de Jogador 1"}).querySelector('[aria-label="Capitão"]')).toBeTruthy();
+    fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 1"}));
+    expect(within(screen.getByRole("dialog")).getByRole("img",{name:"Suspenso"})).toBeTruthy();
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button",{name:"Fechar ações"}));
+    fireEvent.click(screen.getByRole("button",{name:/Ações de Jogador 12/}));
+    expect(within(screen.getByRole("dialog")).getByRole("img",{name:"Contundido"})).toBeTruthy();
   });
 });
 describe("Athlete picker", () => {
@@ -78,6 +108,43 @@ describe("Athlete picker", () => {
     const categoryGroup = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Categoria")!;
     fireEvent.click(within(categoryGroup).getByRole("button",{name:"Limpar"})); fireEvent.click(within(categoryGroup).getByRole("checkbox",{name:"Ouro"}));
     expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
+  });
+  it("shows status indicators only for catalog suspension and injury statuses", () => {
+    const c = testContext();
+    picker(c);
+    fireEvent.click(screen.getByRole("button",{name:"Filtros"}));
+    const situations = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Situação")!;
+    fireEvent.click(within(situations).getByRole("button",{name:"Todos"}));
+    expect(screen.getByRole("img",{name:"Suspenso"})).toBeTruthy();
+    expect(screen.queryByRole("img",{name:"Contundido"})).toBeNull();
+    expect(screen.getByRole("button",{name:"Comprar Sem situação"})).toBeTruthy();
+    expect(within(screen.getByText("Atleta Nulo").closest("li")!).queryByRole("img")).toBeNull();
+  });
+  it("selects each opponent independently from competition matchups", () => {
+    picker();
+    fireEvent.click(screen.getByRole("button",{name:"Filtros"}));
+    const clubGroup = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Clubes")!;
+    const home = within(clubGroup).getByRole("checkbox",{name:"Flamengo"}) as HTMLInputElement;
+    const away = within(clubGroup).getByRole("checkbox",{name:"Botafogo"}) as HTMLInputElement;
+    expect(within(clubGroup).getByRole("group",{name:"Confrontos da competição"})).toBeTruthy();
+    expect(home.checked).toBe(true); expect(away.checked).toBe(true);
+    fireEvent.click(away);
+    expect(home.checked).toBe(true); expect(away.checked).toBe(false);
+    fireEvent.click(away);
+    expect(home.checked).toBe(true); expect(away.checked).toBe(true);
+    fireEvent.click(within(clubGroup).getByRole("button",{name:"Limpar"}));
+    expect(home.checked).toBe(false); expect(away.checked).toBe(false);
+    fireEvent.click(within(clubGroup).getByRole("button",{name:"Todos"}));
+    expect(home.checked).toBe(true); expect(away.checked).toBe(true);
+  });
+  it("shows fallback club filtering and unavailable time for incomplete fixture data", () => {
+    const c = testContext();
+    c.competition.partidas = [{ ...c.competition.partidas[0], clubeVisitanteId:999, inicioPrevisto:"invalid-time" }];
+    picker(c);
+    fireEvent.click(screen.getByRole("button",{name:"Filtros"}));
+    const clubGroup = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Clubes")!;
+    expect(within(clubGroup).getByText("Horário indisponível")).toBeTruthy();
+    expect(within(clubGroup).getByRole("checkbox",{name:"Botafogo"})).toBeTruthy();
   });
   it("offers all, clear and default restore for situations, clubs and categories", () => {
     picker(); fireEvent.click(screen.getByRole("button",{name:"Filtros"}));
@@ -322,7 +389,7 @@ describe("Phase 2B.1 lineup UX", () => {
     expect(trigger.getAttribute("aria-haspopup")).toBe("dialog"); expect(trigger.getAttribute("aria-expanded")).toBe("true"); expect(screen.getAllByRole("dialog")).toHaveLength(1);
     fireEvent.click(screen.getByRole("dialog")); expect(screen.queryByRole("dialog")).toBeNull(); expect(document.activeElement).toBe(trigger);
     fireEvent.click(trigger); fireEvent.click(screen.getByRole("button",{name:"Trocar jogador"}));
-    expect(screen.getAllByRole("dialog")).toHaveLength(1); expect(screen.getByRole("heading",{name:"Escolher Lateral"})).toBeTruthy();
+    expect(screen.getAllByRole("dialog")).toHaveLength(1); expect(screen.getByRole("heading",{name:/Escolher lateral/i})).toBeTruthy();
   });
   it("keeps filters after removing an athlete and starts a fresh editor with defaults", async () => {
     await filledEditor(); fireEvent.click(screen.getByRole("button",{name:"Ações de Jogador 2"})); fireEvent.click(screen.getByRole("button",{name:"Trocar jogador"}));
@@ -354,7 +421,7 @@ describe("Team navigation refinements", () => {
     expect(service.getFantasyLineup).toHaveBeenCalledTimes(1); expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("12");
     await chooseTeam(80); await screen.findByText("Rascunho #80 · v1");
     expect(service.getFantasyLineup).toHaveBeenLastCalledWith(80); expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("80");
-    expect(screen.getByText(/Completar um rascunho não confirma inscrição/)).toBeTruthy();
+    expect(screen.getByText("Salvar rascunho não confirma inscrição.")).toBeTruthy();
   });
   it("selects the duplicated draft and updates the combo after confirmed deletion", async () => {
     vi.mocked(service.listMyFantasyLineups).mockResolvedValue([12,25,80].map(id => testLineup(undefined,{id})));

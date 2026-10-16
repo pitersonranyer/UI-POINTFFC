@@ -6,5 +6,5 @@ import styles from "@/components/point-fantasy/lineups/LineupBuilder.module.css"
 
 export const metadata = { ...noIndexMetadata, title:"Monte sua escalação | POINT FFC FANTASY" };
 export default function FantasyLineupPage() {
-  return <div className={`page-shell ${styles.builder}`}><header className={styles.hero}><p className="eyebrow">Monte sua estratégia</p><h1>POINT FFC FANTASY</h1><p>A estratégia escala. Ative o Reserva Power!</p><Link href="/point-fantasy/atletas/">Catálogo de atletas →</Link></header><FantasyLineupBuilder /></div>;
+  return <div className={`page-shell ${styles.builder}`}><header className={styles.hero}><h1>POINT FFC FANTASY</h1><Link href="/point-fantasy/atletas/">Catálogo de atletas →</Link></header><FantasyLineupBuilder /></div>;
 }

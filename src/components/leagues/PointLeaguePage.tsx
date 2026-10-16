@@ -24,7 +24,11 @@ const deadline = (value: string | null) => {
   if (!value) return null;
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
-  return { date: parsed.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), time: parsed.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) };
+  const timeZone = "America/Sao_Paulo";
+  return {
+    date: parsed.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone }),
+    time: parsed.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone }),
+  };
 };
 const round = (item: Competition) => item.rodadaInicio === null ? null : item.rodadaFim && item.rodadaFim !== item.rodadaInicio ? `${item.rodadaInicio}–${item.rodadaFim}` : String(item.rodadaInicio);
 const money = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

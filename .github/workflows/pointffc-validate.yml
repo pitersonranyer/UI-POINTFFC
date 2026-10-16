@@ -16,17 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
-      NEXT_PUBLIC_CARTOLA_SEASON: ${{ vars.NEXT_PUBLIC_CARTOLA_SEASON }}
-      NEXT_PUBLIC_CARTOLA_ROUND: ${{ vars.NEXT_PUBLIC_CARTOLA_ROUND }}
-      NEXT_PUBLIC_CARTOLA_ADMIN_SEASONS: ${{ vars.NEXT_PUBLIC_CARTOLA_ADMIN_SEASONS }}
-      NEXT_PUBLIC_WHATSAPP_SUPORTE_URL: ${{ vars.NEXT_PUBLIC_WHATSAPP_SUPORTE_URL }}
+      NEXT_PUBLIC_API_URL: https://api-pointffc.onrender.com
     steps:
       - name: Baixar o repositório
         uses: actions/checkout@v4
@@ -40,6 +30,17 @@ jobs:
       - name: Instalar dependências travadas
         run: npm ci
 
+      - name: Configurar ambiente de validação
+        env:
+          POINTFFC_ENV_FILE: ${{ secrets.POINTFFC_ENV_FILE }}
+        run: |
+          if [ -z "$POINTFFC_ENV_FILE" ]; then
+            echo "::error::POINTFFC_ENV_FILE não configurado"
+            exit 1
+          fi
+          printf '%s\n' "$POINTFFC_ENV_FILE" > .env.local
+          chmod 600 .env.local
+
       - name: Executar testes
         run: npm test
 
@@ -50,41 +51,44 @@ jobs:
         run: npm run typecheck
 
       - name: Validar configuração necessária para o build
-        shell: bash
         run: |
-          set -euo pipefail
+          node <<'NODE'
+          const { loadEnvConfig } = require("@next/env");
+          loadEnvConfig(process.cwd(), false);
 
-          required=(
-            NEXT_PUBLIC_FIREBASE_API_KEY
-            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-            NEXT_PUBLIC_FIREBASE_PROJECT_ID
-            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-            NEXT_PUBLIC_FIREBASE_APP_ID
-            NEXT_PUBLIC_CARTOLA_SEASON
-            NEXT_PUBLIC_CARTOLA_ROUND
-          )
-          missing=()
-          for name in "${required[@]}"; do
-            if [[ -z "${!name:-}" ]]; then
-              missing+=("$name")
-            fi
-          done
+          const required = [
+            "NEXT_PUBLIC_FIREBASE_API_KEY",
+            "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
+            "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
+            "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
+            "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+            "NEXT_PUBLIC_FIREBASE_APP_ID",
+            "NEXT_PUBLIC_API_URL",
+          ];
+          const missing = required.filter((name) => !process.env[name]?.trim());
+          if (missing.length) {
+            console.error(`Build não executado: variáveis ausentes em POINTFFC_ENV_FILE: ${missing.join(", ")}`);
+            process.exit(1);
+          }
 
-          if (("${#missing[@]}" > 0)); then
-            printf 'Build não executado: configure as GitHub Actions Variables obrigatórias: %s\n' "${missing[*]}"
-            exit 1
-          fi
+          if (process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN !== "pointffc.com.br") {
+            console.error("Build não executado: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN precisa corresponder ao domínio validado do POINT FFC.");
+            process.exit(1);
+          }
 
-          if [[ "$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN" != "pointffc.com.br" ]]; then
-            echo "Build não executado: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN precisa corresponder ao domínio validado do POINT FFC."
-            exit 1
-          fi
+          let apiUrl;
+          try {
+            apiUrl = new URL(process.env.NEXT_PUBLIC_API_URL);
+          } catch {
+            console.error("Build não executado: NEXT_PUBLIC_API_URL precisa ser uma URL HTTPS pública.");
+            process.exit(1);
+          }
+          if (apiUrl.protocol !== "https:" || ["localhost", "127.0.0.1", "[::1]"].includes(apiUrl.hostname)) {
+            console.error("Build não executado: NEXT_PUBLIC_API_URL precisa ser uma URL HTTPS pública.");
+            process.exit(1);
+          }
 
-          if [[ ! "$NEXT_PUBLIC_CARTOLA_SEASON" =~ ^[1-9][0-9]*$ || ! "$NEXT_PUBLIC_CARTOLA_ROUND" =~ ^[1-9][0-9]*$ ]]; then
-            echo "Build não executado: temporada e rodada precisam ser inteiros positivos."
-            exit 1
-          fi
+          NODE
 
       - name: Gerar build estático de produção
         run: npm run build
