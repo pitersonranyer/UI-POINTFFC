@@ -51,13 +51,19 @@ describe("Pitch and formations", () => {
     const details = within(section).getByRole("button",{name:"Detalhes"});
     expect(details.getAttribute("aria-expanded")).toBe("false");
     expect(within(section).queryByRole("heading",{name:"Confrontos e horários"})).toBeNull();
-    expect(within(section).getByText("1 partida")).toBeTruthy();
+    expect(within(section).getByText("1 confronto")).toBeTruthy();
     expect(within(section).getByText("85 atletas elegíveis")).toBeTruthy();
     fireEvent.click(details);
     expect(within(section).getByRole("heading",{name:"Confrontos e horários"})).toBeTruthy();
     expect(within(section).getByText(/FLA × BOT/)).toBeTruthy();
     expect(screen.getByRole("combobox",{name:"Formação tática"})).toBeTruthy();
     expect(screen.getByRole("button",{name:"+ Novo time"})).toBeTruthy();
+    expect(within(section).getAllByText("Gratuita")).toHaveLength(2);
+    expect(screen.getByRole("textbox",{name:"Nome-base do time"})).toBeTruthy();
+    expect(screen.getByText("#ID · Meu Time 01")).toBeTruthy();
+    expect(screen.getByText(/backend ainda não recebe nem salva nomes personalizados/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button",{name:"Sobre o nome público do time"}));
+    expect(screen.getByRole("note").textContent).toContain("exclusividade e o bloqueio ainda dependem do backend");
     expect(section.compareDocumentPosition(screen.getByRole("region",{name:"Campinho 4-3-3"})) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
   it("opens position-specific slots using keyboard accessible buttons", () => {
@@ -429,10 +435,10 @@ describe("Team navigation refinements", () => {
     vi.mocked(service.deleteFantasyLineup).mockResolvedValue({id:99,excluida:true});
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     await chooseTeam(12); await screen.findByText("Rascunho #12 · v1");
-    fireEvent.click(screen.getByRole("button",{name:"Criar variação"})); await screen.findByText("Rascunho #99 · v1");
+    fireEvent.click(screen.getByRole("button",{name:"Duplicar time"})); await screen.findByText("Rascunho #99 · v1");
     expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("99"); expect(service.duplicateFantasyLineup).toHaveBeenCalledWith(12,1);
     fireEvent.click(screen.getByRole("button",{name:"Excluir rascunho"})); await screen.findByText("Rascunho excluído.");
-    expect(screen.queryByRole("option",{name:"Time 99"})).toBeNull(); expect(screen.getByRole("option",{name:"Time 80"})).toBeTruthy();
+    expect(screen.queryByRole("option",{name:"Time #99 · Rascunho"})).toBeNull(); expect(screen.getByRole("option",{name:"Time #80 · Rascunho"})).toBeTruthy();
     expect(service.deleteFantasyLineup).toHaveBeenCalledWith(99,1);
   });
   it("restores captain and crown from the saved selection without role selects", async () => {

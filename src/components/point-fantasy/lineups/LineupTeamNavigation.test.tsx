@@ -6,10 +6,10 @@ import { testLineup } from "./lineupTestFixtures";
 afterEach(cleanup);
 const drafts = [90,12,55,18,105,700,22].map(id => testLineup(undefined,{id}));
 it("shows every real ID as a flat option and opens only the requested ID", () => {
-  const onOpen = vi.fn(); const props = {drafts,currentId:null as number|null,busy:false,canCreate:true,canDuplicate:false,dirty:false,onOpen,onNew:vi.fn(),onDuplicate:vi.fn()};
+  const onOpen = vi.fn(); const props = {drafts,currentId:null as number|null,busy:false,canCreate:true,canDuplicate:false,dirty:false,limit:8,onOpen,onNew:vi.fn(),onDuplicate:vi.fn()};
   render(<LineupTeamNavigation {...props} />);
   const select = screen.getByRole("combobox",{name:"Time em edição"});
-  expect(within(select).getAllByRole("option").map(b => b.textContent)).toEqual(["Novo time · não salvo","Time 12","Time 18","Time 22","Time 55","Time 90","Time 105","Time 700"]);
+  expect(within(select).getAllByRole("option").map(b => b.textContent)).toEqual(["Novo time · não salvo","Time #12 · Rascunho","Time #18 · Rascunho","Time #22 · Rascunho","Time #55 · Rascunho","Time #90 · Rascunho","Time #105 · Rascunho","Time #700 · Rascunho"]);
   fireEvent.change(select,{target:{value:"105"}}); expect(onOpen).toHaveBeenCalledWith(105);
   expect(select.querySelector("optgroup")).toBeNull(); expect(screen.getAllByRole("button")).toHaveLength(1);
   expect(screen.queryByText(/Página|Anterior|Próxima/)).toBeNull();
@@ -20,11 +20,11 @@ it("keeps the current team and stable IDs after edits and deletion", () => {
   expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("700");
   fireEvent.change(screen.getByRole("combobox",{name:"Time em edição"}),{target:{value:"700"}}); expect(props.onOpen).not.toHaveBeenCalled();
   rerender(<LineupTeamNavigation {...props} drafts={drafts.map(d => ({...d,versao:2}))} />);
-  expect(screen.getByRole("option",{name:"Time 700"})).toBeTruthy();
+  expect(screen.getByRole("option",{name:"Time #700 · Rascunho"})).toBeTruthy();
   rerender(<LineupTeamNavigation {...props} drafts={drafts.filter(d => d.id !== 12)} />);
   expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("700");
   rerender(<LineupTeamNavigation {...props} currentId={null} drafts={drafts.filter(d => d.id < 55)} />);
-  expect(screen.getByRole("option",{name:"Time 18"})).toBeTruthy(); expect(screen.queryByRole("option",{name:"Time 700"})).toBeNull();
+  expect(screen.getByRole("option",{name:"Time #18 · Rascunho"})).toBeTruthy(); expect(screen.queryByRole("option",{name:"Time #700 · Rascunho"})).toBeNull();
   expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).value).toBe("");
 });
 it("supports more than 30 drafts with a single native select and no visual paging", () => {
@@ -45,12 +45,18 @@ it("disables writes and navigation while busy and offers explicit new time actio
   expect((screen.getByRole("combobox",{name:"Time em edição"}) as HTMLSelectElement).disabled).toBe(false);
   rerender(<LineupTeamNavigation {...props} busy={false} />); fireEvent.click(screen.getByRole("button",{name:"+ Novo time"})); expect(onNew).toHaveBeenCalledOnce();
 });
-it("offers a variation only for a clean saved team and routes the action once", () => {
+it("offers duplication only for a clean saved team and routes the action once", () => {
   const onDuplicate = vi.fn(); const props = {drafts,currentId:12,busy:false,canCreate:true,canDuplicate:false,dirty:true,onOpen:vi.fn(),onNew:vi.fn(),onDuplicate};
   const {rerender} = render(<LineupTeamNavigation {...props} />);
-  expect((screen.getByRole("button",{name:"Criar variação"}) as HTMLButtonElement).disabled).toBe(true);
-  expect(screen.getByText("Salve as alterações antes de criar uma variação.")).toBeTruthy();
+  expect((screen.getByRole("button",{name:"Duplicar time"}) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText("Salve as alterações antes de duplicar.")).toBeTruthy();
   rerender(<LineupTeamNavigation {...props} dirty={false} canDuplicate />);
-  fireEvent.click(screen.getByRole("button",{name:"Criar variação"}));
+  fireEvent.click(screen.getByRole("button",{name:"Duplicar time"}));
   expect(onDuplicate).toHaveBeenCalledOnce();
+});
+it("shows actual team count and disables creation when the API limit is reached", () => {
+  const props = {drafts,currentId:null as number|null,busy:false,canCreate:false,canDuplicate:false,dirty:false,limit:7,onOpen:vi.fn(),onNew:vi.fn(),onDuplicate:vi.fn()};
+  render(<LineupTeamNavigation {...props} />);
+  expect(screen.getByText("7 times em rascunho · limite 7/7")).toBeTruthy();
+  expect((screen.getByRole("button",{name:"+ Novo time"}) as HTMLButtonElement).disabled).toBe(true);
 });
