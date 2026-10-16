@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blockingReason, defaultStatuses, emptySelection, formationCounts, friendlyPending, lineupValue, replaceSlot, reserveCeiling, reserveCounts, selectionWarnings, statusKey, statusLabel } from "./lineupPresentation";
+import { blockingReason, defaultStatuses, emptySelection, formationCounts, friendlyPending, lineupValue, removeAthlete, replaceSlot, reserveCeiling, reserveCounts, selectionWarnings, statusKey, statusLabel } from "./lineupPresentation";
 import { completeTestSelection, testAthlete, testContext } from "./lineupTestFixtures";
 import type { Formation } from "@/types/pointFantasyLineup";
 describe("Lineup presentation", () => {
@@ -22,6 +22,12 @@ describe("Lineup presentation", () => {
     expect(replaceSlot(initial, [a,b], slot, testAthlete(999))).toBe(initial);
     expect(replaceSlot({ ...initial, capitaoAtletaId:1 }, [a,b], slot, null).capitaoAtletaId).toBeNull();
     expect(replaceSlot({ ...emptySelection(), reservas:[1], reservaMagoAtletaId:1 }, [a], { ...slot, role:"reservas" }, null).reservaMagoAtletaId).toBeNull();
+  });
+  it("sells a selected athlete from any role and clears dependent titles", () => {
+    const value = { ...emptySelection(), titulares:[1], reservas:[2], tecnico:3, capitaoAtletaId:1, reservaMagoAtletaId:2 };
+    expect(removeAthlete(value, 1)).toMatchObject({ titulares:[], reservas:[2], tecnico:3, capitaoAtletaId:null, reservaMagoAtletaId:2 });
+    expect(removeAthlete(value, 2)).toMatchObject({ titulares:[1], reservas:[], tecnico:3, capitaoAtletaId:1, reservaMagoAtletaId:null });
+    expect(removeAthlete(value, 3)).toMatchObject({ titulares:[1], reservas:[2], tecnico:null, capitaoAtletaId:1, reservaMagoAtletaId:2 });
   });
   it.each([[3,2,2],[3,1,1],[3,3,3]])("sets reserve ceiling from all starters: %i/%i", (first, second, ceiling) => {
     const athletes = [testAthlete(1, 3, { categoriaId:first }), testAthlete(2, 3, { categoriaId:second }), testAthlete(3, 3, { categoriaId:3 })];

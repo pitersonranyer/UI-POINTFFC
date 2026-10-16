@@ -20,6 +20,15 @@ export const emptySelection = (): LineupSelection => ({ formacao:"4-3-3", titula
 export function selectionOf(value: LineupSelection): LineupSelection {
   return { formacao:value.formacao, titulares:[...value.titulares], reservas:[...value.reservas], tecnico:value.tecnico, capitaoAtletaId:value.capitaoAtletaId, reservaMagoAtletaId:value.reservaMagoAtletaId };
 }
+export function removeAthlete(value: LineupSelection, athleteId: number): LineupSelection {
+  const result = selectionOf(value);
+  result.titulares = result.titulares.filter(id => id !== athleteId);
+  result.reservas = result.reservas.filter(id => id !== athleteId);
+  if (result.tecnico === athleteId) result.tecnico = null;
+  if (result.capitaoAtletaId === athleteId) result.capitaoAtletaId = null;
+  if (result.reservaMagoAtletaId === athleteId) result.reservaMagoAtletaId = null;
+  return result;
+}
 export function reserveCounts(formation: Formation): Record<number, number> { return { 1:1, 2:formationCounts[formation][2] ? 1 : 0, 3:formationCounts[formation][2] ? 1 : 2, 4:1, 5:1 }; }
 export function selectedIds(value: LineupSelection) { return [...value.titulares, ...value.reservas, ...(value.tecnico === null ? [] : [value.tecnico])]; }
 export function positionalAthletes(value: LineupSelection, athletes: PointFantasyAthlete[], role: "titulares" | "reservas", position: number) {
@@ -106,7 +115,7 @@ export function selectionWarnings(value: LineupSelection, athletes: PointFantasy
     if (ceiling !== null && reserves.some(a => a.categoriaId === null || a.categoriaId > ceiling)) warnings.push(`Ajuste a categoria dos reservas: ${positionLabels[pos]}.`);
   }
   if (value.capitaoAtletaId !== null && !value.titulares.includes(value.capitaoAtletaId)) warnings.push("O capitão precisa ser titular.");
-  if (value.reservaMagoAtletaId !== null && !value.reservas.includes(value.reservaMagoAtletaId)) warnings.push("O Reserva do Mago precisa estar no banco.");
+  if (value.reservaMagoAtletaId !== null && !value.reservas.includes(value.reservaMagoAtletaId)) warnings.push("O Reserva Power precisa estar no banco.");
   return warnings;
 }
 export function lineupValue(value: LineupSelection, athletes: PointFantasyAthlete[]) {
@@ -124,5 +133,5 @@ export function friendlyPending(message: string) {
   return message.replace(/Completar titulares da posicao (\d)/, (_, p: string) => `Complete os titulares: ${positionLabels[Number(p)] ?? p}`)
     .replace(/Completar reservas da posicao (\d)/, (_, p: string) => `Complete os reservas: ${positionLabels[Number(p)] ?? p}`)
     .replace(/Categoria do reserva \d+ aguarda titulares da posicao (\d)/, (_, p: string) => `Categoria do reserva aguarda titulares: ${positionLabels[Number(p)] ?? p}`)
-    .replace("Selecionar tecnico", "Escolha o técnico").replace("Selecionar capitao", "Defina o capitão").replace("Selecionar Reserva do Mago", "Escolha o Reserva do Mago");
+    .replace("Selecionar tecnico", "Escolha o técnico").replace("Selecionar capitao", "Defina o capitão").replace("Selecionar Reserva do Mago", "Escolha o Reserva Power");
 }

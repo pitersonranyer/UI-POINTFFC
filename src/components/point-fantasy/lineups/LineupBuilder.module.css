@@ -36,12 +36,12 @@
 .slot { position:relative; display:flex; flex-direction:column; align-items:center; min-width:0; width:calc((100% - 12px)/5); max-width:100px; text-align:center; }
 .builder .pickSlot { position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; min-height:80px; padding:2px 1px; background:transparent; color:inherit; border:1px solid transparent; border-radius:6px; }
 .pickSlot strong { display:block; width:100%; font-size:.64rem; line-height:1.25; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.pitch .pickSlot > svg:not(.magoCrown) { filter:drop-shadow(0 0 1px #fff) drop-shadow(0 1px 2px #092316b3); }
+.pitch .pickSlot > svg:not(.powerBolt) { filter:drop-shadow(0 0 1px #fff) drop-shadow(0 1px 2px #092316b3); }
 .pitch .pickSlot strong { width:max-content; max-width:100%; padding:2px 4px; border-radius:4px; background:#10271ed9; color:#fff; text-shadow:0 1px 2px #000; }
 .pickSlot:hover { border-color:#c5e4ce; }
 .emptyShirt { display:grid; place-items:center; width:42px; height:46px; border:1px dashed #d5e5d8; background:#102b2240; border-radius:10px; color:inherit; font-size:1.5rem; font-weight:400; }
 .roleBadge { position:absolute; top:0; right:2px; display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#f6d36b; color:#29250a; font-size:.7rem; font-weight:800; }
-.pickSlot .magoCrown { position:absolute; top:0; right:0; width:26px; height:24px; filter:drop-shadow(0 1px 1px #ffffffa0); }
+.pickSlot .powerBolt { position:absolute; top:0; right:0; width:23px; height:24px; filter:drop-shadow(0 1px 1px #ffffffa0); }
 .teamNavigation { padding:12px; border:1px solid var(--line); border-radius:10px; background:white; }
 .teamPicker { display:grid; grid-template-columns:minmax(0,1fr) max-content; align-items:flex-end; gap:8px; }
 .teamPicker label,.teamPicker select { min-width:0; width:100%; }
@@ -57,6 +57,10 @@
 .actionContent header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:4px; }
 .actionContent h2 { margin:0; font-size:1rem; overflow-wrap:anywhere; }
 .actionContent>button { text-align:left; }
+.athleteInfo { border-top:1px solid #e2e9e3; padding-top:10px; font-size:.78rem; }
+.athleteInfo summary { min-height:36px; display:flex; align-items:center; color:#245c38; font-weight:700; cursor:pointer; }
+.athleteInfo dl { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 14px; margin:10px 0 0; line-height:1.45; }
+.athleteInfo dt { color:#56645b; }.athleteInfo dd { margin:0; text-align:right; font-weight:650; overflow-wrap:anywhere; }
 .coach { position:absolute; bottom:14px; left:14px; width:19%; }
 .coach .slot { width:100%; }
 .benchSection { margin-top:16px; padding:16px 10px; }
@@ -83,8 +87,19 @@
 .pickerHeader h2 { margin:0; font-size:1.2rem; }
 .pickerHeader>.actions { justify-content:flex-end; gap:6px; }
 .pickerProgress { margin:12px 0; padding:9px 11px; border-left:3px solid #d4af37; border-radius:4px; background:#f1f6f2; color:#29513a; font-size:.78rem; line-height:1.5; }
-.pickerFilters { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.pickerFilters label:first-child { grid-column:1/-1; }
+.pickerFilters { display:grid; gap:9px; }
+.pickerFilters .searchFilter { display:flex; flex-direction:column; gap:5px; }
+.compactFilters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; align-items:end; }
+.compactFilters label { min-width:0; display:grid; gap:4px; color:#516056; font-size:.64rem; font-weight:700; }
+.compactFilters select { padding:7px 22px 7px 7px; min-height:42px; font-size:.7rem; }
+.compactFilters button { min-width:0; min-height:42px; padding:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.68rem; }
+.situationPopover { display:flex; flex-wrap:wrap; gap:5px 12px; margin:0; padding:8px; border:1px solid #d8e3da; border-radius:8px; background:#f7faf7; }
+.situationPopover legend { padding:0 5px; font-size:.72rem; font-weight:700; }
+.situationPopover label { min-height:32px; display:flex; align-items:center; gap:5px; font-size:.7rem; }
+.situationPopover input { width:18px; height:18px; accent-color:#186239; }
+.advancedFilters { margin-top:14px; border-top:1px solid #e2e9e3; padding-top:10px; }
+.advancedFilters summary { min-height:38px; display:flex; align-items:center; color:#365542; font-size:.76rem; font-weight:700; cursor:pointer; }
+.advancedFilters .statuses { margin:5px 0 0; }
 .statuses { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; padding:12px; border:1px solid #d8e3da; border-radius:8px; }
 .statuses legend { padding:0 6px; font-size:.8rem; font-weight:700; }
 .statuses label { display:flex; align-items:center; gap:6px; font-size:.75rem; min-height:30px; }
@@ -93,10 +108,13 @@
 .statuses button { font-size:.65rem; padding:7px; min-height:36px; }
 .pickerList { list-style:none; padding:0; margin:0; }
 .pickerList li { display:grid; grid-template-columns:46px minmax(0,1fr) auto; align-items:center; gap:10px; padding:12px 0; border-top:1px solid #e2e9e3; }
+.pickerList li[data-selected="true"] { padding-inline:7px; border-radius:8px; background:#eff7f0; box-shadow:inset 3px 0 #25804a; }
 .pickerList strong { display:block; font-size:.86rem; overflow-wrap:anywhere; }
 .pickerList span { display:flex; align-items:center; gap:4px; margin-top:5px; font-size:.7rem; color:#506057; }
 .pickerList small { display:block; margin-top:4px; font-size:.65rem; line-height:1.5; color:#506057; }
 .pickerList button { padding:7px; font-size:.7rem; }
+.pickerList .sellButton { color:#8b392f; border-color:#e5c8c0; background:#fff5f2; }
+.pickerList .selectedLabel { display:inline-block; color:#176239; font-weight:750; }
 .pickerList .situation { color:#25623e; font-weight:700; }
 .slot .invalid,.pickerList .invalid { color:#92352c; background:#fff0e8; font-size:.6rem; padding:2px; }
 @media(min-width:900px) {
@@ -117,5 +135,11 @@
   .pitch .pickSlot strong { display:-webkit-box; width:100%; max-width:100%; padding:2px 3px; line-height:1.1; white-space:normal; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
   .benchSection { margin-top:8px; padding:12px 8px; }
   .bench { gap:8px 2px; }
+  .athleteActions { position:fixed; inset:auto 0 0; align-self:end; margin:0; width:100%; max-width:none; max-height:min(86dvh,680px); overflow-y:auto; padding-bottom:env(safe-area-inset-bottom); border-radius:16px 16px 0 0; }
+  .actionContent { gap:9px; padding:14px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .actionContent header { position:sticky; top:-14px; z-index:1; padding:8px 0; background:#fff; }
+  .actionContent>button { min-height:46px; }
+  .compactFilters { gap:4px; }
+  .pickerList li { gap:7px; }
 }
 @media(max-width:360px) { .builder { width:calc(100% - 20px); }.pickSlot strong { font-size:.58rem; }.pickerList { margin-inline:-6px; }.pickerList li { gap:5px; } }
