@@ -36,6 +36,8 @@
 .slot { position:relative; display:flex; flex-direction:column; align-items:center; min-width:0; width:calc((100% - 12px)/5); max-width:100px; text-align:center; }
 .builder .pickSlot { position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; min-height:80px; padding:2px 1px; background:transparent; color:inherit; border:1px solid transparent; border-radius:6px; }
 .pickSlot strong { display:block; width:100%; font-size:.64rem; line-height:1.25; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.pitch .pickSlot > svg:not(.magoCrown) { filter:drop-shadow(0 0 1px #fff) drop-shadow(0 1px 2px #092316b3); }
+.pitch .pickSlot strong { width:max-content; max-width:100%; padding:2px 4px; border-radius:4px; background:#10271ed9; color:#fff; text-shadow:0 1px 2px #000; }
 .pickSlot:hover { border-color:#c5e4ce; }
 .emptyShirt { display:grid; place-items:center; width:42px; height:46px; border:1px dashed #d5e5d8; background:#102b2240; border-radius:10px; color:inherit; font-size:1.5rem; font-weight:400; }
 .roleBadge { position:absolute; top:0; right:2px; display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#f6d36b; color:#29250a; font-size:.7rem; font-weight:800; }
@@ -105,4 +107,5 @@
   .pickSlot svg { width:53px; height:auto; }
   .slot small { font-size:.66rem; }
 }
+@media(max-width:767px) { .builder { padding-bottom:calc(132px + env(safe-area-inset-bottom)); } }
 @media(max-width:360px) { .builder { width:calc(100% - 20px); }.pickSlot strong { font-size:.58rem; }.pickerList { margin-inline:-6px; }.pickerList li { gap:5px; } }
