@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef } from "react";
 import { categoryNames } from "@/types/pointFantasy";
 import type { SlotRole } from "@/types/pointFantasyLineup";
 import type { PointFantasyAthlete } from "@/types/pointFantasy";
+import { AthleteStatusIndicator } from "../athletes/AthleteStatusIndicator";
 import { positionLabels, statusLabel } from "./lineupPresentation";
 import styles from "./LineupBuilder.module.css";
 
@@ -27,7 +28,7 @@ export function LineupAthleteActions({ athlete, clubName, role, captain, powerRe
     }}
     onCancel={e => { e.preventDefault(); onClose(); }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div className={styles.actionContent}>
-      <header><div><p className="eyebrow">{role === "reservas" ? "Banco de reservas" : role === "tecnico" ? "Comissão técnica" : "Titular"}</p><h2 id={titleId}>{athlete.apelido}</h2></div><button type="button" onClick={onClose} aria-label="Fechar ações">Fechar</button></header>
+      <header><div><p className="eyebrow">{role === "reservas" ? "Banco de reservas" : role === "tecnico" ? "Comissão técnica" : "Titular"}</p><h2 id={titleId}>{athlete.apelido} <AthleteStatusIndicator statusId={athlete.statusId} /></h2></div><button type="button" onClick={onClose} aria-label="Fechar ações">Fechar</button></header>
       {role === "titulares" && <button type="button" onClick={onCaptain}>{captain ? "Remover capitão" : "Tornar capitão"}</button>}
       {role === "reservas" && <button type="button" onClick={onPowerReserve}>{powerReserve ? "Remover Reserva Power" : "Ativar Reserva Power"}</button>}
       {canReplace && <button type="button" onClick={onReplace}>Trocar jogador</button>}

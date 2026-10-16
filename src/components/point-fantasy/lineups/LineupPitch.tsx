@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import type { FantasyReference, PointFantasyAthlete } from "@/types/pointFantasy";
 import type { LineupSelection, LineupSlot, LineupSlotPlacements } from "@/types/pointFantasyLineup";
 import { ClubJersey } from "../uniforms/ClubJersey";
+import { AthleteStatusIndicator } from "../athletes/AthleteStatusIndicator";
 import { LineupAthleteActions } from "./LineupAthleteActions";
 import { ReserveCategoryMedal } from "./ReserveCategoryMedal";
 import { athleteInSlot, formationCounts, positionalAthletes, positionLabels, reserveCeiling, reserveCounts } from "./lineupPresentation";
@@ -18,6 +19,7 @@ function AthleteSlot({ slot, excess, expanded, onActions, ...props }: Props & { 
     <button type="button" className={styles.pickSlot} disabled={props.disabled} onClick={() => athlete ? onActions(slot, athlete.id, !!excess) : props.onOpen(slot)} aria-label={athlete ? `Ações de ${athlete.apelido}` : `Adicionar ${positionLabels[slot.position]} ${slot.index + 1}`} aria-haspopup={athlete ? "dialog" : undefined} aria-expanded={athlete ? expanded : undefined}>
       {athlete ? <ClubJersey clubId={athlete.clubeIdExterno} size={45} decorative /> : <span className={styles.emptyShirt} aria-hidden="true">+</span>}
       <strong>{athlete?.apelido ?? positionLabels[slot.position]}</strong>
+      {athlete && <AthleteStatusIndicator statusId={athlete.statusId} size={13} />}
       {captain && <span className={styles.roleBadge} aria-label="Capitão">C</span>}
       {powerReserve && <svg className={styles.powerBolt} viewBox="0 0 24 24" width="23" height="24" role="img" aria-label="Reserva Power" focusable="false"><title>Reserva Power</title><path d="M13.2 2.5 4.5 13h6.1l-.7 8.5L19.5 11h-6.2l-.1-8.5Z" fill="#e9bd42" stroke="#795719" strokeWidth="1.2" strokeLinejoin="round"/></svg>}
     </button>
