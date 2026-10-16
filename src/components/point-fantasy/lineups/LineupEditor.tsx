@@ -58,18 +58,17 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
     <div className={styles.lineupControls}>
       <LineupTeamNavigation drafts={editor.drafts} currentId={saved?.id ?? null} busy={busy} canCreate={!blocked && !atLineupLimit} canDuplicate={!disabled && !!saved && !dirty && !atLineupLimit} dirty={dirty} limit={lineupLimit} onOpen={id => void editor.openDraft(id)} onNew={editor.newDraft} onDuplicate={() => void editor.duplicate()} />
       <div className={styles.teamIdentity}>
-        <div className={styles.identityHeading}><label htmlFor="team-name-base">Nome-base · prévia</label><button type="button" className={styles.infoButton} aria-label="Sobre o nome público do time" aria-expanded={identityHelpOpen} aria-controls="team-name-help" onClick={() => setIdentityHelpOpen(open => !open)}>i</button></div>
+        <div className={styles.identityHeading}><label htmlFor="team-name-base">Nome-base</label></div>
         <input id="team-name-base" aria-label="Nome-base do time" maxLength={32} value={teamNameBase} onChange={e => setTeamNameBase(e.target.value)} />
         <output className={styles.namePreview}>{namePreview}</output>
-        <p className={styles.identityDisclaimer}>Prévia apenas: o backend ainda não recebe nem salva nomes personalizados.</p>
-        {identityHelpOpen && <p id="team-name-help" className={styles.identityHelp} role="note">Na Fase 5B, o nome poderá aparecer publicamente, usar numeração sequencial por competição e ficar bloqueado após o primeiro salvamento. A exclusividade e o bloqueio ainda dependem do backend; esta prévia não os garante.</p>}
+        <div className={styles.identityPublicHelp}><span>Este será o nome público do seu time.</span><button type="button" className={styles.infoButton} aria-label="Sobre o nome público do time" aria-expanded={identityHelpOpen} aria-controls="team-name-help" onClick={() => setIdentityHelpOpen(open => !open)}>i</button></div>
+        {identityHelpOpen && <p id="team-name-help" className={styles.identityHelp} role="note">O padrão sugerido é #ID · Meu Time 01; outros times usam a sequência 02, 03 e assim por diante. O nome deve ser exclusivo dentro da competição e ficar bloqueado após o primeiro salvamento. Essas garantias dependem do backend e ainda não estão disponíveis; esta tela mostra apenas uma prévia.</p>}
       </div>
       {atLineupLimit && <p role="status" className={styles.limitNotice}>Limite de times da competição atingido ({editor.drafts.length}/{lineupLimit}).</p>}
       <div className={styles.toolbar}>
         <label>Formação<select aria-label="Formação tática" value={value.formacao} disabled={disabled} onChange={e => { editor.setSlot(null); editor.setValue({ ...value, formacao:e.target.value as Formation }); }}>{Object.keys(formationCounts).map(f => <option key={f}>{f}</option>)}</select></label>
         <strong className={styles.rosterValue}>PC$ {lineupValue(value, context.athletes)}</strong>
         <span className={styles.draftStatus} role="status">{busy ? "Salvando…" : dirty ? "Alterações não salvas" : saved ? "Rascunho salvo" : "Novo rascunho"}</span>
-        <button className={styles.primary} type="button" disabled={disabled || warnings.length > 0 || (!!saved && !dirty)} onClick={() => void editor.save()}>{busy ? "Salvando…" : "Salvar rascunho"}</button>
       </div>
     </div>
     <div className={styles.workspace}><LineupPitch value={value} athletes={context.athletes} clubs={context.clubs} placements={editor.slotPlacements} disabled={disabled} onOpen={editor.openSlot} onRemove={slot => editor.setValue(replaceSlot(value, context.athletes, slot, null, editor.slotPlacements))} onCaptain={id => editor.setValue({ ...value, capitaoAtletaId:id })} onPowerReserve={id => editor.setValue({ ...value, reservaMagoAtletaId:id })} />
@@ -80,9 +79,12 @@ export function LineupEditor({ competitionId, onBack }: { competitionId: number;
         <p className={styles.note}>Toque em um titular para definir o capitão ou em um reserva para ativar o Reserva Power.</p>
         {warnings.length > 0 && <div className={styles.alert}><strong>Ajustes antes de salvar</strong><ul>{warnings.map(w => <li key={w}>{w}</li>)}</ul><p>A formação mudou sem remover atletas. Use os controles de remoção para ajustar os excedentes.</p></div>}
         {dirty || !saved ? <p className={styles.note}>Pendências serão conferidas ao salvar.</p> : saved.validacao.completa ? <p className={styles.notice}>Escalação completa — rascunho salvo</p> : <div><h4>Pendências do rascunho salvo</h4><ul className={styles.pending}>{saved.validacao.pendencias.map((p, i) => <li key={i}>{friendlyPending(p)}</li>)}</ul></div>}
-        <div className={styles.saveActions}><button className={styles.danger} type="button" disabled={disabled || !saved} onClick={() => void editor.remove()}>Excluir rascunho</button></div>
+        <div className={styles.saveActions}><button className={styles.danger} type="button" disabled={disabled || saved?.status !== "RASCUNHO"} onClick={() => void editor.remove()}>Excluir rascunho</button></div>
         <p className={styles.note}>Salvar rascunho não confirma inscrição.</p>
       </aside>
+    </div>
+    <div className={styles.saveActions}>
+      <button className={styles.primary} type="button" disabled={disabled || warnings.length > 0 || (!!saved && !dirty)} onClick={() => void editor.save()}>{busy ? "Salvando…" : "Salvar rascunho"}</button>
     </div>
     {editor.slot && !disabled && <LineupAthletePicker context={context} value={value} slot={editor.slot} mode={editor.slot.mode} filters={editor.pickerFilters} onFiltersChange={editor.setPickerFilters} onClose={() => editor.setSlot(null)} onSelect={athlete => editor.selectAthlete(athlete.id)} onSell={athlete => editor.sellAthlete(athlete.id)} />}
   </div>;

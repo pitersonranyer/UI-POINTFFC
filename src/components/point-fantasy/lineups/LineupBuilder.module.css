@@ -41,10 +41,12 @@
 .teamIdentity { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px 7px; padding:8px 10px; border:1px solid #d7e1d9; border-radius:10px; background:#fff; }
 .identityHeading { display:flex; align-items:center; gap:5px; grid-column:1/-1; }
 .identityHeading label { color:#42574a; font-size:.69rem; }
-.builder .infoButton { display:grid; place-items:center; width:24px; min-height:24px; padding:0; border-radius:50%; font-size:.72rem; }
+.builder .infoButton { display:grid; place-items:center; width:44px; min-height:44px; padding:0; border-radius:50%; font-size:.72rem; }
 .teamIdentity input { min-height:36px; padding:6px 9px; font-size:.78rem; }
 .namePreview { color:#244d32; font-size:.72rem; font-weight:750; white-space:nowrap; }
-.identityDisclaimer,.identityHelp { grid-column:1/-1; margin:0; color:#65736a; font-size:.65rem; line-height:1.4; }
+.identityPublicHelp { grid-column:1/-1; display:flex; align-items:center; gap:5px; color:#65736a; font-size:.65rem; line-height:1.4; }
+.identityPublicHelp .infoButton { flex:none; }
+.identityHelp { grid-column:1/-1; margin:0; color:#65736a; font-size:.65rem; line-height:1.4; }
 .identityHelp { padding:7px; border-radius:7px; background:#f5f7f4; }
 .limitNotice { grid-column:1/-1; margin:0; padding:6px 9px; border-radius:7px; color:#72571a; background:#fff8e8; font-size:.68rem; }
 .teamCount { margin:7px 0 0; color:#59685e; font-size:.68rem; }
@@ -55,7 +57,7 @@
 .pitchLines i { position:absolute; top:50%; left:50%; width:30%; aspect-ratio:1; border:1px solid #ffffff60; border-radius:50%; transform:translate(-50%,-50%); }
 .pitchLines b,.pitchLines em { position:absolute; left:25%; width:50%; height:14%; border:1px solid #ffffff60; }
 .pitchLines b { top:0; border-top:0; }.pitchLines em { bottom:0; border-bottom:0; }
-.pitchRow { display:flex; justify-content:center; align-items:flex-start; gap:3px; min-width:0; }
+.pitchRow { display:flex; flex-wrap:nowrap; justify-content:center; align-items:flex-start; gap:3px; width:100%; max-width:100%; min-width:0; }
 .slot { position:relative; display:flex; flex-direction:column; align-items:center; min-width:0; width:calc((100% - 12px)/5); max-width:100px; text-align:center; }
 .builder .pickSlot { position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; min-height:80px; padding:2px 1px; background:transparent; color:inherit; border:1px solid transparent; border-radius:6px; }
 .pickSlot strong { display:block; width:100%; font-size:.64rem; line-height:1.25; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
@@ -84,7 +86,7 @@
 .athleteInfo summary { min-height:36px; display:flex; align-items:center; color:#245c38; font-weight:700; cursor:pointer; }
 .athleteInfo dl { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 14px; margin:10px 0 0; line-height:1.45; }
 .athleteInfo dt { color:#56645b; }.athleteInfo dd { margin:0; text-align:right; font-weight:650; overflow-wrap:anywhere; }
-.coach { position:absolute; bottom:14px; left:14px; width:19%; }
+.coach { position:absolute; right:14px; bottom:14px; left:auto; width:clamp(100px,22%,140px); }
 .coach .slot { width:100%; }
 .benchSection { margin-top:10px; padding:12px 10px; }
 .bench { display:flex; justify-content:center; flex-wrap:wrap; gap:12px 3px; }
@@ -97,7 +99,7 @@
 .summary .note { margin:0; }
 .note { color:#5a685e; font-size:.75rem; line-height:1.6; }
 .pending { margin:10px 0 0; padding-left:18px; font-size:.78rem; line-height:1.7; color:#536158; }
-.saveActions { display:grid; gap:10px; }
+.saveActions { display:grid; justify-items:start; gap:10px; }
 .builder .primary { background:#19663b; border-color:#19663b; color:white; }
 .builder .danger { color:#92352c; background:#fff6f3; border-color:#ebcfc6; }
 .alert { padding:14px; border:1px solid #e6d49f; border-radius:10px; color:#674b15; background:#fff8e8; font-size:.8rem; line-height:1.6; }
@@ -186,7 +188,7 @@
   .teamIdentity { padding:7px 8px; }
   .teamIdentity input { min-height:34px; }
   .namePreview { font-size:.66rem; }
-  .identityDisclaimer,.identityHelp { font-size:.62rem; }
+  .identityPublicHelp,.identityHelp { font-size:.62rem; }
   .teamNavigation { padding:8px; }
   .teamPicker { grid-template-columns:minmax(0,1fr) max-content; gap:5px; }
   .teamPicker label { font-size:.68rem; }
@@ -194,7 +196,8 @@
   .teamPicker button { min-height:38px; padding:6px 8px; font-size:.67rem; }
   .teamCount { margin-top:5px; }
   .pitch { grid-template-rows:repeat(4,minmax(80px,auto)); row-gap:6px; padding:14px 5px 10px; min-height:408px; }
-  .pitch .slot { width:calc((100% - 8px)/5); }
+  .pitch .slot { width:calc((100% - 12px)/5); flex:0 1 calc((100% - 12px)/5); }
+  .coach { right:8px; bottom:10px; width:clamp(76px,26%,110px); }
   .builder .pickSlot { gap:3px; min-height:76px; padding:1px; }
   .pitch .pickSlot strong { display:-webkit-box; width:100%; max-width:100%; padding:2px 3px; line-height:1.1; white-space:normal; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
   .benchSection { margin-top:8px; padding:12px 8px; }
@@ -210,5 +213,6 @@
   .pickerHeader>.actions { gap:3px; }
   .pickerHeader>.actions button { min-height:38px; padding:6px 8px; font-size:.67rem; }
   .filterPanel { position:fixed; inset:auto 0 0; width:100%; max-width:none; max-height:min(78dvh,680px); padding:14px 14px calc(14px + env(safe-area-inset-bottom)); border-radius:16px 16px 0 0; box-shadow:0 -10px 34px #14251c38; }
+  .saveActions>.primary { width:100%; min-height:46px; }
 }
 @media(max-width:360px) { .builder { width:calc(100% - 20px); }.pickSlot strong { font-size:.58rem; }.competitionHeadline { flex-wrap:wrap; }.competitionHeadline>div { flex:1 1 100%; }.competitionHeadline button { margin-left:auto; }.toolbar .draftStatus { flex:1; text-align:center; }.namePreview { white-space:normal; text-align:right; }.pickerList { margin-inline:-6px; }.pickerList li { gap:5px; }.matchup { grid-template-columns:minmax(60px,1fr) 76px minmax(60px,1fr); }.matchupClub { gap:3px!important; padding-inline:2px; }.matchupClub svg { width:17px; height:auto; } }
