@@ -57,28 +57,67 @@ describe("Athlete picker", () => {
     function PickerHarness() { const [filters,setFilters] = useState(defaultPickerFilters); return <LineupAthletePicker context={context} value={value} slot={{ role,position:1,index:0 }} filters={filters} onFiltersChange={setFilters} onSelect={onSelect} onSell={vi.fn()} onClose={vi.fn()} />; }
     render(<PickerHarness />); return onSelect;
   }
-  it("defaults to probable OR doubt, combines search/club/category and keeps selected athletes visible", () => {
+  it("starts with collapsed filters, defaults to probable and doubt, and keeps selected athletes visible", () => {
     picker(testContext(),{ ...emptySelection(), titulares:[1] });
-    fireEvent.click(screen.getByRole("button",{name:/^Situação/}));
+    const toggle = screen.getByRole("button",{name:"Filtros"});
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("region",{name:"Filtros avançados"})).toBeNull();
+    expect(screen.getByRole("list",{name:"Atletas elegíveis"})).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
     for (const name of ["Provável","Dúvida"]) expect((screen.getByRole("checkbox",{name}) as HTMLInputElement).checked).toBe(true);
     expect(screen.getByRole("button",{name:"Comprar João Dúvida"})).toBeTruthy();
     expect(screen.getByRole("button",{name:"Vender Jogador 1"})).toBeTruthy(); expect(screen.getByText("Escalado")).toBeTruthy();
     expect(screen.queryByText("Suspenso Teste")).toBeNull();
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:" joao "}});
     expect(screen.getByRole("button",{name:"Comprar João Dúvida"})).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Clube"),{target:{value:"263"}}); expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Clube"),{target:{value:""}});
-    fireEvent.change(screen.getByLabelText("Categoria"),{target:{value:"3"}}); expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
+    const clubGroup = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Clubes")!;
+    fireEvent.click(within(clubGroup).getByRole("button",{name:"Limpar"})); fireEvent.click(within(clubGroup).getByRole("checkbox",{name:"Botafogo"}));
+    expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
+    fireEvent.click(within(clubGroup).getByRole("button",{name:"Todos"}));
+    const categoryGroup = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Categoria")!;
+    fireEvent.click(within(categoryGroup).getByRole("button",{name:"Limpar"})); fireEvent.click(within(categoryGroup).getByRole("checkbox",{name:"Ouro"}));
+    expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
   });
-  it("offers all, none, restoration and explicit unknown statuses", () => {
-    picker(); fireEvent.click(screen.getByText("Filtros avançados")); fireEvent.click(screen.getByText("Limpar situações")); expect(screen.getByRole("button",{name:"Situação · 0"})).toBeTruthy();
-    fireEvent.click(screen.getByText("Selecionar todas")); expect(screen.getByRole("button",{name:"Comprar Sem situação"})).toBeTruthy(); expect(screen.getByRole("button",{name:"Comprar Suspenso Teste"})).toBeTruthy();
-    fireEvent.click(screen.getByText("Restaurar Provável + Dúvida")); expect(screen.queryByRole("button",{name:"Comprar Sem situação"})).toBeNull();
-    fireEvent.click(screen.getByRole("button",{name:/^Situação/})); fireEvent.click(screen.getByRole("checkbox",{name:"Sem situação"})); expect(screen.getByRole("button",{name:"Comprar Sem situação"})).toBeTruthy();
+  it("offers all, clear and default restore for situations, clubs and categories", () => {
+    picker(); fireEvent.click(screen.getByRole("button",{name:"Filtros"}));
+    const groups = screen.getAllByRole("group");
+    const situation = within(groups.find(group => group.querySelector("legend")?.textContent === "Situação")!);
+    const clubs = within(groups.find(group => group.querySelector("legend")?.textContent === "Clubes")!);
+    const categories = within(groups.find(group => group.querySelector("legend")?.textContent === "Categoria")!);
+    fireEvent.click(situation.getByRole("button",{name:"Limpar"})); expect(screen.getByRole("button",{name:/^Filtros/}).textContent).toContain("Filtros · 1");
+    expect(screen.getByRole("button",{name:/Ordenar por PointCoins: PC\$ ↓/})).toBeTruthy();
+    fireEvent.click(situation.getByRole("button",{name:"Todos"})); expect(screen.getByRole("button",{name:"Comprar Sem situação"})).toBeTruthy(); expect(screen.getByRole("button",{name:"Comprar Suspenso Teste"})).toBeTruthy();
+    fireEvent.click(situation.getByRole("button",{name:"Restaurar padrão"})); expect(screen.queryByRole("button",{name:"Comprar Sem situação"})).toBeNull();
+    fireEvent.click(screen.getByRole("checkbox",{name:"Sem situação"})); expect(screen.getByRole("button",{name:"Comprar Sem situação"})).toBeTruthy();
+    fireEvent.click(clubs.getByRole("button",{name:"Limpar"})); expect(screen.getByText(/Nenhum clube/)).toBeTruthy();
+    fireEvent.click(clubs.getByRole("button",{name:"Todos"})); expect(screen.getByRole("button",{name:"Comprar João Dúvida"})).toBeTruthy();
+    fireEvent.click(categories.getByRole("button",{name:"Limpar"})); expect(screen.queryByRole("button",{name:/^Comprar /})).toBeNull();
+    fireEvent.click(categories.getByRole("button",{name:"Todas"})); expect(screen.getByRole("button",{name:"Comprar João Dúvida"})).toBeTruthy();
+  });
+  it("selects multiple clubs and categories and sorts by PC$ in both directions with alphabetical ties", () => {
+    const c = testContext(); c.athletes = [
+      testAthlete(1,1,{apelido:"Zeca",clubeIdExterno:262,categoriaId:1,pointcoins:10}),
+      testAthlete(2,1,{apelido:"Ana",clubeIdExterno:263,categoriaId:2,pointcoins:30}),
+      testAthlete(3,1,{apelido:"Bia",clubeIdExterno:262,categoriaId:3,pointcoins:30}),
+      testAthlete(4,1,{apelido:"Cleo",clubeIdExterno:263,categoriaId:3,pointcoins:15}),
+    ];
+    picker(c);
+    expect(screen.getAllByRole("listitem").map(item => item.querySelector("strong")?.textContent)).toEqual(["Ana","Bia","Cleo","Zeca"]);
+    fireEvent.click(screen.getByRole("button",{name:/^Filtros/}));
+    const clubs = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Clubes")!;
+    const categories = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Categoria")!;
+    fireEvent.click(within(clubs).getByRole("button",{name:"Limpar"}));
+    for (const name of ["Flamengo","Botafogo"]) fireEvent.click(within(clubs).getByRole("checkbox",{name}));
+    fireEvent.click(within(categories).getByRole("button",{name:"Limpar"}));
+    for (const name of ["Prata","Ouro"]) fireEvent.click(within(categories).getByRole("checkbox",{name}));
+    expect(screen.getAllByRole("listitem").map(item => item.querySelector("strong")?.textContent)).toEqual(["Ana","Bia","Cleo"]);
+    fireEvent.click(screen.getByRole("button",{name:/Ordenar por PointCoins: PC\$ ↓/}));
+    expect(screen.getAllByRole("listitem").map(item => item.querySelector("strong")?.textContent)).toEqual(["Cleo","Ana","Bia"]);
   });
   it("preserves status filters between pages and selects the internal athlete", () => {
     const c = testContext(); c.athletes = Array.from({length:30},(_,i) => testAthlete(i+1,1,{statusId:2}));
-    const onSelect = picker(c); fireEvent.click(screen.getByRole("button",{name:/^Situação/})); fireEvent.click(screen.getByRole("checkbox",{name:"Provável"}));
+    const onSelect = picker(c); fireEvent.click(screen.getByRole("button",{name:/^Filtros/})); fireEvent.click(screen.getByRole("checkbox",{name:"Provável"}));
     fireEvent.click(screen.getByText("Próxima")); expect((screen.getByRole("checkbox",{name:"Provável"}) as HTMLInputElement).checked).toBe(false);
     fireEvent.click(screen.getByRole("button",{name:"Comprar Jogador 30"})); expect(onSelect).toHaveBeenCalledWith(c.athletes[29]);
   });
@@ -178,46 +217,52 @@ describe("Phase 2B.1 lineup UX", () => {
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Goleiro 1"}))[0]);
     const list = screen.getByRole("list",{name:"Atletas elegíveis"});
-    expect(list.textContent).toContain("Prata · 20 POINTCOINS"); expect(list.textContent).toContain("Provável");
-    expect(list.textContent).not.toContain("Cartola"); expect(list.textContent).not.toContain("8,55"); expect(list.textContent).not.toContain("C$");
+    expect(list.textContent).toContain("Prata · PC$ 20"); expect(list.textContent).toContain("Provável");
+    expect(list.textContent).not.toContain("Cartola"); expect(list.textContent).not.toContain("8,55"); expect(list.textContent).toContain("PC$ 20");
   });
   it("preserves club, category, text and statuses on select, reopen and position change", async () => {
-    const c = testContext(); c.athletes = [testAthlete(201,3,{apelido:"Preferido A"}),testAthlete(202,3,{apelido:"Preferido B",statusId:2}),testAthlete(203,4,{apelido:"Preferido Meia"}),testAthlete(204,6,{apelido:"Preferido Técnico"})];
+    const c = testContext(); c.athletes = [testAthlete(201,3,{apelido:"Preferido A"}),testAthlete(202,3,{apelido:"Preferido B",statusId:2}),testAthlete(203,4,{apelido:"Preferido Meia"}),testAthlete(204,6,{apelido:"Preferido Técnico"}),testAthlete(205,3,{apelido:"Outro clube",clubeIdExterno:263})];
     vi.mocked(service.loadLineupContext).mockResolvedValue(c);
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Zagueiro 1"}))[0]);
-    fireEvent.change(screen.getByLabelText("Clube"),{target:{value:"262"}}); fireEvent.change(screen.getByLabelText("Categoria"),{target:{value:"2"}});
+    fireEvent.click(screen.getByRole("button",{name:"Filtros"}));
+    const clubs = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Clubes")!;
+    fireEvent.click(within(clubs).getByRole("button",{name:"Limpar"})); fireEvent.click(within(clubs).getByRole("checkbox",{name:"Flamengo"}));
+    fireEvent.click(screen.getByRole("checkbox",{name:"Bronze"})); fireEvent.click(screen.getByRole("checkbox",{name:"Ouro"}));
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Preferido"}});
     fireEvent.click(screen.getByRole("button",{name:"Comprar Preferido A"}));
     fireEvent.click(screen.getByRole("button",{name:"Concluir"}));
     fireEvent.click(screen.getByRole("button",{name:"Adicionar Zagueiro 2"}));
-    expect((screen.getByLabelText("Clube") as HTMLSelectElement).value).toBe("262"); expect((screen.getByLabelText("Categoria") as HTMLSelectElement).value).toBe("2");
+    fireEvent.click(screen.getByRole("button",{name:/^Filtros/}));
+    expect((screen.getByRole("checkbox",{name:"Flamengo"}) as HTMLInputElement).checked).toBe(true); expect((screen.getByRole("checkbox",{name:"Prata"}) as HTMLInputElement).checked).toBe(true);
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Preferido");
-    fireEvent.click(screen.getByRole("button",{name:/^Situação/}));
     for (const name of ["Provável","Dúvida"]) expect((screen.getByRole("checkbox",{name}) as HTMLInputElement).checked).toBe(true);
     fireEvent.click(screen.getByRole("button",{name:"Comprar Preferido B"}));
     fireEvent.click(screen.getAllByRole("button",{name:"Adicionar Meia 1"})[0]);
     expect(screen.getByText("MEI · 0/3")).toBeTruthy(); expect(screen.getByRole("button",{name:"Comprar Preferido Meia"})).toBeTruthy();
+    fireEvent.click(screen.getByRole("button",{name:/^Filtros/}));
+    expect((screen.getByRole("checkbox",{name:"Prata"}) as HTMLInputElement).checked).toBe(true);
     fireEvent.click(screen.getByRole("button",{name:"Fechar seletor"}));
     fireEvent.click(screen.getByRole("button",{name:"Adicionar Técnico 1"}));
-    expect((screen.getByLabelText("Categoria") as HTMLSelectElement).value).toBe("2");
     expect(screen.getByRole("button",{name:"Comprar Preferido Técnico"})).toBeTruthy();
   });
   it("keeps custom empty statuses and zero-result filters until explicit restore", async () => {
     render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Zagueiro 1"}))[0]);
     fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Sem correspondência"}});
-    fireEvent.click(screen.getByText("Limpar situações")); fireEvent.click(screen.getByRole("button",{name:"Fechar seletor"}));
+    fireEvent.click(screen.getByRole("button",{name:"Filtros"}));
+    const statusGroup = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Situação")!;
+    fireEvent.click(within(statusGroup).getByRole("button",{name:"Limpar"})); fireEvent.click(screen.getByRole("button",{name:"Fechar seletor"}));
     fireEvent.click(screen.getAllByRole("button",{name:"Adicionar Meia 1"})[0]);
-    expect(screen.getByRole("button",{name:"Situação · 0"})).toBeTruthy(); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Sem correspondência");
-    fireEvent.click(screen.getByText("Filtros avançados")); fireEvent.click(screen.getByText("Restaurar Provável + Dúvida")); expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
+    expect(screen.getByRole("button",{name:/^Filtros/})).toBeTruthy(); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Sem correspondência");
+    fireEvent.click(screen.getByRole("button",{name:/^Filtros/})); fireEvent.click(screen.getByText("Restaurar padrão")); expect(screen.getByText(/Nenhum atleta para esta posição/)).toBeTruthy();
     fireEvent.click(screen.getByText("Limpar filtros")); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("");
-    fireEvent.click(screen.getByRole("button",{name:/^Situação/})); expect((screen.getByRole("checkbox",{name:"Suspenso"}) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("checkbox",{name:"Suspenso"}) instanceof HTMLInputElement).toBe(true);
     fireEvent.click(screen.getByText("Restaurar filtros padrão")); expect((screen.getByRole("checkbox",{name:"Suspenso"}) as HTMLInputElement).checked).toBe(false);
   });
   it("preserves filters through saving, duplicating, removing and new drafts without marking edits dirty", async () => {
     const {result} = renderHook(() => useLineupEditor(8)); await waitFor(() => expect(result.current.context).not.toBeNull());
-    const filters = {search:"Jogador",club:"262",category:"2",statuses:["3","unknown"]};
+    const filters = {search:"Jogador",clubs:["262","263"],categories:["2","3"],statuses:["3","unknown"],sort:"asc" as const};
     act(() => result.current.setPickerFilters(filters)); expect(result.current.dirty).toBe(false);
     await act(() => result.current.save()); expect(result.current.pickerFilters).toEqual(filters);
     await act(() => result.current.duplicate()); expect(result.current.pickerFilters).toEqual(filters);

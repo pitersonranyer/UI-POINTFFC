@@ -40,7 +40,7 @@ describe("Fantasy visuals", () => {
   });
   it("shows backend coins verbatim and omits coach category even if supplied", () => {
     render(<ul><FantasyAthleteRow athlete={athlete(1, { posicaoId: 6, categoriaId: 3 })} /></ul>);
-    expect(screen.getByText("Técnico")).toBeTruthy(); expect(screen.queryByText("Ouro")).toBeNull(); expect(screen.getByText("77")).toBeTruthy();
+    expect(screen.getByText("Técnico")).toBeTruthy(); expect(screen.queryByText("Ouro")).toBeNull(); expect(screen.getByText("PC$ 77")).toBeTruthy();
   });
 });
 describe("Fantasy catalog interface", () => {

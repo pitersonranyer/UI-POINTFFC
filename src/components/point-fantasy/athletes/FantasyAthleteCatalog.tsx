@@ -62,6 +62,6 @@ export function FantasyAthleteCatalog() {
         {filtered.length === 0 ? <p className={styles.state}>Nenhum atleta corresponde aos filtros selecionados.</p> : <ul className={styles.list} aria-label="Atletas">{visible.map(a => <FantasyAthleteRow key={a.id} athlete={a} club={current.clubs.find(c => c.id === a.clubeIdExterno)} position={current.positions.find(p => p.id === a.posicaoId)} />)}</ul>}
         {pages > 1 && <nav className={styles.pagination} aria-label="Paginação dos atletas"><button disabled={page === 1} onClick={() => setPage(p => p - 1)}>Anterior</button><span aria-live="polite">Página {page} de {pages}</span><button disabled={page === pages} onClick={() => setPage(p => p + 1)}>Próxima</button></nav>}
       </>}
-    <p className={styles.note}>POINTCOINS são valores virtuais dos atletas e não representam saldo financeiro. Camisetas e escudos são ilustrações próprias do POINT FFC.</p>
+    <p className={styles.note}>PointCoins são valores virtuais dos atletas e não representam saldo financeiro. Camisetas e escudos são ilustrações próprias do POINT FFC.</p>
   </section>;
 }

@@ -37,7 +37,7 @@ export function LineupAthleteActions({ athlete, clubName, role, captain, powerRe
         <dt>Posição</dt><dd>{positionLabels[athlete.posicaoId] ?? "Posição não informada"}</dd>
         <dt>Situação no catálogo</dt><dd>{statusLabel(athlete.statusId)}</dd>
         {athlete.posicaoId !== 6 && <><dt>Categoria</dt><dd>{athlete.categoriaId ? categoryNames[athlete.categoriaId] ?? "Não informada" : "Não informada"}</dd></>}
-        <dt>POINTCOINS</dt><dd>{athlete.pointcoins}</dd>
+        <dt>PointCoins</dt><dd>PC$ {athlete.pointcoins}</dd>
         <dt>Preço Cartola capturado</dt><dd>{athlete.precoCartola}</dd>
       </dl></details>
     </div>

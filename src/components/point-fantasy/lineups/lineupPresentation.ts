@@ -13,7 +13,7 @@ export const positionLabels: Record<number, string> = { 1:"Goleiro", 2:"Lateral"
 // Fantasy does not currently expose that dictionary. 6 means Nulo, not "Não joga".
 export const capturedStatuses: Record<number, string> = { 2:"Dúvida", 3:"Suspenso", 5:"Contundido", 6:"Nulo", 7:"Provável" };
 export const defaultStatuses = ["7", "2"];
-export const defaultPickerFilters = (): LineupPickerFilters => ({ search:"", club:"", category:"", statuses:[...defaultStatuses] });
+export const defaultPickerFilters = (): LineupPickerFilters => ({ search:"", clubs:null, categories:null, statuses:[...defaultStatuses], sort:"desc" });
 export function statusKey(status: number) { return Object.hasOwn(capturedStatuses, status) ? String(status) : "unknown"; }
 export function statusLabel(status: number) { return capturedStatuses[status] ?? "Situação desconhecida"; }
 export const emptySelection = (): LineupSelection => ({ formacao:"4-3-3", titulares:[], reservas:[], tecnico:null, capitaoAtletaId:null, reservaMagoAtletaId:null });

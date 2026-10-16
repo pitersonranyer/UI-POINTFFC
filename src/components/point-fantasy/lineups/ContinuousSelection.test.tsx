@@ -47,16 +47,22 @@ describe("Continuous lineup selection", () => {
     expect(service.createFantasyLineup).not.toHaveBeenCalled(); expect(service.updateFantasyLineup).not.toHaveBeenCalled();
   });
   it("preserves filters, partial selections and dialog identity when no candidates remain", async () => {
-    const c = testContext(); c.athletes = [testAthlete(1,5,{apelido:"Alvo A",statusId:2}),testAthlete(2,5,{apelido:"Alvo B",statusId:2}),testAthlete(3,5,{apelido:"Outro",categoriaId:3})];
+    const c = testContext(); c.athletes = [testAthlete(1,5,{apelido:"Alvo A",statusId:2}),testAthlete(2,5,{apelido:"Alvo B",statusId:2}),testAthlete(3,5,{apelido:"Outro",categoriaId:3}),testAthlete(4,5,{apelido:"Outro clube",clubeIdExterno:263})];
     vi.mocked(service.loadLineupContext).mockResolvedValue(c); render(<LineupEditor competitionId={8} onBack={vi.fn()} />);
     fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Atacante 1"}))[0]);
-    fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Alvo"}}); fireEvent.change(screen.getByLabelText("Clube"),{target:{value:"262"}});
-    fireEvent.change(screen.getByLabelText("Categoria"),{target:{value:"2"}}); fireEvent.click(screen.getByRole("button",{name:/^Situação/})); fireEvent.click(screen.getByRole("checkbox",{name:"Provável"}));
+    fireEvent.click(screen.getByRole("button",{name:/^Filtros/}));
+    const clubs = screen.getAllByRole("group").find(group => group.querySelector("legend")?.textContent === "Clubes")!;
+    fireEvent.click(within(clubs).getByRole("button",{name:"Limpar"})); fireEvent.click(within(clubs).getByRole("checkbox",{name:"Flamengo"}));
+    fireEvent.click(screen.getByRole("checkbox",{name:"Bronze"})); fireEvent.click(screen.getByRole("checkbox",{name:"Ouro"}));
+    fireEvent.click(screen.getByRole("button",{name:/Ordenar por PointCoins: PC\$ ↓/}));
+    fireEvent.change(screen.getByRole("searchbox"),{target:{value:"Alvo"}}); fireEvent.click(screen.getByRole("checkbox",{name:"Provável"}));
     const dialog = screen.getByRole("dialog"); const input = screen.getByRole("searchbox");
     fireEvent.click(screen.getByRole("button",{name:"Comprar Alvo A"})); fireEvent.click(screen.getByRole("button",{name:"Comprar Alvo B"}));
     expect(screen.getByRole("dialog")).toBe(dialog); expect(screen.getByRole("searchbox")).toBe(input); expect((input as HTMLInputElement).value).toBe("Alvo");
-    expect((screen.getByLabelText("Clube") as HTMLSelectElement).value).toBe("262"); expect((screen.getByLabelText("Categoria") as HTMLSelectElement).value).toBe("2");
+    expect((screen.getByRole("checkbox",{name:"Flamengo"}) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByRole("checkbox",{name:"Prata"}) as HTMLInputElement).checked).toBe(true);
     expect((screen.getByRole("checkbox",{name:"Provável"}) as HTMLInputElement).checked).toBe(false); expect((screen.getByRole("checkbox",{name:"Dúvida"}) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("button",{name:/Ordenar por PointCoins: PC\$ ↑/})).toBeTruthy();
     expect(screen.getByRole("button",{name:"Vender Alvo A"})).toBeTruthy(); expect(screen.getByRole("button",{name:"Vender Alvo B"})).toBeTruthy(); expect(document.activeElement).toBe(screen.getByRole("button",{name:"Concluir"}));
     fireEvent.click(screen.getByRole("button",{name:"Concluir"})); fireEvent.click(screen.getByRole("button",{name:"Salvar rascunho"}));
     await screen.findByText("Rascunho salvo no servidor."); expect(service.createFantasyLineup).toHaveBeenCalledWith(8,expect.objectContaining({titulares:[1,2]}));

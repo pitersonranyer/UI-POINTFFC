@@ -29,4 +29,10 @@ export interface LineupSlot { role: SlotRole; position: number; index: number }
 export interface LineupPickerSession extends LineupSlot { mode: "fill" | "replace" }
 // Visual placement only; never serialized in the HTTP selection.
 export type LineupSlotPlacements = Record<string, number>;
-export interface LineupPickerFilters { search: string; club: string; category: string; statuses: string[] }
+export interface LineupPickerFilters {
+  search: string;
+  clubs: string[] | null;
+  categories: string[] | null;
+  statuses: string[];
+  sort: "desc" | "asc";
+}
