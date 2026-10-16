@@ -83,29 +83,30 @@
 .empty button { margin:6px; }.login { display:inline-flex; align-items:center; }
 .picker { position:fixed; inset:0 0 0 auto; margin:0; width:min(100%,520px); max-width:100%; height:100dvh; max-height:100dvh; padding:20px 16px calc(24px + env(safe-area-inset-bottom)); border:0; border-left:1px solid #ccd9d0; background:#fff; color:#17271e; overflow-y:auto; overscroll-behavior:contain; }
 .picker::backdrop { background:#0c1c1675; }
-.pickerHeader { position:sticky; top:-20px; z-index:2; display:flex; justify-content:space-between; gap:12px; align-items:flex-start; padding-block:10px; background:#fff; }
-.pickerHeader h2 { margin:0; font-size:1.2rem; }
-.pickerHeader>.actions { justify-content:flex-end; gap:6px; }
-.pickerProgress { margin:12px 0; padding:9px 11px; border-left:3px solid #d4af37; border-radius:4px; background:#f1f6f2; color:#29513a; font-size:.78rem; line-height:1.5; }
-.pickerFilters { display:grid; gap:9px; }
-.pickerFilters .searchFilter { display:flex; flex-direction:column; gap:5px; }
-.compactFilters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; align-items:end; }
-.compactFilters label { min-width:0; display:grid; gap:4px; color:#516056; font-size:.64rem; font-weight:700; }
-.compactFilters select { padding:7px 22px 7px 7px; min-height:42px; font-size:.7rem; }
-.compactFilters button { min-width:0; min-height:42px; padding:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.68rem; }
-.situationPopover { display:flex; flex-wrap:wrap; gap:5px 12px; margin:0; padding:8px; border:1px solid #d8e3da; border-radius:8px; background:#f7faf7; }
-.situationPopover legend { padding:0 5px; font-size:.72rem; font-weight:700; }
-.situationPopover label { min-height:32px; display:flex; align-items:center; gap:5px; font-size:.7rem; }
-.situationPopover input { width:18px; height:18px; accent-color:#186239; }
-.advancedFilters { margin-top:14px; border-top:1px solid #e2e9e3; padding-top:10px; }
-.advancedFilters summary { min-height:38px; display:flex; align-items:center; color:#365542; font-size:.76rem; font-weight:700; cursor:pointer; }
-.advancedFilters .statuses { margin:5px 0 0; }
-.statuses { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; padding:12px; border:1px solid #d8e3da; border-radius:8px; }
-.statuses legend { padding:0 6px; font-size:.8rem; font-weight:700; }
-.statuses label { display:flex; align-items:center; gap:6px; font-size:.75rem; min-height:30px; }
-.statuses input { width:18px; height:18px; accent-color:#186239; }
-.statuses>div { display:flex; flex-wrap:wrap; gap:5px; }
-.statuses button { font-size:.65rem; padding:7px; min-height:36px; }
+.pickerHeader { position:sticky; top:-20px; z-index:2; display:flex; justify-content:space-between; gap:12px; align-items:center; padding-block:8px; background:#fff; }
+.pickerHeader h2 { margin:0; font-size:1.08rem; }
+.pickerHeader>.actions { justify-content:flex-end; align-items:center; gap:5px; }
+.pickerProgress { margin:0 3px 0 0; color:#43554a; font-size:.72rem; line-height:1.2; white-space:nowrap; }
+.pickerFilters { position:relative; display:grid; gap:6px; }
+.pickerFilters .searchFilter { display:flex; flex-direction:column; gap:4px; }
+.pickerFilters .searchFilter>input { min-height:42px; }
+.compactFilters { display:grid; grid-template-columns:minmax(0,1fr) minmax(100px,.45fr); gap:6px; }
+.compactFilters button { min-width:0; min-height:40px; padding:6px 9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.72rem; }
+.compactFilters button:last-child { color:#604a15; border-color:#e0d4aa; background:#fbf7e9; }
+.filterSummary { margin:0; min-height:18px; overflow:hidden; color:#617066; font-size:.64rem; line-height:1.4; text-overflow:ellipsis; white-space:nowrap; }
+.filterPanel { position:absolute; z-index:5; top:100%; left:0; width:min(100%,480px); max-height:min(72vh,600px); overflow:auto; padding:12px; border:1px solid #ccd9d0; border-radius:12px; background:white; box-shadow:0 12px 38px #14251c30; }
+.filterPanel[hidden] { display:none; }
+.filterPanelHeader { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:4px; }
+.filterPanelHeader strong { font-size:.85rem; }
+.filterPanelHeader button,.filterActions button { min-height:36px; padding:6px 9px; font-size:.68rem; }
+.filterGroup { min-width:0; margin:8px 0; padding:8px; border:1px solid #d8e3da; border-radius:9px; }
+.filterGroup legend { padding:0 5px; font-size:.75rem; font-weight:750; color:#365542; }
+.filterChoices { display:flex; flex-wrap:wrap; gap:4px 12px; }
+.filterChoices label { min-height:34px; display:flex; flex-direction:row; align-items:center; gap:6px; font-size:.72rem; }
+.filterChoices input { flex:none; width:18px; height:18px; accent-color:#186239; }
+.filterActions { display:flex; flex-wrap:wrap; gap:5px; padding-top:5px; }
+.filterGroup:disabled { opacity:.55; }
+.filterGroup:disabled button,.filterGroup:disabled input { cursor:not-allowed; }
 .pickerList { list-style:none; padding:0; margin:0; }
 .pickerList li { display:grid; grid-template-columns:46px minmax(0,1fr) auto; align-items:center; gap:10px; padding:12px 0; border-top:1px solid #e2e9e3; }
 .pickerList li[data-selected="true"] { padding-inline:7px; border-radius:8px; background:#eff7f0; box-shadow:inset 3px 0 #25804a; }
@@ -139,7 +140,12 @@
   .actionContent { gap:9px; padding:14px 16px calc(12px + env(safe-area-inset-bottom)); }
   .actionContent header { position:sticky; top:-14px; z-index:1; padding:8px 0; background:#fff; }
   .actionContent>button { min-height:46px; }
-  .compactFilters { gap:4px; }
   .pickerList li { gap:7px; }
+  .picker { padding:12px 12px calc(14px + env(safe-area-inset-bottom)); }
+  .pickerHeader { top:-12px; gap:6px; }
+  .pickerHeader h2 { font-size:.95rem; }
+  .pickerHeader>.actions { gap:3px; }
+  .pickerHeader>.actions button { min-height:38px; padding:6px 8px; font-size:.67rem; }
+  .filterPanel { position:fixed; inset:auto 0 0; width:100%; max-width:none; max-height:min(78dvh,680px); padding:14px 14px calc(14px + env(safe-area-inset-bottom)); border-radius:16px 16px 0 0; box-shadow:0 -10px 34px #14251c38; }
 }
 @media(max-width:360px) { .builder { width:calc(100% - 20px); }.pickSlot strong { font-size:.58rem; }.pickerList { margin-inline:-6px; }.pickerList li { gap:5px; } }

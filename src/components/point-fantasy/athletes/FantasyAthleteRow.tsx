@@ -14,6 +14,6 @@ export function FantasyAthleteRow({ athlete: a, club, position }: { athlete: Poi
     <div className={styles.identity}><strong>{a.apelido}</strong><span><ClubShield clubId={a.clubeIdExterno} size={20} decorative />{clubUniforms[a.clubeIdExterno]?.name ?? club?.dados.nome ?? `Clube ${a.clubeIdExterno}`}</span></div>
     <span className={styles.position}>{coach ? "Técnico" : position?.dados.nome ?? "Posição não informada"}</span>
     <span className={styles.category} data-category={category}>{coach ? "Comissão técnica" : category ?? "Sem categoria"}</span>
-    <span className={styles.coins}><strong>{a.pointcoins}</strong><small>POINTCOINS</small></span>
+    <span className={styles.coins}><strong>PC$ {a.pointcoins}</strong><small>PointCoins</small></span>
   </li>;
 }

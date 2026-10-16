@@ -7,7 +7,7 @@ export function testContext(): LineupContext {
   return {
     competition:{ id:8, catalogoId:9, nome:"Competição de teste", temporada:2026, rodada:31, tipoAcesso:"FREE", valorInscricao:"0.00", status:"PUBLICADA", inicioInscricao:"2026-01-01T00:00:00Z", fimInscricao:"2098-01-01T00:00:00Z", fechamentoDefinitivoEm:null, limiteEscalacoesUsuario:null, criadoEm:"", atualizadoEm:"", partidas:[{ id:1, competicaoId:8, partidaIdExterno:100, clubeMandanteId:262, clubeVisitanteId:263, inicioPrevisto:"2099-01-01T00:00:00Z", inicioReal:null, status:"AGENDADA" }] },
     catalog:{ id:9, temporada:2026, rodada:31, versao:1, status:"CONGELADO", capturadoEm:"", congeladoEm:"", criadoEm:"" },
-    athletes:[...Array.from({ length:80 }, (_, i) => testAthlete(i + 1, (i % 6) + 1)), testAthlete(100, 1, { apelido:"João Dúvida", statusId:2 }), testAthlete(101, 1, { apelido:"Suspenso Teste", statusId:3 }), testAthlete(102, 1, { apelido:"Sem situação", statusId:999 })],
+    athletes:[...Array.from({ length:80 }, (_, i) => testAthlete(i + 1, (i % 6) + 1)), testAthlete(100, 1, { apelido:"João Dúvida", statusId:2 }), testAthlete(101, 1, { apelido:"Suspenso Teste", statusId:3 }), testAthlete(102, 1, { apelido:"Sem situação", statusId:999 }), testAthlete(103, 1, { apelido:"Botafogo Jogador", clubeIdExterno:263 })],
     clubs:[{ id:262, dados:{ nome:"FLA", abreviacao:"FLA" } }, { id:263, dados:{ nome:"BOT", abreviacao:"BOT" } }],
     positions:[1,2,3,4,5,6].map(id => ({ id, dados:{ nome:String(id), abreviacao:String(id) } })),
   };
