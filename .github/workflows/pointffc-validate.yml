@@ -64,8 +64,6 @@ jobs:
             "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
             "NEXT_PUBLIC_FIREBASE_APP_ID",
             "NEXT_PUBLIC_API_URL",
-            "NEXT_PUBLIC_CARTOLA_SEASON",
-            "NEXT_PUBLIC_CARTOLA_ROUND",
           ];
           const missing = required.filter((name) => !process.env[name]?.trim());
           if (missing.length) {
@@ -90,10 +88,6 @@ jobs:
             process.exit(1);
           }
 
-          if (!/^[1-9][0-9]*$/.test(process.env.NEXT_PUBLIC_CARTOLA_SEASON) || !/^[1-9][0-9]*$/.test(process.env.NEXT_PUBLIC_CARTOLA_ROUND)) {
-            console.error("Build não executado: temporada e rodada precisam ser inteiros positivos.");
-            process.exit(1);
-          }
           NODE
 
       - name: Gerar build estático de produção
