@@ -2,6 +2,7 @@ export const TELEGRAM_LINK_PATH = "/conectar-telegram/";
 
 /** Only allow a known same-origin destination; never trust an arbitrary URL query value. */
 export function getPostAuthRedirect(value: string | null | undefined): string {
+  if (value && /^\/point-fantasy(?:\?competicao=[1-9]\d*)?$/.test(value)) return value;
   return value === "/conectar-telegram" || value === TELEGRAM_LINK_PATH
     ? TELEGRAM_LINK_PATH
     : "/dashboard";

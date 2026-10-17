@@ -11,7 +11,10 @@ type CreationIntent = { kind: "create"; selection: LineupSelection; identity: Cr
 const intentParameters = (intent: CreationIntent) => JSON.stringify({ ...intent, identity:{ nomeBase:intent.identity.nomeBase } });
 type RegistrationIntent = { request: FreeLineupRegistrationRequest; teams: FantasyLineup[]; competitionName: string };
 
-export function useLineupEditor(competitionId: number) {
+export function useLineupEditor(competitionId: number, integrated = false) {
+  const [teamName, setTeamName] = useState("Tropa do Mago");
+  const integratedIntent = useRef<FreeLineupRegistrationRequest | null>(null);
+  const [integratedPending, setIntegratedPending] = useState(false);
   const [context, setContext] = useState<LineupContext | null>(null);
   const [drafts, setDrafts] = useState<FantasyLineup[]>([]);
   const [saved, setSaved] = useState<FantasyLineup | null>(null);
@@ -41,26 +44,26 @@ export function useLineupEditor(competitionId: number) {
   const selectionCursor = useRef({ value, slot, placements:slotPlacements });
   selectionCursor.current = { value, slot, placements:slotPlacements };
   function setValue(next: LineupSelection) {
-    if (pending.current || running.current || registrationLock.current || (saved && saved.status !== "RASCUNHO")) return;
+    if (integratedPending || pending.current || running.current || registrationLock.current || (saved && saved.status !== "RASCUNHO" && !(integrated && context?.competition.tipoAcesso === "FREE"))) return;
     setPlacements(selectionCursor.current.placements);
     setSelection(next);
   }
   function openSlot(next: LineupSlot) {
-    if (registrationLock.current || (saved && saved.status !== "RASCUNHO")) return;
+    if (integratedPending || registrationLock.current || (saved && saved.status !== "RASCUNHO" && !(integrated && context?.competition.tipoAcesso === "FREE"))) return;
     const session: LineupPickerSession = { ...next, mode:athleteInSlot(value, context?.athletes ?? [], next, slotPlacements) ? "replace" : "fill" };
     selectionCursor.current.slot = session;
     setSlot(session);
   }
   function selectAthlete(id: number) {
     const current = selectionCursor.current;
-    if (!context || !current.slot || running.current || pending.current || registrationLock.current || (saved && saved.status !== "RASCUNHO") || conflict || serverBlocked || blockingReason(context, Date.now())) return;
+    if (!context || !current.slot || running.current || pending.current || registrationLock.current || (saved && saved.status !== "RASCUNHO" && !(integrated && context?.competition.tipoAcesso === "FREE")) || conflict || serverBlocked || blockingReason(context, Date.now())) return;
     const next = selectIntoLineupSlot(current.value, context.athletes, current.slot, id, current.placements);
     if (!next) return;
     selectionCursor.current = { value:next.selection, slot:next.nextSlot, placements:next.placements };
     setValue(next.selection); setPlacements(next.placements); setSlot(next.nextSlot);
   }
   function sellAthlete(id: number) {
-    if (running.current || pending.current || registrationLock.current || (saved && saved.status !== "RASCUNHO") || conflict || serverBlocked) return;
+    if (running.current || pending.current || registrationLock.current || (saved && saved.status !== "RASCUNHO" && !(integrated && context?.competition.tipoAcesso === "FREE")) || conflict || serverBlocked) return;
     const current = selectionCursor.current;
     const nextValue = removeAthlete(current.value, id);
     const activeAthlete = context && current.slot ? athleteInSlot(current.value, context.athletes, current.slot, current.placements) : undefined;
@@ -86,9 +89,14 @@ export function useLineupEditor(competitionId: number) {
   const accept = useCallback((result: FantasyLineup) => {
     if (result.competicaoId !== competitionId) throw new Error("A escalação retornada pertence a outra competição.");
     setSaved(result); setSelection(selectionOf(result)); setSlot(null); setConflict(false);
+    if (integrated) {
+      let unresolved = false;
+      try { unresolved = result.status !== "INSCRITA" && !!window.localStorage.getItem(`point-fantasy:registration:v1:${competitionId}:${result.id}`); } catch { /* Saving reports unavailable persistence before submitting. */ }
+      setIntegratedPending(unresolved);
+    }
     if (result.identidade) setIdentityState(previous => ({ items:previous?.items ?? [], estadoIdentidade:"DEFINIDA", identidade:result.identidade, rascunhosLegados:previous?.rascunhosLegados ?? 0 }));
     setDrafts(items => [result, ...items.filter(item => item.id !== result.id)]);
-  }, [competitionId]);
+  }, [competitionId, integrated]);
   async function run(action: () => Promise<void>) {
     if (running.current) return;
     running.current = true; setBusy(true); setError(""); setNotice(""); setSlot(null);
@@ -98,6 +106,7 @@ export function useLineupEditor(competitionId: number) {
       setError(lineupError(err));
       if (err instanceof ApiError && err.status === 409) {
         setConflict(true);
+        if (saved) { try { const latest = await getFantasyLineup(saved.id); if (active.current) setDrafts(items => items.map(item => item.id === latest.id ? latest : item)); } catch { /* Explicit reload remains available. */ } }
         if (/bloquead|primeira partida|competicao indisponivel/i.test(err.message)) setServerBlocked(true);
       }
       if (err instanceof ApiError && [401,403].includes(err.status)) setServerBlocked(true);
@@ -105,24 +114,27 @@ export function useLineupEditor(competitionId: number) {
   }
   function discardConfirmed() { return !dirty || window.confirm("Há alterações não salvas. Deseja descartá-las e continuar?"); }
   function newDraft() {
-    if (running.current || pending.current || registrationLock.current || !discardConfirmed()) return;
+    if (integratedPending || running.current || pending.current || registrationLock.current || !discardConfirmed()) return false;
     rejectedIntent.current = null;
     setSaved(null); setSelection(emptySelection()); setPlacements({}); setSlot(null); setError(""); setNotice(""); setConflict(false);
+    return true;
   }
   async function openDraft(id: number) {
-    if (running.current || pending.current || registrationLock.current || !discardConfirmed()) return;
+    if (integratedPending || running.current || pending.current || registrationLock.current || !discardConfirmed()) return false;
     rejectedIntent.current = null;
-    await run(async () => { const result = await getFantasyLineup(id); if (active.current) accept(result); });
+    let opened = false;
+    await run(async () => { const result = await getFantasyLineup(id); if (active.current) { accept(result); opened = true; } });
+    return opened;
   }
-  async function createIntent(kind: "create" | "duplicate", nomeBase?: string) {
+  async function createIntent(kind: "create" | "duplicate", nomeBase?: string, source = saved) {
     if (running.current || pending.current || registrationLock.current || conflict || serverBlocked || !identityState || !context || blockingReason(context, Date.now())) return;
-    if (kind === "duplicate" && (!saved || saved.status !== "RASCUNHO" || dirty)) return;
-    const name = nomeBase === undefined ? undefined : normalizeTeamName(nomeBase);
+    if (kind === "duplicate" && (!source || source.status !== "RASCUNHO" || dirty)) return;
+    const name = nomeBase === undefined ? (integrated && identityState.estadoIdentidade !== "DEFINIDA" ? normalizeTeamName(teamName) : undefined) : normalizeTeamName(nomeBase);
     if (name === null) { setError("Use de 2 a 60 caracteres: letras, números, espaços, ponto, apóstrofo ou hífen."); return; }
-    if (identityState.estadoIdentidade !== "DEFINIDA" && name === undefined) { setNameAction(kind); return; }
+    if (!integrated && identityState.estadoIdentidade !== "DEFINIDA" && name === undefined) { setNameAction(kind); return; }
     const identity = { chaveIdempotencia:"", ...(identityState.estadoIdentidade !== "DEFINIDA" ? { nomeBase:name! } : {}) };
-    const intent: CreationIntent = kind === "duplicate" && saved
-      ? { kind, id:saved.id, version:saved.versao, identity }
+    const intent: CreationIntent = kind === "duplicate" && source
+      ? { kind, id:source.id, version:source.versao, identity }
       : { kind:"create", selection:structuredClone(selectionOf(value)), identity };
     intent.identity.chaveIdempotencia = rejectedIntent.current && intentParameters(rejectedIntent.current) === intentParameters(intent)
       ? rejectedIntent.current.identity.chaveIdempotencia : crypto.randomUUID();
@@ -143,7 +155,7 @@ export function useLineupEditor(competitionId: number) {
           : await duplicateFantasyLineup(intent.id, intent.version, intent.identity);
         if (active.current) {
           accept(result); pending.current = null; rejectedIntent.current = null; setPendingCreation(false); setNameAction(null);
-          setNotice(intent.kind === "create" ? "Rascunho salvo no servidor." : "Novo rascunho independente criado no servidor.");
+          setNotice(integrated ? "Time salvo. Em montagem." : intent.kind === "create" ? "Rascunho salvo no servidor." : "Novo rascunho independente criado no servidor."); if (integrated && intent.kind === "create") await finishIntegratedSave(result);
         }
       } catch (err) {
         if (!active.current) return;
@@ -158,12 +170,49 @@ export function useLineupEditor(competitionId: number) {
     });
   }
   async function retryCreation() { if (pending.current && !running.current && !serverBlocked) await executeIntent(pending.current, true); }
+  async function finishIntegratedSave(team: FantasyLineup) {
+    if (!context) return;
+    if (team.status === "INSCRITA") { setNotice("Time salvo. Inscrição preservada."); return; }
+    if (context.competition.tipoAcesso !== "FREE") { setNotice("Time salvo. A participação paga depende de confirmação específica."); return; }
+    if (!team.validacao.completa) return;
+    const unavailable = freeRegistrationReason(context, Date.now());
+    if (unavailable) { setError(`Time salvo. ${unavailable}`); return; }
+    const storageKey = `point-fantasy:registration:v1:${competitionId}:${team.id}`;
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      const request = integratedIntent.current?.escalacaoIds[0] === team.id ? integratedIntent.current : { escalacaoIds:[team.id], chaveIdempotencia:stored || crypto.randomUUID() };
+      integratedIntent.current = request;
+      window.localStorage.setItem(storageKey, request.chaveIdempotencia);
+      const latest = await getFantasyLineup(team.id);
+      if (latest.status !== "INSCRITA") {
+        if (!latest.validacao.completa) throw new Error("O time ainda possui pendências. Recarregue a versão atual.");
+        await confirmFreeFantasyLineups(competitionId, request);
+      }
+      const refreshed = latest.status === "INSCRITA" ? latest : await getFantasyLineup(team.id);
+      if (refreshed.status !== "INSCRITA") throw new Error("A confirmação ainda não foi recuperada. Tente novamente.");
+      accept(refreshed);
+      integratedIntent.current = null;
+      setIntegratedPending(false);
+      window.localStorage.removeItem(storageKey);
+      setNotice("Time salvo e inscrito!");
+    } catch (err) {
+      setIntegratedPending(true);
+      setNotice("");
+      setError(`Time salvo. Não foi possível concluir a inscrição. Tente salvar novamente. ${lineupError(err)}`);
+      if (err instanceof ApiError && [401,403].includes(err.status)) setServerBlocked(true);
+      if (err instanceof ApiError && err.status === 409) {
+        try { const latest = await getFantasyLineup(team.id); setDrafts(items => items.map(item => item.id === latest.id ? latest : item)); } catch { /* Safe retry keeps the operation key. */ }
+      }
+    }
+  }
   async function save() {
-    if (pending.current || registrationLock.current || conflict || serverBlocked || running.current || (saved && saved.status !== "RASCUNHO")) return;
+    if (integrated && (!context || blockingReason(context, Date.now()))) return;
+    if (pending.current || registrationLock.current || conflict || serverBlocked || running.current || (saved && saved.status !== "RASCUNHO" && !(integrated && context?.competition.tipoAcesso === "FREE"))) return;
     if (!saved) { await createIntent("create"); return; }
+    if (integrated && (!dirty || integratedPending)) { await run(() => finishIntegratedSave(saved)); return; }
     await run(async () => {
       const result = await updateFantasyLineup(saved.id, saved.versao, selectionOf(value));
-      if (active.current) { accept(result); setNotice("Rascunho salvo no servidor."); }
+      if (active.current) { accept(result); setNotice(integrated ? "Time salvo. Em montagem." : "Rascunho salvo no servidor."); if (integrated) await finishIntegratedSave(result); }
     });
   }
   async function duplicate() {
@@ -285,5 +334,5 @@ export function useLineupEditor(competitionId: number) {
     });
   }
   const registrationTeams = registrationIntent.current?.teams ?? drafts.filter(team => registrationIds.includes(team.id));
-  return { context, drafts, saved, value, setValue, slot, setSlot, openSlot, selectAthlete, sellAthlete, slotPlacements, pickerFilters, setPickerFilters, loading, busy, error, notice, conflict, serverBlocked, dirty, save, duplicate, remove, reload, newDraft, openDraft, identityState, nameAction, pendingCreation, retryCreation, confirmName:(name: string) => nameAction ? createIntent(nameAction, name) : Promise.resolve(), cancelName:() => { if (!running.current) setNameAction(null); }, retry:() => setRetry(n => n + 1), registrationIds, toggleRegistration, registrationReview, reviewRegistration, closeRegistration, confirmRegistration, registrationError, registrationLocked, registrationRefreshRequired, registrationRetry:!!registrationIntent.current, registrationTeams, registrationCompetitionName:registrationIntent.current?.competitionName ?? context?.competition.nome ?? "" };
+  return { duplicateListed:(team: FantasyLineup) => createIntent("duplicate", undefined, team), integratedPending, teamName, setTeamName, context, drafts, saved, value, setValue, slot, setSlot, openSlot, selectAthlete, sellAthlete, slotPlacements, pickerFilters, setPickerFilters, loading, busy, error, notice, conflict, serverBlocked, dirty, save, duplicate, remove, reload, newDraft, openDraft, identityState, nameAction, pendingCreation, retryCreation, confirmName:(name: string) => nameAction ? createIntent(nameAction, name) : Promise.resolve(), cancelName:() => { if (!running.current) setNameAction(null); }, retry:() => setRetry(n => n + 1), registrationIds, toggleRegistration, registrationReview, reviewRegistration, closeRegistration, confirmRegistration, registrationError, registrationLocked, registrationRefreshRequired, registrationRetry:!!registrationIntent.current, registrationTeams, registrationCompetitionName:registrationIntent.current?.competitionName ?? context?.competition.nome ?? "" };
 }

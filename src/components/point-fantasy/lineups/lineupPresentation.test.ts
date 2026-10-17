@@ -51,6 +51,7 @@ describe("Lineup presentation", () => {
   });
   it("blocks exactly at kickoff without reopening presumed delayed games", () => {
     const c = testContext(); const kickoff = Date.parse(c.competition.partidas[0].inicioPrevisto);
+    c.competition.fimInscricao = "2100-01-01T00:00:00Z";
     expect(blockingReason(c, kickoff - 1)).toBeNull(); expect(blockingReason(c, kickoff)).toContain("bloqueada");
     c.competition.partidas[0].status = "ADIADA"; expect(blockingReason(c, Date.parse("2026-10-15"))).toBeTruthy();
   });

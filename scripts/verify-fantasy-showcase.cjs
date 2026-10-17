@@ -51,7 +51,7 @@ const competitions = [
       assert.equal(await page.locator('link[rel=canonical]').getAttribute('href'), 'https://pointffc.com.br/point-fantasy');
       assert.equal(await page.getByRole('tab').count(), 1);
       assert.equal(await page.getByRole('button', { name: 'Participar', exact: true }).count(), 2);
-      assert.equal(await page.getByRole('button', { name: 'Encerrada', exact: true }).isDisabled(), true);
+      assert.equal(await page.getByRole('button', { name: 'Ver andamento', exact: true }).isDisabled(), false);
       const rail = page.getByRole('region', { name: 'Carrossel de competições' });
       await page.screenshot({ path: path.join(output, `${width}.png`), fullPage: true });
       if (width < 768) {

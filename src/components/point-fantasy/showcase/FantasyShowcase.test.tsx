@@ -94,22 +94,39 @@ it("trata erro, nova tentativa e ausência de competições", async () => {
   expect(await screen.findByText("Nenhuma competição disponível no momento.")).toBeTruthy();
 });
 
-it("atualiza a listagem e remove ações quando o servidor encerra a competição", async () => {
+it("substitui Participar por Ver andamento quando o servidor encerra a competição", async () => {
   vi.mocked(listFantasyCompetitions).mockResolvedValueOnce([competition()]).mockResolvedValue([{ ...competition(), status: "ENCERRADA" }]);
   render(<FantasyShowcase />);
   await screen.findByRole("button", { name: "Participar" });
   fireEvent.click(screen.getByRole("button", { name: "Atualizar" }));
-  expect((await screen.findByRole("button", { name: "Encerrada" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((await screen.findByRole("button", { name: "Ver andamento" }) as HTMLButtonElement).disabled).toBe(false);
   expect(screen.queryByRole("button", { name: "Participar" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Ver andamento" }));
+  expect(screen.getByRole("region", { name: "Editor existente" }).textContent).toContain("Competição 8");
 });
 
-it("expira o botão durante a sessão e impede clique com dados antigos", async () => {
+it("permite acompanhar os times quando o prazo expira durante a sessão", async () => {
   vi.useFakeTimers(); const now = new Date("2026-10-17T12:00:00Z"); vi.setSystemTime(now);
   vi.mocked(listFantasyCompetitions).mockResolvedValue([{ ...competition(), fimInscricao: "2026-10-17T12:00:02Z" }]);
   await act(async () => { render(<FantasyShowcase />); });
   expect(screen.getByRole("button", { name: "Participar" })).toBeTruthy();
   await act(async () => { vi.advanceTimersByTime(2000); });
-  expect((screen.getByRole("button", { name: "Encerrada" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "Ver andamento" }) as HTMLButtonElement).disabled).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "Ver andamento" }));
+  expect(window.location.search).toBe("?competicao=8");
+});
+
+it.each(["ENCERRADA", "FINALIZADA", "FECHADA"])("permite consultar a competição %s", async status => {
+  vi.mocked(listFantasyCompetitions).mockResolvedValue([{ ...competition(19), status }]);
+  render(<FantasyShowcase />);
+  fireEvent.click(await screen.findByRole("button", { name: "Ver andamento" }));
+  expect(window.location.search).toBe("?competicao=19");
+});
+
+it("mantém indisponível a participação antes da abertura", async () => {
+  vi.mocked(listFantasyCompetitions).mockResolvedValue([{ ...competition(), inicioInscricao:"2099-01-01T00:00:00Z", fimInscricao:"2100-01-01T00:00:00Z" }]);
+  render(<FantasyShowcase />);
+  expect((await screen.findByRole("button", { name:"Em breve" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
 it("respeita início, fim, fechamento definitivo e datas inválidas", () => {

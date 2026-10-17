@@ -126,6 +126,7 @@ export function blockingReason(context: LineupContext, now: number): string | nu
   const c = context.competition;
   if (c.status !== "PUBLICADA" || context.catalog.status !== "CONGELADO" || c.temporada !== context.catalog.temporada || c.rodada !== context.catalog.rodada) return "Competição ou catálogo indisponível para edição.";
   if (!Number.isFinite(Date.parse(c.inicioInscricao)) || Date.parse(c.inicioInscricao) > now) return "A montagem ainda não foi aberta.";
+  if (!Number.isFinite(Date.parse(c.fimInscricao)) || Date.parse(c.fimInscricao) <= now) return "O prazo de edição está encerrado.";
   if (c.fechamentoDefinitivoEm && (!Number.isFinite(Date.parse(c.fechamentoDefinitivoEm)) || Date.parse(c.fechamentoDefinitivoEm) <= now)) return "A competição foi encerrada para edição.";
   if (!c.partidas.length || c.partidas.some(m => m.status !== "AGENDADA" || m.inicioReal !== null || !Number.isFinite(Date.parse(m.inicioPrevisto)) || Date.parse(m.inicioPrevisto) <= now)) return "Edição bloqueada pelo início previsto ou registrado de uma partida.";
   return null;

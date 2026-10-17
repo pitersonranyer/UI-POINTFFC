@@ -202,6 +202,7 @@ describe("Athlete picker", () => {
 describe("Private journey", () => {
   it("opens the selected competition through the existing authenticated editor without creating a draft", async () => {
     render(<FantasyLineupBuilder competitionId={19} onBack={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Bora escalar/ }));
     await screen.findByRole("region", { name: "Campinho 4-3-3" });
     expect(service.loadLineupContext).toHaveBeenCalledWith(19, expect.any(AbortSignal));
     expect(service.listFantasyCompetitions).not.toHaveBeenCalled();
@@ -216,13 +217,14 @@ describe("Private journey", () => {
   });
   it("requires the existing login and makes no anonymous requests", () => {
     auth.authenticated = false; render(<FantasyLineupBuilder />);
-    expect(screen.getByRole("link",{name:"Entrar na minha conta"}).getAttribute("href")).toMatch(/^\/login\/?$/);
+    expect(screen.getByRole("link",{name:"Entrar na minha conta"}).getAttribute("href")).toBe("/login?returnTo=%2Fpoint-fantasy");
     expect(service.listFantasyCompetitions).not.toHaveBeenCalled();
   });
   it("discovers competitions and creates an incomplete draft without fake validation", async () => {
     render(<FantasyLineupBuilder />); fireEvent.click(await screen.findByText("Participar"));
-    fireEvent.click(await screen.findByText("Salvar rascunho"));
-    await screen.findByText("Rascunho salvo no servidor.");
+    fireEvent.click(await screen.findByRole("button", { name: /Bora escalar/ }));
+    fireEvent.click(await screen.findByText("Salvar time"));
+    await screen.findByText("Time salvo. Em montagem.");
     expect(service.createFantasyLineup).toHaveBeenCalledWith(8,emptySelection(),expect.objectContaining({chaveIdempotencia:expect.any(String)}));
     expect(screen.getByText("Escolha o técnico")).toBeTruthy(); expect(screen.queryByText(/Escalação completa/)).toBeNull();
   });

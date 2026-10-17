@@ -100,13 +100,14 @@ export function FantasyShowcase() {
             {competitions.map((competition, index) => {
               const availability = competitionAvailability(competition, now);
               const open = availability === "Inscrições abertas";
+              const canView = availability === "Encerrada";
               return <article key={competition.id} className={styles.card} aria-label={competition.nome}>
                 <div className={styles.cardTop}><span><Trophy size={15} aria-hidden="true" />Rodada {competition.rodada}</span><span>{competition.temporada}</span></div>
                 <h3>{competition.nome}</h3>
                 <div className={styles.entry}><span className={competition.tipoAcesso === "FREE" ? styles.free : styles.paid}>{competition.tipoAcesso === "FREE" ? "FREE" : "PAGA"}</span><strong>{competition.tipoAcesso === "FREE" ? "Grátis para participar" : Number.isFinite(Number(competition.valorInscricao)) ? currency.format(Number(competition.valorInscricao)) : "Valor não informado"}</strong></div>
                 <div className={styles.deadline}><CalendarClock size={18} aria-hidden="true" /><div><span>Participe até</span><strong>{competitionDeadline(competition.fimInscricao)}</strong><small>Horário de Brasília</small></div></div>
                 <p className={styles.limit}>{competition.limiteEscalacoesUsuario === null ? "Sem limite de times por usuário" : `Até ${competition.limiteEscalacoesUsuario} ${competition.limiteEscalacoesUsuario === 1 ? "time" : "times"} por usuário`}</p>
-                <div className={styles.cardFooter}><span className={open ? styles.open : styles.closed}>{availability}</span><button type="button" disabled={!open} onClick={() => { if (competitionAvailability(competition, Date.now()) === "Inscrições abertas") select(competition.id); }}>{open ? "Participar" : availability}<ArrowRight size={17} aria-hidden="true" /></button></div>
+                <div className={styles.cardFooter}><span className={open ? styles.open : styles.closed}>{availability}</span><button type="button" disabled={!open && !canView} onClick={() => { const current = competitionAvailability(competition, Date.now()); if (current === "Inscrições abertas" || current === "Encerrada") select(competition.id); }}>{open ? "Participar" : canView ? "Ver andamento" : availability}<ArrowRight size={17} aria-hidden="true" /></button></div>
                 {competitions.length > 1 && <span className={styles.srOnly}>{index + 1} de {competitions.length}</span>}
               </article>;
             })}

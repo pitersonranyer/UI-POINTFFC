@@ -1,0 +1,21 @@
+/* Traditional classes are applied directly in CompetitionRanking.tsx. */
+.ranking { min-width:0; color:#111; }
+.list { list-style:none; padding:0; margin:0; }
+.position,.score { font-variant-numeric:tabular-nums; }
+.row > svg { flex:none; width:30px; height:30px; }
+/* Keep the inline badge visible even when a public team name needs ellipsis. */
+.ranking .identity > strong { display:flex; align-items:center; gap:7px; }
+.name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.identity .badge { flex:none; display:inline-block; margin-left:0; overflow:visible; }
+/* The Fantasy builder also styles buttons; keep the traditional compact refresh control. */
+.ranking .header button { min-height:0; padding:7px 9px; border:1px solid #e6dfcf; border-radius:7px; background:#fff; color:#896b2d; font-size:11px; font-weight:800; }
+.message { margin:12px 0; }
+.state { padding:20px 0; font-size:.85rem; line-height:1.5; }
+.state a { display:inline-block; margin:8px; }
+.pagination { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px; margin-top:14px; font-size:.75rem; }
+@media (max-width:520px) {
+  .name { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; overflow-wrap:anywhere; }
+  .pagination { gap:8px; font-size:11px; }
+  .ranking .pagination button { padding:7px 9px; font-size:11px; }
+}
+@media (max-width:360px) { .ranking.ranking { padding:12px; } }

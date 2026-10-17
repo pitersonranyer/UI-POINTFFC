@@ -208,3 +208,12 @@
 .athleteVisual .roleBadge { top:-8px; left:calc(100% - 5px); right:auto; width:18px; height:18px; font-size:11px; line-height:1; }
 .athleteVisual .powerBolt { top:-8px; left:calc(100% - 5px); right:auto; width:18px; height:18px; }
 @media(min-width:900px) { .athleteVisual { width:53px; height:55.12px; } }
+
+.journeyTabs { display:flex; gap:8px; margin:16px 0; border-bottom:1px solid #ddd; }
+.journeyTabs button { flex:1; padding:10px 4px; border:0; background:transparent; font-weight:600; }
+.journeyTabs button[aria-selected="true"] { border-bottom:3px solid #b08b35; }
+.myTeams { list-style:none; padding:0; }
+.myTeams li,.teamHeading { display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
+.myTeams li { border-bottom:1px solid #ddd; }
+.myTeams li div { flex:1; min-width:100px; overflow-wrap:anywhere; }
+.teamHeading input { display:block; width:100%; max-width:280px; padding:8px; }
