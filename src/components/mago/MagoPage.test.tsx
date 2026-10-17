@@ -44,8 +44,8 @@ describe("Mago da rodada 29", () => {
   });
 
   it("atualiza metadata sem perder canonical e redes sociais", () => {
-    expect(metadata.title).toContain("Rodada 30");
-    expect(metadata.description).toContain("Rodada 30");
+    expect(metadata.title).toContain("Rodada 31");
+    expect(metadata.description).toContain("Rodada 31");
     expect(JSON.stringify(metadata)).not.toMatch(/gato[\s_-]*mestre/i);
     expect(metadata.alternates?.canonical).toBe("https://pointffc.com.br/mago/");
     expect(metadata.openGraph).toBeTruthy(); expect(metadata.twitter).toBeTruthy();

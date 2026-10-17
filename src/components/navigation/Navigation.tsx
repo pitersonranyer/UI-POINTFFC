@@ -12,6 +12,7 @@ const publicLinks = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/provaveis", label: "Prováveis", icon: Shirt },
   { href: "/ligas", label: "Ligas", icon: Trophy },
+  { href: "/point-fantasy", label: "Fantasy", icon: Shirt },
 ];
 export function Navigation() {
   const pathname = usePathname();
@@ -116,7 +117,7 @@ export function Navigation() {
           </div>
         </div>
       </header>
-      <nav className={styles.mobileNav}>
+      <nav className={styles.mobileNav} style={{ gridTemplateColumns: `repeat(${links.length + (!isLoading && !user ? 1 : 0)}, minmax(0, 1fr))` }}>
         {links.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}

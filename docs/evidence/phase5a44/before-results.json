@@ -1,0 +1,1637 @@
+{
+  "context": "Real LineupEditor -> LineupPitch -> LineupAthleteActions; actual CSS; only authentication and API replaced with synthetic fixtures; no backend writes",
+  "results": [
+    {
+      "state": "titular-comum",
+      "width": 360,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 360,
+        "height": 294
+      },
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": false,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 330,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 301,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 314,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Tornar capitão",
+          "x": 15,
+          "y": 701,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(244, 247, 244)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "titular-capitao",
+      "width": 360,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 360,
+        "height": 294
+      },
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": true,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 330,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 301,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 314,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover capitão",
+          "x": 15,
+          "y": 701,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(244, 247, 244)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-comum",
+      "width": 360,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 360,
+        "height": 294
+      },
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": false,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 330,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 301,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 314,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Ativar Reserva Power",
+          "x": 15,
+          "y": 701,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-power",
+      "width": 360,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 360,
+        "height": 294
+      },
+      "viewport": {
+        "width": 360,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": true,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 330,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 301,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 314,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover Reserva Power",
+          "x": 15,
+          "y": 701,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "titular-comum",
+      "width": 390,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 390,
+        "height": 294
+      },
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "scroll": 388,
+      "client": 388,
+      "roleSeal": false,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 360,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 331,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 344,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Tornar capitão",
+          "x": 15,
+          "y": 701,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "titular-capitao",
+      "width": 390,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 390,
+        "height": 294
+      },
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "scroll": 388,
+      "client": 388,
+      "roleSeal": true,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 360,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 331,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 344,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover capitão",
+          "x": 15,
+          "y": 701,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(244, 247, 244)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-comum",
+      "width": 390,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 390,
+        "height": 294
+      },
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "scroll": 388,
+      "client": 388,
+      "roleSeal": false,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 360,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 331,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 344,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Ativar Reserva Power",
+          "x": 15,
+          "y": 701,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(244, 247, 244)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-power",
+      "width": 390,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 0,
+        "y": 606,
+        "width": 390,
+        "height": 294
+      },
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "scroll": 388,
+      "client": 388,
+      "roleSeal": true,
+      "header": {
+        "x": 15,
+        "y": 621,
+        "width": 360,
+        "height": 70
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 331,
+          "y": 634,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 344,
+            "y": 647,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover Reserva Power",
+          "x": 15,
+          "y": 701,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 26,
+            "y": 714.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 15,
+          "y": 749,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 762,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 15,
+          "y": 793,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 25,
+            "y": 806,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 15,
+          "y": 843,
+          "width": 360,
+          "height": 44,
+          "background": "rgb(244, 247, 244)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 25,
+            "y": 857,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "titular-comum",
+      "width": 768,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 204,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": false,
+      "header": {
+        "x": 219,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 505,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 518,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Tornar capitão",
+          "x": 219,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 230,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 219,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 219,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 219,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 229,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "titular-capitao",
+      "width": 768,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 204,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": true,
+      "header": {
+        "x": 219,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 505,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 518,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover capitão",
+          "x": 219,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 230,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 219,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 219,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 219,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 229,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-comum",
+      "width": 768,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 204,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": false,
+      "header": {
+        "x": 219,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 505,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 518,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Ativar Reserva Power",
+          "x": 219,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 230,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 219,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(244, 247, 244)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 219,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 219,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 229,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-power",
+      "width": 768,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 204,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": true,
+      "header": {
+        "x": 219,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 505,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 518,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover Reserva Power",
+          "x": 219,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 230,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 219,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 219,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 229,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 219,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 229,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "titular-comum",
+      "width": 1280,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 460,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": false,
+      "header": {
+        "x": 475,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 761,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 774,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Tornar capitão",
+          "x": 475,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 486,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 475,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 475,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 475,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 485,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "titular-capitao",
+      "width": 1280,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 460,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": true,
+      "header": {
+        "x": 475,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 761,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 774,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover capitão",
+          "x": 475,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 486,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 475,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(244, 247, 244)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 475,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 475,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 485,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-comum",
+      "width": 1280,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 460,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": false,
+      "header": {
+        "x": 475,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 761,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 774,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Ativar Reserva Power",
+          "x": 475,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 486,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 475,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 475,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 475,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 485,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    },
+    {
+      "state": "reserva-power",
+      "width": 1280,
+      "component": null,
+      "className": "LineupBuilder_athleteActions",
+      "box": {
+        "x": 460,
+        "y": 309,
+        "width": 360,
+        "height": 282
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scroll": 358,
+      "client": 358,
+      "roleSeal": true,
+      "header": {
+        "x": 475,
+        "y": 326,
+        "width": 330,
+        "height": 54
+      },
+      "controls": [
+        {
+          "name": "Fechar ações",
+          "x": 761,
+          "y": 331,
+          "width": 44,
+          "height": 44,
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(101, 115, 106)",
+          "icon": {
+            "x": 774,
+            "y": 344,
+            "width": 18,
+            "height": 18
+          }
+        },
+        {
+          "name": "Remover Reserva Power",
+          "x": 475,
+          "y": 390,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(246, 246, 241)",
+          "color": "rgb(140, 107, 24)",
+          "icon": {
+            "x": 486,
+            "y": 403.5,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Trocar jogador",
+          "x": 475,
+          "y": 438,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 451,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Informações do atleta",
+          "x": 475,
+          "y": 482,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(48, 79, 60)",
+          "icon": {
+            "x": 485,
+            "y": 495,
+            "width": 17,
+            "height": 17
+          }
+        },
+        {
+          "name": "Remover da escalação",
+          "x": 475,
+          "y": 532,
+          "width": 330,
+          "height": 44,
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(166, 61, 61)",
+          "icon": {
+            "x": 485,
+            "y": 546,
+            "width": 17,
+            "height": 17
+          }
+        }
+      ]
+    }
+  ]
+}

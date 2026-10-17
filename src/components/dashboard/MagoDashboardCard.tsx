@@ -30,6 +30,7 @@ export function MagoDashboardCard({ data }: { data: MagoRound }) {
       <div className={styles.identity}><h2 id="dashboard-mago-title">Mago do Point Fantasy</h2><p>Inteligência para sua rodada</p></div>
       <span className={styles.badge}>Rodada {data.rodada}</span>
     </header>
+    {data.rodada === 31 && <div className={styles.closingTeaser}><strong>Pré-jogo R31 · Corinthians: escolha do Mago · Botafogo: destaque estratégico.</strong><span>Remo lidera o xG (1,80). Histórico anterior: R30, 8/10 tendências (80%) e 3 placares exatos; R29 + R30, 15/20 (75%) e 4 placares exatos.</span></div>}
     {data.fechamento && <div className={styles.closingTeaser}>
       <strong>O Mago presta contas: {Math.round(data.fechamento.indicadores.tendenciasCorretas / data.fechamento.resultados.length * 100)}% de acerto nas tendências da R30.</strong>
       <span>Três placares exatos e análise completa do desempenho defensivo.</span>

@@ -9,6 +9,10 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "cleanUrls": true
+    "cleanUrls": true,
+    "redirects": [
+      { "regex": "^/point-fantasy/escalacoes/?$", "destination": "/point-fantasy", "type": 301 },
+      { "regex": "^/point-fantasy/$", "destination": "/point-fantasy", "type": 301 }
+    ]
   }
 }

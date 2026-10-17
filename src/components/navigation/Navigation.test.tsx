@@ -21,6 +21,7 @@ it.each([false, true])("mantém menus sem Mago e Desafios, com autenticação %s
     expect(within(nav).queryByRole("link", { name: "Desafios" })).toBeNull();
     expect(nav.querySelector('a[href="/desafios"]')).toBeNull();
     for (const name of ["Dashboard", "Prováveis", "Ligas"]) expect(within(nav).getByRole("link", { name })).toBeTruthy();
+    expect(within(nav).getByRole("link", { name: "Fantasy" }).getAttribute("href")).toBe("/point-fantasy");
   }
 });
 

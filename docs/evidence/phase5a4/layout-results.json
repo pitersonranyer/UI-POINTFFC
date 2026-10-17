@@ -1,0 +1,229 @@
+{
+  "environment": "Chrome, isolated real Pitch/Actions components, synthetic catalog fixtures; no backend writes",
+  "results": [
+    {
+      "width": 360,
+      "pitch": {
+        "viewport": 360,
+        "scroll": 360,
+        "coachInsidePitch": true,
+        "badges": [
+          {
+            "overlap": false,
+            "statusWidth": 16
+          },
+          {
+            "overlap": false,
+            "statusWidth": 16
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 0,
+          "right": 360,
+          "top": 622,
+          "bottom": 900,
+          "height": 278,
+          "scroll": 358,
+          "client": 358,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 436.5625
+        },
+        {
+          "role": "reserva",
+          "left": 0,
+          "right": 360,
+          "top": 622,
+          "bottom": 900,
+          "height": 278,
+          "scroll": 358,
+          "client": 358,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 436.5625
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "pitch": {
+        "viewport": 390,
+        "scroll": 390,
+        "coachInsidePitch": true,
+        "badges": [
+          {
+            "overlap": false,
+            "statusWidth": 16
+          },
+          {
+            "overlap": false,
+            "statusWidth": 16
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 0,
+          "right": 390,
+          "top": 622,
+          "bottom": 900,
+          "height": 278,
+          "scroll": 388,
+          "client": 388,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 436.5625
+        },
+        {
+          "role": "reserva",
+          "left": 0,
+          "right": 390,
+          "top": 622,
+          "bottom": 900,
+          "height": 278,
+          "scroll": 388,
+          "client": 388,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 436.5625
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "pitch": {
+        "viewport": 768,
+        "scroll": 768,
+        "coachInsidePitch": true,
+        "badges": [
+          {
+            "overlap": false,
+            "statusWidth": 16
+          },
+          {
+            "overlap": false,
+            "statusWidth": 16
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 204,
+          "right": 564,
+          "top": 317,
+          "bottom": 583,
+          "height": 266,
+          "scroll": 358,
+          "client": 358,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 424.5625
+        },
+        {
+          "role": "reserva",
+          "left": 204,
+          "right": 564,
+          "top": 317,
+          "bottom": 583,
+          "height": 266,
+          "scroll": 358,
+          "client": 358,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 424.5625
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "pitch": {
+        "viewport": 1280,
+        "scroll": 1280,
+        "coachInsidePitch": true,
+        "badges": [
+          {
+            "overlap": false,
+            "statusWidth": 16
+          },
+          {
+            "overlap": false,
+            "statusWidth": 16
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 460,
+          "right": 820,
+          "top": 317,
+          "bottom": 583,
+          "height": 266,
+          "scroll": 358,
+          "client": 358,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 424.5625
+        },
+        {
+          "role": "reserva",
+          "left": 460,
+          "right": 820,
+          "top": 317,
+          "bottom": 583,
+          "height": 266,
+          "scroll": 358,
+          "client": 358,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "expandedHeight": 424.5625
+        }
+      ]
+    }
+  ]
+}

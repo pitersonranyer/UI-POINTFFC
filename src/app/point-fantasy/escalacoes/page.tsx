@@ -1,10 +1,9 @@
 import React from "react";
-import Link from "next/link";
-import { noIndexMetadata } from "@/lib/seo";
-import { FantasyLineupBuilder } from "@/components/point-fantasy/lineups/FantasyLineupBuilder";
-import styles from "@/components/point-fantasy/lineups/LineupBuilder.module.css";
+import { publicMetadata, noIndexMetadata } from "@/lib/seo";
+import { LegacyFantasyEntry } from "@/components/point-fantasy/showcase/LegacyFantasyEntry";
 
-export const metadata = { ...noIndexMetadata, title:"Monte sua escalação | POINT FFC FANTASY" };
+// Firebase serves the 301; this fallback also supports local/static preview servers.
+export const metadata = { ...publicMetadata("POINT FFC Fantasy", "Acesse as competições do POINT FFC Fantasy.", "/point-fantasy"), ...noIndexMetadata };
 export default function FantasyLineupPage() {
-  return <div className={`page-shell ${styles.builder}`}><header className={styles.hero}><h1>POINT FFC FANTASY</h1><Link href="/point-fantasy/atletas/">Catálogo de atletas →</Link></header><FantasyLineupBuilder /></div>;
+  return <LegacyFantasyEntry />;
 }

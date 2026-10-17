@@ -1,13 +1,14 @@
+import React from "react";
 import { publicMetadata } from "@/lib/seo";
 import { MagoPage } from "@/components/mago/MagoPage";
-import { magoRodada30 } from "@/data/mago/rodada30";
+import { magoRodada31 } from "@/data/mago/rodada31";
 
 export const metadata = publicMetadata(
-  `O Mago presta contas — Rodada ${magoRodada30.rodada} | POINT FFC`,
-  `Fechamento da Rodada ${magoRodada30.rodada}: 80% de acerto nas tendências, três placares exatos e análise do desempenho defensivo.`,
+  `Mago do POINT — Rodada ${magoRodada31.rodada} | POINT FFC`,
+  `Análise da Rodada ${magoRodada31.rodada}: nove jogos, ranking de SG, pelotões, Top 5 xG e Placar Imaginário. Projeções pré-jogo do POINT FFC.`,
   "/mago/",
 );
 
 export default function Page() {
-  return <MagoPage data={magoRodada30} />;
+  return <MagoPage data={magoRodada31} />;
 }

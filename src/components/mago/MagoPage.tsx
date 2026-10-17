@@ -3,6 +3,7 @@ import React, { type ReactNode } from "react";
 import Link from "next/link";
 import type { MagoRound, MagoTeam } from "@/types/mago-premium";
 import styles from "./MagoPage.module.css";
+import { rankingSg31, especialistas31 } from "@/data/mago/rodada31";
 
 const number = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -170,6 +171,21 @@ export function MagoExpertGroups({ data }: { data: MagoRound }) {
 
 export function MagoPage({ data }: { data: MagoRound }) {
   const withGroup = (team: MagoTeam): MagoTeam => ({ ...team, pelotao: data.pelotoes.find(group => group.clubes.includes(team.clube))?.nome ?? team.pelotao });
+  if (data.rodada === 31) return <div className={styles.page}><div className={styles.shell}>
+    <MagoHero rodada={31} pelotoesDoMago editorial={{ titulo: "Rodada 31: SG, ataque e estratégia", subtitulo: "Nove confrontos válidos · 17 a 19/10/2026", visao: [], mercado: "", veredito: [], estrategia: [] }} />
+    <p className={styles.preview}>Pré-jogo · Temporada 2026 · Curadoria editorial: POINT FFC. Projeções não são garantias. Horários de Brasília.</p>
+    <MagoTopPick data={data} /><MagoSummary data={data} />
+    <MagoSgRanking teams={data.topSg} /><MagoAlternatives teams={data.alternativas} />
+    <section className={styles.section} aria-labelledby="ranking-sg-r31"><SectionTitle id="ranking-sg-r31" icon={<ShieldCheck />} title="Ranking estatístico de SG — R31" subtitle="Todos os 18 clubes, em ordem de probabilidade. Os pelotões seguem curadoria editorial própria." />
+      <div className={styles.tableScroll}><table className={styles.indicatorTable}><caption>Projeções de SG fornecidas para a R31</caption><thead><tr><th scope="col">Clube</th><th scope="col">Probabilidade de SG</th></tr></thead><tbody>{rankingSg31.map(team => <tr key={team.clube}><th scope="row">{team.clube}</th><td>{number.format(team.sg)}%</td></tr>)}</tbody></table></div>
+    </section>
+    <MagoExpertGroups data={data} />
+    <section className={styles.crossing} aria-labelledby="especialistas-r31"><h2 id="especialistas-r31">Comparativo com especialistas</h2><p>Seleção externa fornecida no briefing, sem identificação da publicação original. A lista é uma referência editorial, não uma previsão estatística independente nem produção original do POINT FFC.</p><h3>Prováveis SG</h3><p>{especialistas31.provaveis.join(" · ")}</p><h3>Alternativas</h3><p>{especialistas31.alternativas.join(" · ")}</p><p>Convergência: Corinthians, Botafogo e São Paulo. Flamengo diverge com 24,63% de SG apesar de figurar entre os prováveis. Fluminense permanece no Pelotão 1. Atlético-MG tem 33,98% de SG, está fora da seleção externa e exige atenção às escalações.</p></section>
+    <MagoAlerts data={data} /><MagoAttackRanking data={data} />
+    <section className={styles.section} aria-labelledby="placares"><SectionTitle id="placares" icon={<Orbit />} title="Placar Imaginário do Mago" subtitle="R31 · Previsões pré-jogo preservadas para avaliação posterior; não são resultados garantidos." /><div className={styles.predictions}>{data.placares.map((game, index) => <article key={game.mandante} className={styles.prediction}><p className={styles.predictionLabel}>{data.jogos?.[index].dia} · {data.jogos?.[index].horario}</p><div className={styles.score}><span>{game.mandante}</span><strong>{game.golsMandante} <small>x</small> {game.golsVisitante}</strong><span>{game.visitante === "Bragantino" ? "RB Bragantino" : game.visitante}</span></div></article>)}</div></section>
+    <section className={styles.summary} aria-labelledby="historico-mago"><SectionTitle id="historico-mago" icon={<Trophy />} title="Histórico de desempenho anterior" /><p>R30: 8/10 tendências corretas · 80% de aproveitamento · 3 placares exatos.</p><p>Acumulado R29 + R30: 15/20 tendências corretas · 75% de aproveitamento · 4 placares exatos.</p><p>Resultados anteriores, separados das previsões da R31.</p></section>
+    <footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer>
+  </div></div>;
   if (data.editorial) return <div className={styles.page}><div className={styles.shell}>
     <MagoHero rodada={data.rodada} pelotoesDoMago={data.pelotoesDoMago} editorial={data.editorial} />
     <p className={styles.preview}>Análise do Mago · Temporada 2026 · Curadoria editorial: POINT FFC</p>

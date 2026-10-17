@@ -1,0 +1,77 @@
+{
+  "environment": "Chrome; isolated frontend with synthetic API fixtures; no real backend writes",
+  "results": [
+    {
+      "width": 360,
+      "modal": {
+        "left": 0,
+        "right": 360,
+        "bottom": 900,
+        "width": 360,
+        "scroll": 360,
+        "client": 360,
+        "viewport": 360
+      },
+      "navigation": {
+        "viewport": 360,
+        "scroll": 360,
+        "navigationHeight": 108,
+        "coachInsidePitch": true
+      }
+    },
+    {
+      "width": 390,
+      "modal": {
+        "left": 0,
+        "right": 390,
+        "bottom": 900,
+        "width": 390,
+        "scroll": 390,
+        "client": 390,
+        "viewport": 390
+      },
+      "navigation": {
+        "viewport": 390,
+        "scroll": 390,
+        "navigationHeight": 108,
+        "coachInsidePitch": true
+      }
+    },
+    {
+      "width": 768,
+      "modal": {
+        "left": 149,
+        "right": 619,
+        "bottom": 631.1875,
+        "width": 470,
+        "scroll": 470,
+        "client": 470,
+        "viewport": 768
+      },
+      "navigation": {
+        "viewport": 768,
+        "scroll": 768,
+        "navigationHeight": 52,
+        "coachInsidePitch": true
+      }
+    },
+    {
+      "width": 1280,
+      "modal": {
+        "left": 405,
+        "right": 875,
+        "bottom": 631.1875,
+        "width": 470,
+        "scroll": 470,
+        "client": 470,
+        "viewport": 1280
+      },
+      "navigation": {
+        "viewport": 1280,
+        "scroll": 1280,
+        "navigationHeight": 52,
+        "coachInsidePitch": true
+      }
+    }
+  ]
+}

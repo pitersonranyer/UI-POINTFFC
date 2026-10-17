@@ -338,7 +338,7 @@ export function PointFantasySetup() {
           <div><small>Período de inscrição</small><strong>{formatDate(competition.inicioInscricao)} até {formatDate(competition.fimInscricao)}</strong></div>
           <div><small>Partidas</small><strong>{competition.partidas?.length ?? selectedMatches.length}</strong></div>
         </div>
-        {competition.status !== "PUBLICADA" ? <div className={styles.actions}><button className={styles.primary} type="button" onClick={()=>void publish()} disabled={working}>{busy==="publish"?<LoaderCircle className="spin"/>:<Send/>}Publicar competição</button></div> : <div className={styles.published}><div><strong><Check size={14}/> Competição publicada</strong><p>Abra a montagem de escalações para testar o fluxo de aceitação.</p></div><Link className={styles.linkButton} href="/point-fantasy/escalacoes/"><ExternalLink/>Abrir escalações</Link></div>}
+        {competition.status !== "PUBLICADA" ? <div className={styles.actions}><button className={styles.primary} type="button" onClick={()=>void publish()} disabled={working}>{busy==="publish"?<LoaderCircle className="spin"/>:<Send/>}Publicar competição</button></div> : <div className={styles.published}><div><strong><Check size={14}/> Competição publicada</strong><p>Abra a montagem de escalações para testar o fluxo de aceitação.</p></div><Link className={styles.linkButton} href="/point-fantasy"><ExternalLink/>Ver competições</Link></div>}
       </>}
     </section>
   </div>;

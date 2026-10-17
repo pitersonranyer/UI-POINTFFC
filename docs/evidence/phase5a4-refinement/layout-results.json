@@ -1,0 +1,949 @@
+{
+  "environment": "Chrome, isolated real components and global CSS, synthetic catalog fixtures; no backend writes",
+  "results": [
+    {
+      "width": 360,
+      "pitch": {
+        "viewport": 360,
+        "scroll": 360,
+        "coachInsidePitch": true,
+        "conditions": [
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 0,
+          "right": 360,
+          "top": 606,
+          "bottom": 900,
+          "height": 294,
+          "scroll": 358,
+          "client": 358,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        },
+        {
+          "role": "reserva",
+          "left": 0,
+          "right": 360,
+          "top": 606,
+          "bottom": 900,
+          "height": 294,
+          "scroll": 358,
+          "client": 358,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "pitch": {
+        "viewport": 390,
+        "scroll": 390,
+        "coachInsidePitch": true,
+        "conditions": [
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 0,
+          "right": 390,
+          "top": 606,
+          "bottom": 900,
+          "height": 294,
+          "scroll": 388,
+          "client": 388,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        },
+        {
+          "role": "reserva",
+          "left": 0,
+          "right": 390,
+          "top": 606,
+          "bottom": 900,
+          "height": 294,
+          "scroll": 388,
+          "client": 388,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "pitch": {
+        "viewport": 768,
+        "scroll": 768,
+        "coachInsidePitch": true,
+        "conditions": [
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 204,
+          "right": 564,
+          "top": 309,
+          "bottom": 591,
+          "height": 282,
+          "scroll": 358,
+          "client": 358,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        },
+        {
+          "role": "reserva",
+          "left": 204,
+          "right": 564,
+          "top": 309,
+          "bottom": 591,
+          "height": 282,
+          "scroll": 358,
+          "client": 358,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "pitch": {
+        "viewport": 1280,
+        "scroll": 1280,
+        "coachInsidePitch": true,
+        "conditions": [
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          },
+          {
+            "width": 15,
+            "height": 15,
+            "position": "absolute",
+            "leftOffset": 2,
+            "bottomOffset": 3,
+            "belowName": false,
+            "changesSlotHeight": false,
+            "overlapsRole": false
+          }
+        ]
+      },
+      "modals": [
+        {
+          "role": "titular",
+          "left": 460,
+          "right": 820,
+          "top": 309,
+          "bottom": 591,
+          "height": 282,
+          "scroll": 358,
+          "client": 358,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        },
+        {
+          "role": "reserva",
+          "left": 460,
+          "right": 820,
+          "top": 309,
+          "bottom": 591,
+          "height": 282,
+          "scroll": 358,
+          "client": 358,
+          "jerseyArea": 52,
+          "nameGap": 8,
+          "roleSeal": true,
+          "targets": [
+            44,
+            44,
+            44,
+            44,
+            44
+          ],
+          "icons": [
+            18,
+            17,
+            17,
+            17,
+            17
+          ]
+        }
+      ]
+    }
+  ]
+}
