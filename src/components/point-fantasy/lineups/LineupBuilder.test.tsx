@@ -51,10 +51,10 @@ describe("Pitch and formations", () => {
     const details = within(section).getByRole("button",{name:"Detalhes"});
     expect(details.getAttribute("aria-expanded")).toBe("false");
     expect(within(section).queryByRole("heading",{name:"Confrontos e horários"})).toBeNull();
-    expect(within(section).getByText("1 confronto")).toBeTruthy();
-    expect(within(section).getByText("85 atletas elegíveis")).toBeTruthy();
     fireEvent.click(details);
     expect(within(section).getByRole("heading",{name:"Confrontos e horários"})).toBeTruthy();
+    expect(within(section).getByText("1 confronto")).toBeTruthy();
+    expect(within(section).getByText("85 · 2 clubes")).toBeTruthy();
     expect(within(section).getByText(/FLA × BOT/)).toBeTruthy();
     expect(screen.getByRole("combobox",{name:"Formação tática"})).toBeTruthy();
     expect(screen.getByRole("navigation",{name:"Meus times"})).toBeTruthy();
