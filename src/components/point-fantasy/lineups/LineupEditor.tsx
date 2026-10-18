@@ -30,8 +30,8 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
   const focused = integrated && editing;
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   const { context, value, saved, dirty, busy } = editor;
-  if (editor.loading) return <p className={styles.empty} role="status">Carregando competição, atletas elegíveis e seus times…</p>;
-  if (!context) return <div className={styles.empty} role="alert"><p>{editor.error}</p><button onClick={editor.retry}>Tentar novamente</button><button onClick={onBack}>Voltar às competições</button></div>;
+  if (editor.loading) return <div className={styles.editor}><button className={styles.competitionBack} type="button" onClick={onBack}>← Competições</button><p className={styles.empty} role="status">Carregando competição, atletas elegíveis e seus times…</p></div>;
+  if (!context) return <div className={styles.editor}><button className={styles.competitionBack} type="button" onClick={onBack}>← Competições</button><div className={styles.empty} role="alert"><p>{editor.error}</p><button onClick={editor.retry}>Tentar novamente</button></div></div>;
   const reason = blockingReason(context, now);
   const blocked = !!reason || editor.serverBlocked || user?.status !== "ATIVO";
   const registered = saved?.status === "INSCRITA";
@@ -71,8 +71,7 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
   const currentTeamName = saved?.nomePublico ?? editor.identityState?.identidade?.nomeBase ?? editor.teamName;
   const currentTeamStatus = busy ? "Atualizando…" : registered ? "Inscrito" : dirty ? "Alterações não salvas" : saved ? "Em montagem" : "Novo time · não salvo";
   const currentTeamCount = saved ? editor.drafts.length : editor.drafts.length + 1;
-  return <div className={`${styles.editor} ${focused ? styles.focusMode : ""}`}>
-    {!focused && <button className={styles.back} type="button" disabled={busy || editor.pendingCreation || editor.registrationLocked} onClick={back}>← Competições</button>}
+  return <div className={`${styles.editor} ${integrated && !focused ? styles.competitionOverview : ""} ${focused ? styles.focusMode : ""}`}>
     {focused && <header className={styles.focusedTeamHeader}>
       <button className={styles.focusBack} type="button" disabled={busy || editor.pendingCreation || editor.registrationLocked || editor.integratedPending} onClick={leaveEditor}>← Meus times</button>
       <TeamCrest team={saved}/>
@@ -83,7 +82,19 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
       {lineupLimit !== null && <span className={styles.focusedTeamCount} aria-label={`${currentTeamCount} de ${lineupLimit} times`}>{currentTeamCount}/{lineupLimit}</span>}
       {!saved && editor.identityState?.estadoIdentidade !== "DEFINIDA" && <button className={styles.nameSuggestion} type="button" disabled={busy || editor.pendingCreation} onClick={() => { const names = ["Tropa do Mago", "Seleção Dourada", "Craques do Point"]; editor.setTeamName(names[(names.indexOf(editor.teamName) + 1) % names.length]); }}>Sugestão</button>}
     </header>}
-    {!focused && <section className={`${leagueStyles.competitionHeader} ${styles.fantasyCompetitionHeader}`} aria-label="Competição selecionada">
+    {!focused && integrated && <section className={styles.compactCompetitionHeader} aria-label="Competição selecionada">
+      <div className={styles.competitionTopline}><button className={styles.competitionBack} type="button" disabled={busy || editor.pendingCreation || editor.registrationLocked} onClick={back}>← Competições</button><span className={`${leagueStyles.roundBadge} ${styles.lightRoundBadge}`}>Rodada {competition.rodada}</span></div>
+      <h1 title={competition.nome}>{competition.nome}</h1>
+      <p className={styles.competitionSummary}><span>{competition.temporada}</span><span>{competition.tipoAcesso === "FREE" ? "Grátis" : inscriptionPrice ? `Paga · ${inscriptionPrice}` : "Paga · valor indisponível"}</span><span>Inscrições até {formatFantasyDate(competition.fimInscricao)}</span></p>
+      <button className={styles.detailsToggle} type="button" aria-expanded={detailsOpen} aria-controls="competition-details" onClick={() => setDetailsOpen(open => !open)}>{detailsOpen ? "Ocultar detalhes ▴" : "Ver detalhes ▾"}</button>
+      <div className={styles.competitionDetails} id="competition-details" hidden={!detailsOpen}>
+        <h3>Informações da competição</h3>
+        <dl className={styles.competitionMetadata}><dt>Status</dt><dd>{competition.status}</dd><dt>Temporada</dt><dd>{competition.temporada}</dd><dt>Rodada</dt><dd>{competition.rodada}</dd><dt>Modalidade</dt><dd>{competition.tipoAcesso === "FREE" ? "FREE · Grátis" : `PAGO · ${inscriptionPrice ?? "valor indisponível"}`}</dd><dt>Inscrições até (Brasília)</dt><dd>{formatFantasyDate(competition.fimInscricao)}</dd><dt>Bloqueio</dt><dd>{lockTime ? formatFantasyDate(lockTime) + " (Brasília)" : "Horário indisponível"}</dd><dt>Confrontos</dt><dd>{competition.partidas.length} {competition.partidas.length === 1 ? "confronto" : "confrontos"}</dd><dt>Atletas elegíveis</dt><dd>{context.athletes.length} · {context.clubs.length} clubes</dd><dt>Limite de escalações</dt><dd>{lineupLimit ?? "Sem limite definido"}</dd></dl>
+        <h3>Confrontos e horários</h3>
+        {matchups.length ? <ul className={styles.matches}>{matchups.map(({ match, home, away }) => <li key={match.id}>{home?.dados.abreviacao || getClubUniform(match.clubeMandanteId).abbreviation} × {away?.dados.abreviacao || getClubUniform(match.clubeVisitanteId).abbreviation} · {formatMatchupDate(match.inicioPrevisto)}</li>)}</ul> : <p>Nenhuma partida informada pela competição.</p>}
+      </div>
+    </section>}
+    {!focused && !integrated && <><button className={styles.back} type="button" disabled={busy || editor.pendingCreation || editor.registrationLocked} onClick={back}>← Competições</button><section className={`${leagueStyles.competitionHeader} ${styles.fantasyCompetitionHeader}`} aria-label="Competição selecionada">
       <div className={leagueStyles.titleRow}><div><h1>{competition.nome}</h1><p>Temporada {competition.temporada}</p></div><span className={leagueStyles.roundBadge}>Rodada {competition.rodada}</span></div>
       <div className={`${leagueStyles.headerMetrics} ${styles.fantasyHeaderMetrics}`}>
         <div><strong>{competition.tipoAcesso === "FREE" ? "Gratuita" : inscriptionPrice ? `Paga · ${inscriptionPrice}` : "Paga"}</strong><small>Participação</small></div>
@@ -96,7 +107,7 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
         {matchups.length ? <ul className={styles.matches}>{matchups.map(({ match, home, away }) => <li key={match.id}>{home?.dados.abreviacao || getClubUniform(match.clubeMandanteId).abbreviation} × {away?.dados.abreviacao || getClubUniform(match.clubeVisitanteId).abbreviation} · {formatMatchupDate(match.inicioPrevisto)}</li>)}</ul> : <p>Nenhuma partida informada pela competição.</p>}
         <dl className={styles.competitionMetadata}><dt>Período de inscrição</dt><dd>{formatFantasyDate(competition.inicioInscricao)} – {formatFantasyDate(competition.fimInscricao)} (Brasília)</dd><dt>Bloqueio</dt><dd>{lockTime ? formatFantasyDate(lockTime) + " (Brasília)" : "Horário indisponível"}</dd><dt>Confrontos</dt><dd>{competition.partidas.length} {competition.partidas.length === 1 ? "confronto" : "confrontos"}</dd><dt>Atletas elegíveis</dt><dd>{context.athletes.length} · {context.clubs.length} clubes</dd><dt>Limite de escalações</dt><dd>{lineupLimit ?? "Sem limite definido"}</dd></dl>
       </div>
-    </section>}
+    </section></>}
     {integrated && !editing && <CompetitionLineupAction competition={competition} disabledReason={createBlockedReason} onStart={startNewLineup} />}
     {blocked && <div className={`${leagueStyles.refreshWarning} ${styles.deadlineNotice}`} role="status">{reason ?? (user?.status !== "ATIVO" ? "Sua conta precisa estar ativa para editar." : "O servidor bloqueou as ações de escrita. A visualização foi preservada.")} O horário do servidor é a referência final.</div>}
     {editor.error && !editor.nameAction && <div className={styles.alert} role="alert">{editor.error}</div>}
@@ -107,7 +118,6 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
       <CompetitionTabs tab={tab} onChange={setTab} />
       <section role="tabpanel" id="journey-panel" aria-labelledby={`tab-${tab.replaceAll(" ", "-")}`}>
       {tab === "Ranking" ? <CompetitionRanking competitionId={competitionId}/> : tab === "Premiação" ? <p className={styles.note}>Funcionalidade disponível em breve.</p> : <>
-        <div className={styles.myTeamsToolbar}><h2>Meus times</h2></div>
         {dirty && <div className={styles.localDraftNotice} role="status">As alterações locais continuam preservadas. <button type="button" onClick={() => setEditing(true)}>Continuar editando</button></div>}
         {!editor.drafts.length ? <div className={styles.empty}><p>A rodada está chegando! Seu próximo craque pode estar entre os menos badalados. Monte sua seleção, aposte na estratégia e entre na disputa!</p></div> : <>
           <ul className={`${leagueStyles.entries} ${styles.myTeams}`}>{editor.drafts.map(team => {

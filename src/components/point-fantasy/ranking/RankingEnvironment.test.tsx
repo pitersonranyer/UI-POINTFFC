@@ -38,8 +38,18 @@ it("keeps the editor focused, then loads ranking from Meus times without losing 
 });
 it("gives anonymous visitors public ranking access and keeps private teams protected",async()=>{
  auth.isAuthenticated=false;auth.accessToken="";
- render(<FantasyLineupBuilder competitionId={8}/>);
+ const onBack=vi.fn();render(<FantasyLineupBuilder competitionId={8} onBack={onBack}/>);
  await screen.findByRole("region",{name:"Competição selecionada"});
+ expect(screen.getAllByRole("button",{name:"← Competições"})).toHaveLength(1);
+ expect(screen.getByRole("heading",{name:"Competição de teste"})).toBeTruthy();
+ expect(screen.getAllByText("2026").length).toBeGreaterThan(0);expect(screen.getByText("Grátis")).toBeTruthy();expect(screen.getAllByText(/Inscrições até/).length).toBeGreaterThan(0);
+ expect(screen.getByRole("button",{name:"Ver detalhes ▾"}).getAttribute("aria-expanded")).toBe("false");
+ fireEvent.click(screen.getByRole("button",{name:"Ver detalhes ▾"}));
+ expect(screen.getByRole("button",{name:"Ocultar detalhes ▴"}).getAttribute("aria-expanded")).toBe("true");
+ expect(screen.getByText("PUBLICADA")).toBeTruthy();
+ expect(screen.getByText("Período de inscrição")).toBeTruthy();
+ expect(screen.queryByRole("heading",{name:"Meus times"})).toBeNull();
+ fireEvent.click(screen.getByRole("button",{name:"← Competições"}));expect(onBack).toHaveBeenCalledTimes(1);
  expect(screen.getByRole("link",{name:"Entrar na minha conta"}).getAttribute("href")).toContain("competicao%3D8");
  expect(loadLineupContext).not.toHaveBeenCalled();expect(listMyFantasyLineups).not.toHaveBeenCalled();expect(getFantasyCompetitionRanking).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole("tab",{name:"Ranking"}));await screen.findByText("Nenhum time inscrito nesta competição.");
