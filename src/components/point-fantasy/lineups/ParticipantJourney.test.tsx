@@ -86,13 +86,25 @@ it.each([false,true])("lists registered and unfinished teams and respects closed
  vi.mocked(service.getFantasyLineup).mockResolvedValue(team);
  vi.mocked(service.updateFantasyLineup).mockResolvedValue({...team,formacao:"4-4-2",versao:2});
  render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>);
- await screen.findByText("Tropa 01"); expect(screen.getByText(/4-3-3 · Inscrito/)).toBeTruthy(); expect(screen.getByText(/4-3-3 · Em montagem/)).toBeTruthy();
+ const publicName=await screen.findByText("Tropa 01"); expect(publicName.getAttribute("title")).toBe("Tropa 01");
+ expect(screen.getAllByRole("img",{name:"Brasão do time"})).toHaveLength(2); expect(screen.getAllByText("4-3-3",{exact:true})).toHaveLength(2); expect(screen.getByText("Inscrito",{exact:true})).toBeTruthy(); expect(screen.getByText("Em montagem",{exact:true})).toBeTruthy();
  fireEvent.click(screen.getAllByRole("button",{name:closed ? "Visualizar" : "Editar"})[0]);
  await screen.findByText(/Inscrita · Tropa 01/);
  const formation=screen.getByRole("combobox",{name:"Formação tática"}) as HTMLSelectElement;
  expect(formation.disabled).toBe(closed);
  expect((screen.getByRole("button",{name:"Duplicar time"}) as HTMLButtonElement).disabled).toBe(true);
  if(!closed) { fireEvent.change(formation,{target:{value:"4-4-2"}}); fireEvent.click(screen.getByRole("button",{name:"Salvar time"})); await waitFor(() => expect(service.updateFantasyLineup).toHaveBeenCalled()); expect(service.confirmFreeFantasyLineups).not.toHaveBeenCalled(); }
+});
+it("keeps long public team names accessible in the compact My teams row", async () => {
+ const longName="Tropa do Mago Campeão da Temporada com Estratégia Especial";
+ const team=testLineup(undefined,{nomePublico:longName});
+ vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([team],{estadoIdentidade:"DEFINIDA",identidade:{nomeBase:"Tropa do Mago",identificadorPublico:"TROPA-1",ultimoSequencial:1}}));
+ render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>);
+ const name=await screen.findByText(longName);
+ expect(name.getAttribute("title")).toBe(longName);
+ expect(screen.getByText(/Em montagem/)).toBeTruthy();
+ expect(screen.getAllByRole("img",{name:"Brasão do time"})).toHaveLength(1);
+ expect(service.createFantasyLineup).not.toHaveBeenCalled();
 });
 it("duplicates only unfinished teams using the backend identity and roster", async () => {
  const source=testLineup(undefined,{nomePublico:"Original"});

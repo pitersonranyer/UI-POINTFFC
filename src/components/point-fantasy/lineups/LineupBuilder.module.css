@@ -209,11 +209,54 @@
 .athleteVisual .powerBolt { top:-8px; left:calc(100% - 5px); right:auto; width:18px; height:18px; }
 @media(min-width:900px) { .athleteVisual { width:53px; height:55.12px; } }
 
-.journeyTabs { display:flex; gap:8px; margin:16px 0; border-bottom:1px solid #ddd; }
-.journeyTabs button { flex:1; padding:10px 4px; border:0; background:transparent; font-weight:600; }
-.journeyTabs button[aria-selected="true"] { border-bottom:3px solid #b08b35; }
-.myTeams { list-style:none; padding:0; }
-.myTeams li,.teamHeading { display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
-.myTeams li { border-bottom:1px solid #ddd; }
-.myTeams li div { flex:1; min-width:100px; overflow-wrap:anywhere; }
+.fantasyCompetitionHeader { padding:5px 2px 10px; }
+.fantasyCompetitionHeader h1 { margin:0; font-size:clamp(21px,3vw,28px); line-height:1.1; letter-spacing:-.045em; }
+.fantasyCompetitionHeader p { margin:5px 0 0; }
+.fantasyHeaderMetrics { max-width:680px; }
+.fantasyHeaderMetrics>div { flex:1; min-width:0; padding-inline:12px; }
+.fantasyHeaderMetrics strong { font-size:14px; overflow-wrap:anywhere; }
+.fantasyHeaderMetrics small { font-size:9px; }
+.builder .detailsToggle { display:inline-flex; align-items:center; justify-content:center; min-height:40px; margin-top:10px; padding:6px 10px; border:1px solid #c5ac70; border-radius:7px; background:#fffaf0; color:#6f5419; font-size:.7rem; font-weight:800; }
+.competitionDetails { border-top:1px solid #e5e1d8; color:#555; }
+.competitionDetails h3 { color:#806323; }
+.competitionMetadata dt { color:#777; }
+.competitionMetadata dd { color:#222; }
+.deadlineNotice { margin:0; }
+.myTeams { list-style:none; margin:0; padding:0; }
+.myTeamsToolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 8px; }
+.myTeamsToolbar h2 { margin:0; font-size:1rem; letter-spacing:-.02em; }
+.builder .myTeamsToolbar>button { min-height:44px; padding:8px 12px; border:1px solid #efd271; border-radius:8px; background:linear-gradient(#e9c96e,#d3ad4c); color:#1b1b1b; font-size:11px; font-weight:900; letter-spacing:.02em; text-transform:uppercase; }
+.myTeamEntry { flex-wrap:nowrap; gap:8px; padding:7px 9px; }
+.myTeamCrest { display:grid; place-items:center; flex:none; width:32px; height:36px; }
+.myTeamCrest svg { display:block; width:30px; height:35px; }
+.myTeamIdentity { flex:1; min-width:0; }
+.myTeamIdentity.myTeamIdentity>strong { display:block; min-width:0; overflow:hidden; font-size:.8rem; text-overflow:ellipsis; white-space:nowrap; }
+.myTeamIdentity.myTeamIdentity>small { display:flex; align-items:center; min-width:0; overflow:hidden; font-size:.65rem; text-overflow:ellipsis; white-space:nowrap; }
+.teamStatus { flex:none; margin-left:7px; padding:3px 6px; font-size:9px; }
+.myTeamActions { flex:none; flex-wrap:nowrap; gap:4px; }
+.builder .myTeamActions.myTeamActions button { min-height:40px; padding:5px 8px; border:1px solid #c5ac70; border-radius:7px; background:#fffaf0; color:#6f5419; font-size:.66rem; white-space:nowrap; }
+.teamHeading { display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
 .teamHeading input { display:block; width:100%; max-width:280px; padding:8px; }
+@media(max-width:700px) {
+  .fantasyCompetitionHeader { padding:2px 2px 10px; }
+  .fantasyCompetitionHeader h1 { font-size:22px; }
+  .fantasyHeaderMetrics { margin-top:11px; }
+  .fantasyHeaderMetrics>div { padding-inline:7px; }
+  .fantasyHeaderMetrics strong { font-size:10px; line-height:1.25; }
+  .fantasyHeaderMetrics small { font-size:8px; line-height:1.2; }
+  .builder .detailsToggle { min-height:40px; margin-top:8px; }
+  .deadlineNotice { padding:8px 10px; font-size:11px; line-height:1.4; }
+  .myTeamsToolbar { margin-bottom:6px; }
+  .builder .myTeamsToolbar>button { min-height:40px; padding:7px 10px; font-size:10px; }
+  .myTeamEntry { gap:6px; padding:6px 7px; }
+  .builder .myTeamActions.myTeamActions button { min-height:40px; padding-inline:6px; font-size:.62rem; }
+}
+@media(max-width:360px) {
+  .fantasyHeaderMetrics>div { padding-inline:4px; }
+  .fantasyHeaderMetrics strong { font-size:9px; }
+  .fantasyHeaderMetrics small { font-size:7px; }
+  .myTeamEntry { gap:5px; padding-inline:5px; }
+  .myTeamCrest { width:28px; }
+  .myTeamCrest svg { width:27px; height:31px; }
+  .builder .myTeamActions.myTeamActions button { padding-inline:5px; font-size:.6rem; }
+}

@@ -15,6 +15,7 @@ import { CompetitionRanking } from "../ranking/CompetitionRanking";
 import { CompetitionTabs } from "../ranking/CompetitionTabs";
 import { FirstLineupSaveDialog } from "./FirstLineupSaveDialog";
 import { formatMatchupDate, sortLineupMatchups } from "./lineupMatchups";
+import leagueStyles from "../../leagues/PointCompetition.module.css";
 import styles from "./LineupBuilder.module.css";
 
 export const formatFantasyDate = (date: string) => new Date(date).toLocaleString("pt-BR", { timeZone:"America/Sao_Paulo", dateStyle:"short", timeStyle:"short" });
@@ -46,16 +47,21 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
   function back() { if (!busy && !editor.pendingCreation && !editor.registrationLocked && (!dirty || window.confirm("Descartar alterações não salvas e voltar às competições?"))) onBack(); }
   return <div className={styles.editor}>
     <button className={styles.back} type="button" disabled={busy || editor.pendingCreation || editor.registrationLocked} onClick={back}>← Competições</button>
-    <section className={styles.competitionSummary} aria-label="Competição selecionada">
-      <div className={styles.competitionHeadline}><div><h2>{competition.nome}</h2><p>{competition.temporada} · Rodada {competition.rodada}</p></div><span className={styles.accessBadge}>{competition.tipoAcesso === "FREE" ? "Gratuita" : `Paga · ${Number(competition.valorInscricao).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}`}</span><button type="button" aria-expanded={detailsOpen} aria-controls="competition-details" onClick={() => setDetailsOpen(open => !open)}>{detailsOpen ? "Fechar" : "Detalhes"}</button></div>
-      <div className={styles.competitionFacts}><span>{competition.status}</span><span>Inscrições até {formatFantasyDate(competition.fimInscricao)} (Brasília)</span><span>{competition.partidas.length} {competition.partidas.length === 1 ? "confronto" : "confrontos"}</span><span>{context.athletes.length} atletas elegíveis</span><span>Bloqueio: {lockTime ? formatFantasyDate(lockTime) + " (Brasília)" : "Horário indisponível"}</span></div>
+    <section className={`${leagueStyles.competitionHeader} ${styles.fantasyCompetitionHeader}`} aria-label="Competição selecionada">
+      <div className={leagueStyles.titleRow}><div><h1>{competition.nome}</h1><p>Temporada {competition.temporada}</p></div><span className={leagueStyles.roundBadge}>Rodada {competition.rodada}</span></div>
+      <div className={`${leagueStyles.headerMetrics} ${styles.fantasyHeaderMetrics}`}>
+        <div><strong>{competition.tipoAcesso === "FREE" ? "Gratuita" : `Paga · ${Number(competition.valorInscricao).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}`}</strong><small>Participação</small></div>
+        <div><strong>{competition.status}</strong><small>Status</small></div>
+        <div><strong>{formatFantasyDate(competition.fimInscricao)}</strong><small>Inscrições até (Brasília)</small></div>
+      </div>
+      <button className={styles.detailsToggle} type="button" aria-expanded={detailsOpen} aria-controls="competition-details" onClick={() => setDetailsOpen(open => !open)}>{detailsOpen ? "Fechar" : "Detalhes"}</button>
       <div className={styles.competitionDetails} id="competition-details" hidden={!detailsOpen}>
         <h3>Confrontos e horários</h3>
         {matchups.length ? <ul className={styles.matches}>{matchups.map(({ match, home, away }) => <li key={match.id}>{home?.dados.abreviacao || getClubUniform(match.clubeMandanteId).abbreviation} × {away?.dados.abreviacao || getClubUniform(match.clubeVisitanteId).abbreviation} · {formatMatchupDate(match.inicioPrevisto)}</li>)}</ul> : <p>Nenhuma partida informada pela competição.</p>}
-        <dl className={styles.competitionMetadata}><dt>Participação</dt><dd>{competition.tipoAcesso === "FREE" ? "Gratuita" : Number(competition.valorInscricao).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}</dd><dt>Status</dt><dd>{competition.status}</dd><dt>Período de inscrição</dt><dd>{formatFantasyDate(competition.inicioInscricao)} – {formatFantasyDate(competition.fimInscricao)}</dd><dt>Atletas elegíveis</dt><dd>{context.athletes.length} · {context.clubs.length} clubes</dd><dt>Limite de escalações</dt><dd>{lineupLimit ?? "Sem limite definido"}</dd></dl>
+        <dl className={styles.competitionMetadata}><dt>Período de inscrição</dt><dd>{formatFantasyDate(competition.inicioInscricao)} – {formatFantasyDate(competition.fimInscricao)} (Brasília)</dd><dt>Bloqueio</dt><dd>{lockTime ? formatFantasyDate(lockTime) + " (Brasília)" : "Horário indisponível"}</dd><dt>Confrontos</dt><dd>{competition.partidas.length} {competition.partidas.length === 1 ? "confronto" : "confrontos"}</dd><dt>Atletas elegíveis</dt><dd>{context.athletes.length} · {context.clubs.length} clubes</dd><dt>Limite de escalações</dt><dd>{lineupLimit ?? "Sem limite definido"}</dd></dl>
       </div>
     </section>
-    {blocked && <div className={styles.alert} role="status">{reason ?? (user?.status !== "ATIVO" ? "Sua conta precisa estar ativa para editar." : "O servidor bloqueou as ações de escrita. A visualização foi preservada.")} O horário do servidor é a referência final.</div>}
+    {blocked && <div className={`${leagueStyles.refreshWarning} ${styles.deadlineNotice}`} role="status">{reason ?? (user?.status !== "ATIVO" ? "Sua conta precisa estar ativa para editar." : "O servidor bloqueou as ações de escrita. A visualização foi preservada.")} O horário do servidor é a referência final.</div>}
     {editor.error && !editor.nameAction && <div className={styles.alert} role="alert">{editor.error}</div>}
     {editor.pendingCreation && !editor.nameAction && <div className={styles.alert}><p>A confirmação está pendente. Consulte seus times e confirme a mesma operação antes de continuar.</p><button type="button" disabled={busy || blocked} onClick={() => void editor.retryCreation()}>Tentar novamente</button></div>}
     {editor.conflict && <div className={styles.alert}><p>Suas alterações locais foram preservadas. Recarregue a versão atual para continuar; o descarte exige confirmação.</p><button type="button" disabled={busy} onClick={() => void editor.reload()}>Recarregar versão atual</button></div>}
@@ -64,8 +70,20 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
       <CompetitionTabs tab={tab} onChange={setTab} />
       <section role="tabpanel" id="journey-panel" aria-labelledby={`tab-${tab.replaceAll(" ", "-")}`}>
       {tab === "Ranking" ? <CompetitionRanking competitionId={competitionId}/> : tab === "Premiação" ? <p className={styles.note}>Funcionalidade disponível em breve.</p> : !editing ? <>
-        <button type="button" disabled={writeDisabled || atLineupLimit} onClick={() => { if (editor.newDraft()) setEditing(true); }}>+ Novo time</button>
-        {!editor.drafts.length ? <div className={styles.empty}><p>A rodada está chegando! Seu próximo craque pode estar entre os menos badalados. Monte sua seleção, aposte na estratégia e entre na disputa!</p><button className={styles.primary} disabled={writeDisabled || atLineupLimit} onClick={() => setEditing(true)}>⚽ Bora escalar!</button></div> : <ul className={styles.myTeams}>{editor.drafts.map(team => <li key={team.id}><TeamCrest team={team}/><div><strong>{team.nomePublico ?? `Time #${team.id}`}</strong><p>{team.formacao} · {team.status === "INSCRITA" ? "Inscrito" : "Em montagem"}</p></div><button disabled={busy} onClick={() => { void editor.openDraft(team.id).then(opened => { if (opened) setEditing(true); }); }}>{blocked ? "Visualizar" : "Editar"}</button>{team.status === "RASCUNHO" && editor.identityState?.estadoIdentidade === "DEFINIDA" && <button type="button" disabled={writeDisabled || editor.integratedPending || atLineupLimit} onClick={() => void editor.duplicateListed(team)}>Duplicar</button>}</li>)}</ul>}
+        <div className={styles.myTeamsToolbar}><h2>Meus times</h2><button className={leagueStyles.participationCta} type="button" disabled={writeDisabled || atLineupLimit} onClick={() => { if (editor.newDraft()) setEditing(true); }}>+ Novo time</button></div>
+        {!editor.drafts.length ? <div className={styles.empty}><p>A rodada está chegando! Seu próximo craque pode estar entre os menos badalados. Monte sua seleção, aposte na estratégia e entre na disputa!</p><button className={styles.primary} disabled={writeDisabled || atLineupLimit} onClick={() => setEditing(true)}>⚽ Bora escalar!</button></div> : <>
+          <ul className={`${leagueStyles.entries} ${styles.myTeams}`}>{editor.drafts.map(team => {
+            const teamName = team.nomePublico ?? `Time #${team.id}`;
+            return <li key={team.id} className={`${leagueStyles.entry} ${styles.myTeamEntry}`}>
+              <span className={styles.myTeamCrest}><TeamCrest team={team}/></span>
+              <div className={`${leagueStyles.teamName} ${styles.myTeamIdentity}`}><strong title={teamName}>{teamName}</strong><small>{team.formacao}<span className={`${leagueStyles.participationStatus} ${styles.teamStatus}`}>{team.status === "INSCRITA" ? "Inscrito" : "Em montagem"}</span></small></div>
+              <div className={`${leagueStyles.secondaryActions} ${styles.myTeamActions}`}>
+                <button type="button" disabled={busy} onClick={() => { void editor.openDraft(team.id).then(opened => { if (opened) setEditing(true); }); }}>{blocked ? "Visualizar" : "Editar"}</button>
+                {team.status === "RASCUNHO" && editor.identityState?.estadoIdentidade === "DEFINIDA" && <button type="button" disabled={writeDisabled || editor.integratedPending || atLineupLimit} onClick={() => void editor.duplicateListed(team)}>Duplicar</button>}
+              </div>
+            </li>;
+          })}</ul>
+        </>}
       </> : <button type="button" disabled={busy || editor.pendingCreation || editor.integratedPending} onClick={() => { if (editor.newDraft()) setEditing(false); }}>← Meus times</button>}
       </section>
     </>}
