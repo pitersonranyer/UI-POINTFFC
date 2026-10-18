@@ -8,7 +8,7 @@ export interface PointFantasyAthlete {
   posicaoId: number; statusId: number; apelido: string; precoCartola: string;
   categoriaId: number | null; pointcoins: number;
 }
-export interface FantasyReference { id: number; dados: { nome: string; abreviacao: string; slug?: string } }
+export interface FantasyReference { id: number; dados: { nome: string; abreviacao: string; slug?: string; apelido?: string; escudos?: Partial<Record<"30x30" | "45x45" | "60x60", string>> } }
 export interface FantasyCatalogData { athletes: PointFantasyAthlete[]; clubs: FantasyReference[]; positions: FantasyReference[] }
 export interface AthleteFilters { search: string; club: string; position: string; category: string; coaches: boolean }
 export const emptyAthleteFilters: AthleteFilters = { search: "", club: "", position: "", category: "", coaches: true };

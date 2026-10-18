@@ -1,10 +1,13 @@
 "use client";
 import React, { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarClock, RefreshCw, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, CalendarDays, RefreshCw, Trophy } from "lucide-react";
 import { lineupError, listFantasyCompetitions } from "@/services/pointFantasyLineupService";
+import { getFantasyShowcaseMatchups } from "@/services/pointFantasyShowcaseService";
 import type { FantasyCompetition } from "@/types/pointFantasyLineup";
+import type { FantasyShowcaseMatchups } from "@/services/pointFantasyShowcaseService";
 import { FantasyLineupBuilder } from "../lineups/FantasyLineupBuilder";
+import { FantasyMatchupsDialog } from "./FantasyMatchupsDialog";
 import { competitionAvailability, competitionDeadline, competitionIdFromSearch } from "./competitionPresentation";
 import styles from "./FantasyShowcase.module.css";
 import editorStyles from "../lineups/LineupBuilder.module.css";
@@ -20,7 +23,11 @@ export function FantasyShowcase() {
   const [revision, setRevision] = useState(0);
   const [now, setNow] = useState(0);
   const [active, setActive] = useState(0);
+  const [matchupCompetition, setMatchupCompetition] = useState<FantasyCompetition | null>(null);
+  const [matchupState, setMatchupState] = useState<{ loading: boolean; data?: FantasyShowcaseMatchups; error?: string }>({ loading: false });
+  const [matchupCache, setMatchupCache] = useState<Record<number, FantasyShowcaseMatchups>>({});
   const rail = useRef<HTMLDivElement>(null);
+  const matchupRequest = useRef<{ id: number; controller: AbortController } | null>(null);
   const panelId = useId();
   const tabId = useId();
 
@@ -51,6 +58,38 @@ export function FantasyShowcase() {
     const timer = window.setInterval(refresh, 60000);
     return () => { controller.abort(); window.removeEventListener("focus", refresh); window.clearInterval(timer); };
   }, [ready, selected, revision]);
+
+  useEffect(() => () => matchupRequest.current?.controller.abort(), []);
+
+  function loadMatchups(competition: FantasyCompetition) {
+    matchupRequest.current?.controller.abort();
+    const controller = new AbortController();
+    const request = { id: competition.id, controller };
+    matchupRequest.current = request;
+    setMatchupState({ loading: true });
+    getFantasyShowcaseMatchups(competition.id, competition.catalogoId, controller.signal).then(data => {
+      if (controller.signal.aborted || matchupRequest.current !== request) return;
+      setMatchupCache(current => current[competition.id] ? current : { ...current, [competition.id]: data });
+      setMatchupState({ loading: false, data });
+    }).catch(error => {
+      if (controller.signal.aborted || matchupRequest.current !== request) return;
+      setMatchupState({ loading: false, error: lineupError(error) });
+    });
+  }
+
+  function openMatchups(competition: FantasyCompetition) {
+    setMatchupCompetition(competition);
+    const cached = matchupCache[competition.id];
+    if (cached) setMatchupState({ loading: false, data: cached });
+    else loadMatchups(competition);
+  }
+
+  function closeMatchups() {
+    matchupRequest.current?.controller.abort();
+    matchupRequest.current = null;
+    setMatchupCompetition(null);
+    setMatchupState({ loading: false });
+  }
 
   function select(id: number | null) {
     const url = new URL(window.location.href);
@@ -101,12 +140,22 @@ export function FantasyShowcase() {
               const availability = competitionAvailability(competition, now);
               const open = availability === "Inscrições abertas";
               const canView = availability === "Encerrada";
+              const rawPaidAmount = competition.valorInscricao;
+              const paidAmount = typeof rawPaidAmount === "number"
+                ? rawPaidAmount
+                : typeof rawPaidAmount === "string" && rawPaidAmount.trim() !== ""
+                  ? Number(rawPaidAmount)
+                  : Number.NaN;
+              const validPaidAmount = competition.tipoAcesso === "PAGO" && Number.isFinite(paidAmount) && paidAmount >= 0;
               return <article key={competition.id} className={styles.card} aria-label={competition.nome}>
-                <div className={styles.cardTop}><span><Trophy size={15} aria-hidden="true" />Rodada {competition.rodada}</span><span>{competition.temporada}</span></div>
-                <h3>{competition.nome}</h3>
-                <div className={styles.entry}><span className={competition.tipoAcesso === "FREE" ? styles.free : styles.paid}>{competition.tipoAcesso === "FREE" ? "FREE" : "PAGA"}</span><strong>{competition.tipoAcesso === "FREE" ? "Grátis para participar" : Number.isFinite(Number(competition.valorInscricao)) ? currency.format(Number(competition.valorInscricao)) : "Valor não informado"}</strong></div>
-                <div className={styles.deadline}><CalendarClock size={18} aria-hidden="true" /><div><span>Participe até</span><strong>{competitionDeadline(competition.fimInscricao)}</strong><small>Horário de Brasília</small></div></div>
-                <p className={styles.limit}>{competition.limiteEscalacoesUsuario === null ? "Sem limite de times por usuário" : `Até ${competition.limiteEscalacoesUsuario} ${competition.limiteEscalacoesUsuario === 1 ? "time" : "times"} por usuário`}</p>
+                <div className={styles.cardTop}><span><Trophy size={14} aria-hidden="true" />Rodada {competition.rodada}<i aria-hidden="true">·</i>{competition.temporada}</span><span className={competition.tipoAcesso === "FREE" ? styles.free : styles.paid}>{competition.tipoAcesso}</span></div>
+                <h3 title={competition.nome}>{competition.nome}</h3>
+                {validPaidAmount && <p className={styles.entryFee}>Inscrição <strong>{currency.format(paidAmount)}</strong></p>}
+                <div className={styles.featureRow}>
+                  <div className={styles.prize}><span>Premiação</span><strong>Sem premiação informada</strong></div>
+                  <button className={styles.matchupsLink} type="button" aria-haspopup="dialog" onClick={() => openMatchups(competition)}><CalendarDays size={15} aria-hidden="true" />Ver confrontos</button>
+                </div>
+                <div className={styles.deadline}><CalendarClock size={16} aria-hidden="true" /><div><span>Inscrições até</span><strong>{competitionDeadline(competition.fimInscricao)}</strong><small>Horário de Brasília</small></div></div>
                 <div className={styles.cardFooter}><span className={open ? styles.open : styles.closed}>{availability}</span><button type="button" disabled={!open && !canView} onClick={() => { const current = competitionAvailability(competition, Date.now()); if (current === "Inscrições abertas" || current === "Encerrada") select(competition.id); }}>{open ? "Participar" : canView ? "Ver andamento" : availability}<ArrowRight size={17} aria-hidden="true" /></button></div>
                 {competitions.length > 1 && <span className={styles.srOnly}>{index + 1} de {competitions.length}</span>}
               </article>;
@@ -117,5 +166,6 @@ export function FantasyShowcase() {
     </div>
     <p className={styles.note}>A disponibilidade é confirmada ao abrir a competição. Sua inscrição só acontece na etapa de confirmação.</p>
     <Link className={styles.catalog} href="/point-fantasy/atletas/">Explorar catálogo de atletas <ArrowRight size={16} aria-hidden="true" /></Link>
+    {matchupCompetition && <FantasyMatchupsDialog competition={matchupCompetition} loading={matchupState.loading} data={matchupState.data} error={matchupState.error} onRetry={() => loadMatchups(matchupCompetition)} onClose={closeMatchups} />}
   </section>;
 }

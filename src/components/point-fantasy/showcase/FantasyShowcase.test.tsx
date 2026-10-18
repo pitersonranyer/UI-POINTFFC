@@ -1,10 +1,11 @@
 import React from "react";
 import { readFileSync } from "node:fs";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { FantasyShowcase } from "./FantasyShowcase";
 import { competitionAvailability, competitionIdFromSearch } from "./competitionPresentation";
 import { listFantasyCompetitions } from "@/services/pointFantasyLineupService";
+import { getFantasyShowcaseMatchups } from "@/services/pointFantasyShowcaseService";
 import { testContext } from "../lineups/lineupTestFixtures";
 import { metadata } from "@/app/point-fantasy/page";
 import { metadata as legacyMetadata } from "@/app/point-fantasy/escalacoes/page";
@@ -14,36 +15,138 @@ import hostingConfig from "../../../../firebase.json";
 const router = vi.hoisted(() => ({ replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 vi.mock("@/services/pointFantasyLineupService", async original => ({ ...await original<typeof import("@/services/pointFantasyLineupService")>(), listFantasyCompetitions: vi.fn() }));
+vi.mock("@/services/pointFantasyShowcaseService", () => ({ getFantasyShowcaseMatchups: vi.fn() }));
 vi.mock("../lineups/FantasyLineupBuilder", () => ({ FantasyLineupBuilder: ({ competitionId, onBack }: { competitionId: number; onBack: () => void }) => <section aria-label="Editor existente"><p>Competição {competitionId}</p><button onClick={onBack}>Voltar</button></section> }));
 const competition = (id = 8) => ({ ...testContext().competition, id, nome: `Competição ${id}` });
 
 beforeEach(() => {
   window.history.replaceState({}, "", "/point-fantasy");
   vi.mocked(listFantasyCompetitions).mockReset().mockResolvedValue([competition()]);
+  vi.mocked(getFantasyShowcaseMatchups).mockReset();
   router.replace.mockClear();
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
-it("carrega dados reais em Todas, sem inventar campeonatos, prêmios ou confrontos", async () => {
+it("mantém os dados reais, indica quando não há premiação informada e abre confrontos sob demanda", async () => {
   render(<FantasyShowcase />);
   expect(screen.getByRole("status").textContent).toContain("Carregando");
   const card = await screen.findByRole("article", { name: "Competição 8" });
   expect(screen.getAllByRole("tab").map(tab => tab.textContent)).toEqual(["Todas"]);
   expect(screen.getByRole("tab").getAttribute("aria-selected")).toBe("true");
   expect(card.textContent).toContain("FREE");
-  expect(card.textContent).toContain("Grátis para participar");
   expect(card.textContent).toContain("Rodada 31");
-  expect(card.textContent).not.toMatch(/prêmio|confronto|Brasileirão/i);
+  expect(card.textContent).toContain("Sem premiação informada");
+  expect(card.textContent).not.toMatch(/Brasileirão|times por usuário/i);
+  expect(within(card).getByRole("button", { name: /Ver confrontos/ })).toBeTruthy();
+  expect(getFantasyShowcaseMatchups).not.toHaveBeenCalled();
   expect(screen.queryByRole("button", { name: "Próxima competição" })).toBeNull();
 });
 
-it("mostra preço e limite reais em competição paga", async () => {
+it("mostra preço de inscrição real em competição paga sem confundi-lo com premiação", async () => {
   vi.mocked(listFantasyCompetitions).mockResolvedValue([{ ...competition(), tipoAcesso: "PAGO", valorInscricao: "12.50", limiteEscalacoesUsuario: 3 }]);
   render(<FantasyShowcase />);
   const card = await screen.findByRole("article");
-  expect(card.textContent).toContain("PAGA");
+  expect(card.textContent).toContain("PAGO");
   expect(card.textContent).toMatch(/12,50/);
-  expect(card.textContent).toContain("Até 3 times por usuário");
+  expect(card.textContent).toContain("Inscrição");
+  expect(card.textContent).toContain("Sem premiação informada");
+  expect(card.textContent).not.toContain("Até 3 times por usuário");
+});
+
+it("abre uma modal informativa, fecha por Escape e restaura o foco sem iniciar inscrição", async () => {
+  vi.mocked(getFantasyShowcaseMatchups).mockResolvedValue({
+    partidas: [{ id: 10, competicaoId: 8, partidaIdExterno: 100, clubeMandanteId: 262, clubeVisitanteId: 263, inicioPrevisto: "2026-10-18T19:00:00.000Z", inicioReal: null, status: "AGENDADA" }],
+    clubes: [
+      { id: 262, dados: { nome: "FLA", abreviacao: "FLA", apelido: "Mengão", escudos: { "45x45": "https://img.example/flamengo.png" } } },
+      { id: 263, dados: { nome: "BOT", abreviacao: "BOT", apelido: "Glorioso", escudos: { "45x45": "https://img.example/botafogo.png" } } },
+    ],
+  });
+  render(<FantasyShowcase />);
+  const card = await screen.findByRole("article", { name: "Competição 8" });
+  const open = within(card).getByRole("button", { name: /Ver confrontos/ });
+  open.focus();
+  fireEvent.click(open);
+  const dialog = await screen.findByRole("dialog", { name: "Jogos da disputa" });
+  expect(within(dialog).getByText("Competição 8")).toBeTruthy();
+  expect(within(dialog).getByText("Flamengo")).toBeTruthy();
+  expect(within(dialog).getByText("Botafogo")).toBeTruthy();
+  expect(within(dialog).getByText(/16:00 · Brasília/)).toBeTruthy();
+  expect(within(dialog).getByRole("img", { name: "Escudo do Flamengo" })).toBeTruthy();
+  const close = within(dialog).getByRole("button", { name: "Fechar" });
+  fireEvent.keyDown(dialog, { key: "Tab" });
+  expect(document.activeElement).toBe(close);
+  expect(window.location.search).toBe("");
+  fireEvent.keyDown(document, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(document.activeElement).toBe(open);
+  fireEvent.click(open);
+  await screen.findByRole("dialog", { name: "Jogos da disputa" });
+  expect(getFantasyShowcaseMatchups).toHaveBeenCalledTimes(1);
+});
+
+it("mostra estado vazio quando a competição não tem confrontos", async () => {
+  vi.mocked(getFantasyShowcaseMatchups).mockResolvedValue({ partidas: [], clubes: [] });
+  render(<FantasyShowcase />);
+  const card = await screen.findByRole("article", { name: "Competição 8" });
+  fireEvent.click(within(card).getByRole("button", { name: /Ver confrontos/ }));
+  expect(await screen.findByText("Nenhum confronto informado para esta disputa.")).toBeTruthy();
+  expect(getFantasyShowcaseMatchups).toHaveBeenCalledTimes(1);
+});
+
+it("mostra erro e permite repetir a consulta", async () => {
+  vi.mocked(getFantasyShowcaseMatchups).mockRejectedValueOnce(new Error("Sem conexão")).mockResolvedValueOnce({ partidas: [], clubes: [] });
+  render(<FantasyShowcase />);
+  const card = await screen.findByRole("article", { name: "Competição 8" });
+  fireEvent.click(within(card).getByRole("button", { name: /Ver confrontos/ }));
+  expect(await screen.findByRole("alert")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
+  expect(await screen.findByText("Nenhum confronto informado para esta disputa.")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+  fireEvent.click(within(card).getByRole("button", { name: /Ver confrontos/ }));
+  expect(await screen.findByText("Nenhum confronto informado para esta disputa.")).toBeTruthy();
+  expect(getFantasyShowcaseMatchups).toHaveBeenCalledTimes(2);
+});
+
+it("ignora uma resposta atrasada depois que a modal é fechada", async () => {
+  let resolveRequest!: (data: Awaited<ReturnType<typeof getFantasyShowcaseMatchups>>) => void;
+  vi.mocked(getFantasyShowcaseMatchups).mockImplementationOnce(() => new Promise(resolve => { resolveRequest = resolve; }));
+  render(<FantasyShowcase />);
+  const card = await screen.findByRole("article", { name: "Competição 8" });
+  fireEvent.click(within(card).getByRole("button", { name: /Ver confrontos/ }));
+  await screen.findByRole("dialog", { name: "Jogos da disputa" });
+  fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+  resolveRequest({ partidas: [{ id: 10, competicaoId: 8, partidaIdExterno: 100, clubeMandanteId: 262, clubeVisitanteId: 263, inicioPrevisto: "2026-10-18T19:00:00.000Z", inicioReal: null, status: "AGENDADA" }], clubes: [] });
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(screen.queryByText("Flamengo")).toBeNull();
+});
+
+it("não mostra partidas atrasadas de outra competição", async () => {
+  let resolveOld!: (data: Awaited<ReturnType<typeof getFantasyShowcaseMatchups>>) => void;
+  vi.mocked(listFantasyCompetitions).mockResolvedValue([competition(8), competition(19)]);
+  vi.mocked(getFantasyShowcaseMatchups)
+    .mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
+    .mockResolvedValueOnce({
+      partidas: [{ id: 20, competicaoId: 19, partidaIdExterno: 200, clubeMandanteId: 266, clubeVisitanteId: 264, inicioPrevisto: "2026-10-19T20:00:00.000Z", inicioReal: null, status: "ADIADA" }],
+      clubes: [
+        { id: 266, dados: { nome: "FLU", abreviacao: "FLU", apelido: "Tricolor" } },
+        { id: 264, dados: { nome: "COR", abreviacao: "COR", apelido: "Timão" } },
+      ],
+    });
+  render(<FantasyShowcase />);
+  const first = await screen.findByRole("article", { name: "Competição 8" });
+  const second = screen.getByRole("article", { name: "Competição 19" });
+  fireEvent.click(within(first).getByRole("button", { name: /Ver confrontos/ }));
+  await screen.findByRole("dialog", { name: "Jogos da disputa" });
+  fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+  fireEvent.click(within(second).getByRole("button", { name: /Ver confrontos/ }));
+  const dialog = await screen.findByRole("dialog", { name: "Jogos da disputa" });
+  expect(await within(dialog).findByText("Fluminense")).toBeTruthy();
+  resolveOld({
+    partidas: [{ id: 10, competicaoId: 8, partidaIdExterno: 100, clubeMandanteId: 262, clubeVisitanteId: 263, inicioPrevisto: "2026-10-18T19:00:00.000Z", inicioReal: null, status: "AGENDADA" }],
+    clubes: [],
+  });
+  await waitFor(() => expect(within(dialog).queryByText("Flamengo")).toBeNull());
+  expect(within(dialog).getByText("Fluminense")).toBeTruthy();
 });
 
 it("abre o editor com o ID correto e preserva parâmetros e histórico de navegação", async () => {
