@@ -521,8 +521,21 @@ describe("Team navigation refinements", () => {
     expect(screen.getByText("Cada escalação: Grátis")).toBeTruthy();
     const header = screen.getByRole("region",{name:"Competição selecionada"});
     const tabs = screen.getByRole("tablist",{name:"Ambiente da competição"});
+    expect(screen.getAllByRole("button",{name:"← Competições"})).toHaveLength(1);
+    expect(screen.getByRole("heading",{name:"Competição de teste"})).toBeTruthy();
+    expect(screen.getAllByText("2026").length).toBeGreaterThan(0);
+    expect(screen.getByText("Grátis")).toBeTruthy();
+    expect(screen.getAllByText(/Inscrições até/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button",{name:"Ver detalhes ▾"}).getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(screen.getByRole("button",{name:"Ver detalhes ▾"}));
+    expect(screen.getByRole("button",{name:"Ocultar detalhes ▴"}).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("PUBLICADA")).toBeTruthy();
+    expect(screen.getByText("Limite de escalações")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button",{name:"Ocultar detalhes ▴"}));
     expect(header.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(action.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("heading",{name:"Meus times"})).toBeNull();
+    expect(tabs.className).toContain("competitionTabs");
     expect(screen.queryByRole("button",{name:/Novo time|Bora escalar/i})).toBeNull();
     expect(screen.getByText("Escalação preservada")).toBeTruthy();
 

@@ -26,7 +26,7 @@ function CompetitionChooser() {
 export function FantasyLineupBuilder({ competitionId, onBack }: { competitionId?: number; onBack?: () => void } = {}) {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) return <p role="status" className={styles.empty}>Verificando sua sessão…</p>;
-  if (!isAuthenticated && competitionId !== undefined) return <PublicCompetitionEnvironment key={competitionId} competitionId={competitionId} />;
+  if (!isAuthenticated && competitionId !== undefined) return <PublicCompetitionEnvironment key={competitionId} competitionId={competitionId} onBack={onBack ?? (() => {})} />;
   if (!isAuthenticated) return <div className={styles.empty}><h2>Entre para montar sua escalação</h2><p>Use sua conta POINT FFC para salvar e retomar times.</p><Link className={styles.login} href={getLoginHref(competitionId ? `/point-fantasy?competicao=${competitionId}` : "/point-fantasy")}>Entrar na minha conta</Link> <Link href="/point-fantasy/atletas/">Consultar catálogo público</Link></div>;
   if (competitionId !== undefined) return <LineupEditor integrated key={`${user?.idUsuario}-${competitionId}`} competitionId={competitionId} onBack={onBack ?? (() => {})} />;
   return <CompetitionChooser key={user?.idUsuario} />;

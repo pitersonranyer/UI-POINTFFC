@@ -108,7 +108,7 @@ export function FantasyShowcase() {
   }
 
   if (!ready) return <p role="status">Carregando competições…</p>;
-  if (selected !== null) return <div className={editorStyles.builder}><button className={styles.back} type="button" onClick={() => select(null)}><ArrowLeft size={16} /> Voltar às competições</button><FantasyLineupBuilder key={selected} competitionId={selected} onBack={() => select(null)} /></div>;
+  if (selected !== null) return <div className={editorStyles.builder}><FantasyLineupBuilder key={selected} competitionId={selected} onBack={() => select(null)} /></div>;
 
   return <section className={styles.showcase} aria-label="Competições POINT FFC Fantasy">
     <div className={styles.toolbar}>

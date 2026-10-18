@@ -222,6 +222,30 @@
 .competitionMetadata dt { color:#777; }
 .competitionMetadata dd { color:#222; }
 .deadlineNotice { margin:0; }
+.competitionOverview { gap:8px; }
+.competitionOverview .lineupAction { gap:3px; }
+.compactCompetitionHeader { min-width:0; padding:0 2px 7px; border-bottom:1px solid #e5e1d8; }
+.competitionTopline { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:32px; }
+.builder .competitionBack { display:inline-flex; align-items:center; justify-content:flex-start; min-height:32px; padding:4px 2px; border:0; border-radius:5px; background:transparent; color:#58645b; font-size:.72rem; font-weight:700; }
+.builder .competitionBack:hover { background:#f3f5f2; color:#185f36; }
+.builder .competitionBack:focus-visible { outline:2px solid #b08c3b; outline-offset:2px; }
+.lightRoundBadge { padding:4px 7px; border-color:#e5d7ad; border-radius:5px; background:#fbf6e7; color:#806323; font-size:.61rem; letter-spacing:.04em; }
+.compactCompetitionHeader h1 { margin:3px 0 0; color:#202820; font-size:clamp(1.18rem,3.8vw,1.65rem); line-height:1.12; letter-spacing:-.035em; overflow-wrap:anywhere; }
+.competitionSummary { display:flex; flex-wrap:wrap; align-items:center; gap:3px 8px; margin:4px 0 0; color:#68736b; font-size:.72rem; line-height:1.35; }
+.competitionSummary span+span::before { content:"·"; margin-right:8px; color:#b08c3b; font-weight:800; }
+.builder .detailsToggle { display:inline-flex; align-items:center; justify-content:flex-start; min-height:34px; margin:3px 0 0; padding:4px 2px; border:0; border-radius:4px; background:transparent; color:#70591e; font-size:.68rem; font-weight:750; }
+.builder .detailsToggle:hover { color:#185f36; text-decoration:underline; }
+.builder .detailsToggle:focus-visible { outline:2px solid #b08c3b; outline-offset:2px; }
+.competitionDetails { margin-top:3px; padding:8px 9px; border:1px solid #ece8df; border-radius:8px; background:#fbfaf7; color:#555; font-size:.72rem; }
+.competitionDetails[hidden] { display:none; }
+.competitionDetails h3+h3 { margin-top:10px; }
+.competitionDetails .competitionMetadata { margin-top:7px; grid-template-columns:minmax(95px,.5fr) minmax(0,1fr); }
+.competitionDetails .matches { margin-top:7px; color:#353d37; }
+.competitionTabs { gap:14px; margin:0 0 6px; padding:0; border-bottom:1px solid #e5e1d8; }
+.competitionTabs button { flex:0 0 auto; min-height:37px; padding:5px 2px 7px; border:0; border-radius:0; background:transparent; color:#626862; font-size:.73rem; }
+.competitionOverview .competitionTabs button[aria-selected="true"] { border-color:transparent; background:transparent; color:#202020; }
+.competitionOverview .competitionTabs button[aria-selected="true"]::after { bottom:-1px; left:0; width:100%; height:2px; border-radius:2px 2px 0 0; background:#d4af37; }
+.competitionTabs button:focus-visible { outline:2px solid #896b2d; outline-offset:2px; }
 .lineupAction { display:grid; gap:6px; width:100%; min-width:0; }
 .lineupPrice { margin:0; color:#68736b; font-size:.74rem; line-height:1.35; text-align:center; }
 .lineupActionButton { display:flex; box-sizing:border-box; width:100%; min-height:50px; align-items:center; justify-content:center; gap:8px; padding:11px 16px; border:1px solid #19663b; border-radius:8px; background:#19663b; color:white; font:inherit; font-size:.95rem; font-weight:800; text-align:center; text-decoration:none; cursor:pointer; transition:background-color .15s ease; }
@@ -298,13 +322,24 @@
   .focusMode .teamNavigation[data-compact="true"] .teamActions button { padding-inline:5px; font-size:.62rem; }
 }
 @media(max-width:700px) {
+  .competitionOverview { gap:6px; }
+  .compactCompetitionHeader { padding:0 1px 5px; }
+  .competitionTopline { min-height:30px; }
+  .builder .competitionBack { min-height:32px; font-size:.68rem; }
+  .compactCompetitionHeader h1 { margin-top:2px; font-size:clamp(1.05rem,5vw,1.35rem); }
+  .competitionSummary { gap:2px 6px; font-size:.67rem; }
+  .competitionSummary span+span::before { margin-right:6px; }
+  .builder .detailsToggle { min-height:32px; margin-top:2px; padding-block:3px; font-size:.65rem; }
+  .competitionDetails { padding:7px; }
+  .competitionDetails .competitionMetadata { grid-template-columns:minmax(88px,.55fr) minmax(0,1fr); gap:4px 8px; }
+  .competitionTabs { gap:12px; margin-bottom:5px; }
+  .competitionTabs button { min-height:35px; padding-inline:1px; font-size:.7rem; }
   .fantasyCompetitionHeader { padding:2px 2px 10px; }
   .fantasyCompetitionHeader h1 { font-size:22px; }
   .fantasyHeaderMetrics { margin-top:11px; }
   .fantasyHeaderMetrics>div { padding-inline:7px; }
   .fantasyHeaderMetrics strong { font-size:10px; line-height:1.25; }
   .fantasyHeaderMetrics small { font-size:8px; line-height:1.2; }
-  .builder .detailsToggle { min-height:40px; margin-top:8px; }
   .lineupActionButton { min-height:50px; font-size:.9rem; }
   .deadlineNotice { padding:8px 10px; font-size:11px; line-height:1.4; }
   .myTeamsToolbar { margin-bottom:6px; }

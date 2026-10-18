@@ -16,7 +16,7 @@ const router = vi.hoisted(() => ({ replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 vi.mock("@/services/pointFantasyLineupService", async original => ({ ...await original<typeof import("@/services/pointFantasyLineupService")>(), listFantasyCompetitions: vi.fn() }));
 vi.mock("@/services/pointFantasyShowcaseService", () => ({ getFantasyShowcaseMatchups: vi.fn() }));
-vi.mock("../lineups/FantasyLineupBuilder", () => ({ FantasyLineupBuilder: ({ competitionId, onBack }: { competitionId: number; onBack: () => void }) => <section aria-label="Editor existente"><p>Competição {competitionId}</p><button onClick={onBack}>Voltar</button></section> }));
+vi.mock("../lineups/FantasyLineupBuilder", () => ({ FantasyLineupBuilder: ({ competitionId, onBack }: { competitionId: number; onBack: () => void }) => <section aria-label="Editor existente"><p>Competição {competitionId}</p><button onClick={onBack}>← Competições</button></section> }));
 const competition = (id = 8) => ({ ...testContext().competition, id, nome: `Competição ${id}` });
 
 beforeEach(() => {
@@ -26,6 +26,16 @@ beforeEach(() => {
   router.replace.mockClear();
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
+
+it("mantém um único retorno à vitrine ao abrir uma competição", async () => {
+  render(<FantasyShowcase />);
+  const card = await screen.findByRole("article", { name: "Competição 8" });
+  fireEvent.click(within(card).getByRole("button", { name: /Participar/ }));
+  expect(await screen.findByRole("region", { name: "Editor existente" })).toBeTruthy();
+  expect(screen.getAllByRole("button", { name: "← Competições" })).toHaveLength(1);
+  fireEvent.click(screen.getByRole("button", { name: "← Competições" }));
+  expect(await screen.findByRole("article", { name: "Competição 8" })).toBeTruthy();
+});
 
 it("mantém os dados reais, indica quando não há premiação informada e abre confrontos sob demanda", async () => {
   render(<FantasyShowcase />);
@@ -158,7 +168,7 @@ it("abre o editor com o ID correto e preserva parâmetros e histórico de navega
   expect(screen.getByRole("region", { name: "Editor existente" }).textContent).toContain("Competição 19");
   expect(window.location.search).toBe("?origem=menu&competicao=19");
   expect(window.location.hash).toBe("#disputas");
-  fireEvent.click(screen.getByRole("button", { name: "Voltar" }));
+  fireEvent.click(screen.getByRole("button", { name: "← Competições" }));
   await screen.findByRole("article", { name: "Competição 8" });
   expect(window.location.search).toBe("?origem=menu");
   window.history.replaceState({}, "", "/point-fantasy?competicao=8");
