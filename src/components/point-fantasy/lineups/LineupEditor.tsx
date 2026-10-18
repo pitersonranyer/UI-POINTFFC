@@ -15,6 +15,7 @@ import { CompetitionRanking } from "../ranking/CompetitionRanking";
 import { CompetitionTabs } from "../ranking/CompetitionTabs";
 import { FirstLineupSaveDialog } from "./FirstLineupSaveDialog";
 import { formatMatchupDate, sortLineupMatchups } from "./lineupMatchups";
+import { CompetitionLineupAction, competitionLineupPrice } from "./CompetitionLineupAction";
 import leagueStyles from "../../leagues/PointCompetition.module.css";
 import styles from "./LineupBuilder.module.css";
 
@@ -37,20 +38,35 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
   const disabled = writeDisabled || editor.integratedPending || (registered && (!integrated || context.competition.tipoAcesso !== "FREE"));
   const warnings = selectionWarnings(value, context.athletes);
   const competition = context.competition;
+  const inscriptionPrice = competitionLineupPrice(competition);
   const lockTimes = [...competition.partidas.map(m => Date.parse(m.inicioPrevisto)), ...(competition.fechamentoDefinitivoEm ? [Date.parse(competition.fechamentoDefinitivoEm)] : [])].filter(Number.isFinite);
   const lockTime = lockTimes.length ? new Date(Math.min(...lockTimes)).toISOString() : null;
   const matchups = sortLineupMatchups(competition.partidas ?? [], context.clubs);
   const byId = new Map(context.athletes.map(a => [a.id, a]));
   const lineupLimit = competition.limiteEscalacoesUsuario;
   const atLineupLimit = lineupLimit !== null && editor.drafts.length >= lineupLimit;
+  const createBlockedReason = reason
+    ?? (editor.serverBlocked ? "O servidor bloqueou as ações de escrita."
+      : editor.conflict ? "Atualize a versão da escalação antes de continuar."
+        : editor.pendingCreation ? "Resolva a criação pendente antes de continuar."
+          : editor.registrationLocked ? "Aguarde a conclusão da confirmação em andamento."
+            : editor.integratedPending ? "Aguarde a confirmação da participação em andamento."
+              : user?.status !== "ATIVO" ? "Sua conta precisa estar ativa para criar uma escalação."
+                : atLineupLimit ? `Limite de escalações atingido (${editor.drafts.length}/${lineupLimit}).`
+                  : busy ? "Aguarde a conclusão da operação atual." : null);
   const showNavigation = editor.drafts.length > 0 || editor.identityState?.estadoIdentidade === "DEFINIDA";
   function back() { if (!busy && !editor.pendingCreation && !editor.registrationLocked && (!dirty || window.confirm("Descartar alterações não salvas e voltar às competições?"))) onBack(); }
+  function startNewLineup() {
+    if (!editor.newDraft()) return;
+    setEditing(true);
+    setTab("Meus times");
+  }
   return <div className={styles.editor}>
     <button className={styles.back} type="button" disabled={busy || editor.pendingCreation || editor.registrationLocked} onClick={back}>← Competições</button>
     <section className={`${leagueStyles.competitionHeader} ${styles.fantasyCompetitionHeader}`} aria-label="Competição selecionada">
       <div className={leagueStyles.titleRow}><div><h1>{competition.nome}</h1><p>Temporada {competition.temporada}</p></div><span className={leagueStyles.roundBadge}>Rodada {competition.rodada}</span></div>
       <div className={`${leagueStyles.headerMetrics} ${styles.fantasyHeaderMetrics}`}>
-        <div><strong>{competition.tipoAcesso === "FREE" ? "Gratuita" : `Paga · ${Number(competition.valorInscricao).toLocaleString("pt-BR", { style:"currency", currency:"BRL" })}`}</strong><small>Participação</small></div>
+        <div><strong>{competition.tipoAcesso === "FREE" ? "Gratuita" : inscriptionPrice ? `Paga · ${inscriptionPrice}` : "Paga"}</strong><small>Participação</small></div>
         <div><strong>{competition.status}</strong><small>Status</small></div>
         <div><strong>{formatFantasyDate(competition.fimInscricao)}</strong><small>Inscrições até (Brasília)</small></div>
       </div>
@@ -61,6 +77,7 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
         <dl className={styles.competitionMetadata}><dt>Período de inscrição</dt><dd>{formatFantasyDate(competition.inicioInscricao)} – {formatFantasyDate(competition.fimInscricao)} (Brasília)</dd><dt>Bloqueio</dt><dd>{lockTime ? formatFantasyDate(lockTime) + " (Brasília)" : "Horário indisponível"}</dd><dt>Confrontos</dt><dd>{competition.partidas.length} {competition.partidas.length === 1 ? "confronto" : "confrontos"}</dd><dt>Atletas elegíveis</dt><dd>{context.athletes.length} · {context.clubs.length} clubes</dd><dt>Limite de escalações</dt><dd>{lineupLimit ?? "Sem limite definido"}</dd></dl>
       </div>
     </section>
+    {integrated && <CompetitionLineupAction competition={competition} disabledReason={createBlockedReason} onStart={startNewLineup} />}
     {blocked && <div className={`${leagueStyles.refreshWarning} ${styles.deadlineNotice}`} role="status">{reason ?? (user?.status !== "ATIVO" ? "Sua conta precisa estar ativa para editar." : "O servidor bloqueou as ações de escrita. A visualização foi preservada.")} O horário do servidor é a referência final.</div>}
     {editor.error && !editor.nameAction && <div className={styles.alert} role="alert">{editor.error}</div>}
     {editor.pendingCreation && !editor.nameAction && <div className={styles.alert}><p>A confirmação está pendente. Consulte seus times e confirme a mesma operação antes de continuar.</p><button type="button" disabled={busy || blocked} onClick={() => void editor.retryCreation()}>Tentar novamente</button></div>}
@@ -70,8 +87,8 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
       <CompetitionTabs tab={tab} onChange={setTab} />
       <section role="tabpanel" id="journey-panel" aria-labelledby={`tab-${tab.replaceAll(" ", "-")}`}>
       {tab === "Ranking" ? <CompetitionRanking competitionId={competitionId}/> : tab === "Premiação" ? <p className={styles.note}>Funcionalidade disponível em breve.</p> : !editing ? <>
-        <div className={styles.myTeamsToolbar}><h2>Meus times</h2><button className={leagueStyles.participationCta} type="button" disabled={writeDisabled || atLineupLimit} onClick={() => { if (editor.newDraft()) setEditing(true); }}>+ Novo time</button></div>
-        {!editor.drafts.length ? <div className={styles.empty}><p>A rodada está chegando! Seu próximo craque pode estar entre os menos badalados. Monte sua seleção, aposte na estratégia e entre na disputa!</p><button className={styles.primary} disabled={writeDisabled || atLineupLimit} onClick={() => setEditing(true)}>⚽ Bora escalar!</button></div> : <>
+        <div className={styles.myTeamsToolbar}><h2>Meus times</h2>{!integrated && <button className={leagueStyles.participationCta} type="button" disabled={writeDisabled || atLineupLimit} onClick={() => { if (editor.newDraft()) setEditing(true); }}>+ Novo time</button>}</div>
+        {!editor.drafts.length ? <div className={styles.empty}><p>A rodada está chegando! Seu próximo craque pode estar entre os menos badalados. Monte sua seleção, aposte na estratégia e entre na disputa!</p>{!integrated && <button className={styles.primary} disabled={writeDisabled || atLineupLimit} onClick={() => setEditing(true)}>⚽ Bora escalar!</button>}</div> : <>
           <ul className={`${leagueStyles.entries} ${styles.myTeams}`}>{editor.drafts.map(team => {
             const teamName = team.nomePublico ?? `Time #${team.id}`;
             return <li key={team.id} className={`${leagueStyles.entry} ${styles.myTeamEntry}`}>

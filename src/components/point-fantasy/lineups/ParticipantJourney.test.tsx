@@ -16,12 +16,12 @@ beforeEach(() => {
  vi.spyOn(window,"confirm").mockReturnValue(true);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-async function mount() { render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>); await screen.findByRole("button",{name:/Bora escalar/}); }
+async function mount() { render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>); await screen.findByRole("button",{name:/Escale seu time/}); }
 it("opens My teams with three tabs, then an empty pitch without POST or modal", async () => {
  await mount(); expect(screen.getAllByRole("tab")).toHaveLength(3);
  fireEvent.click(screen.getByRole("tab",{name:"Premiação"})); expect(screen.getByText(/disponível em breve/)).toBeTruthy();
  fireEvent.click(screen.getByRole("tab",{name:"Meus times"}));
- fireEvent.click(screen.getByRole("button",{name:/Bora escalar/}));
+ fireEvent.click(screen.getByRole("button",{name:/Escale seu time/}));
  expect(screen.getByRole("region",{name:"Campinho 4-3-3"})).toBeTruthy();
  expect((screen.getByRole("textbox",{name:"Nome do time"}) as HTMLInputElement).value).toBe("Tropa do Mago");
  expect(screen.queryByRole("dialog")).toBeNull(); expect(service.createFantasyLineup).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ it("confirms a complete FREE team only after the server receipt and retrieves it
  vi.mocked(service.getFantasyLineup).mockResolvedValueOnce(team).mockResolvedValue({...team,status:"INSCRITA",versao:2});
  let finish!: (value: Awaited<ReturnType<typeof service.confirmFreeFantasyLineups>>) => void;
  vi.mocked(service.confirmFreeFantasyLineups).mockReturnValue(new Promise(resolve => { finish=resolve; }));
- await mount(); fireEvent.click(screen.getByRole("button",{name:/Bora escalar/}));
+ await mount(); fireEvent.click(screen.getByRole("button",{name:/Escale seu time/}));
  const save=screen.getByRole("button",{name:"Salvar time"}); fireEvent.click(save); fireEvent.click(save);
  await waitFor(() => expect(service.confirmFreeFantasyLineups).toHaveBeenCalledTimes(1));
  expect(service.createFantasyLineup).toHaveBeenCalledTimes(1); expect(screen.queryByText("Time salvo e inscrito!")).toBeNull();
@@ -73,7 +73,7 @@ it("confirms a complete FREE team only after the server receipt and retrieves it
 it("saves paid teams without registering or charging", async () => {
  const context=testContext(); context.competition.tipoAcesso="PAGO";
  vi.mocked(service.loadLineupContext).mockResolvedValue(context);
- await mount(); fireEvent.click(screen.getByRole("button",{name:/Bora escalar/}));
+ await mount(); fireEvent.click(screen.getByRole("button",{name:/Escale seu time/}));
  fireEvent.click(screen.getByRole("button",{name:"Salvar time"}));
  expect(await screen.findByText(/participação paga depende/)).toBeTruthy();
  expect(service.confirmFreeFantasyLineups).not.toHaveBeenCalled();

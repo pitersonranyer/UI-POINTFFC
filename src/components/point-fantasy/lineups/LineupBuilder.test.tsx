@@ -7,6 +7,7 @@ import { LineupPitch } from "./LineupPitch";
 import { LineupAthletePicker } from "./LineupAthletePicker";
 import { useLineupEditor } from "./useLineupEditor";
 import { ApiError } from "@/services/apiClient";
+import * as apiClient from "@/services/apiClient";
 import * as service from "@/services/pointFantasyLineupService";
 import { completeTestSelection, testAthlete, testContext, testLineup, testMyLineups } from "./lineupTestFixtures";
 import { defaultPickerFilters, emptySelection, formationCounts } from "./lineupPresentation";
@@ -14,7 +15,8 @@ import type { Formation } from "@/types/pointFantasyLineup";
 
 const auth = vi.hoisted(() => ({ authenticated:true, loading:false, status:"ATIVO" }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth:() => ({ isAuthenticated:auth.authenticated, isLoading:auth.loading, user:{ idUsuario:"test-user", status:auth.status } }) }));
-vi.mock("@/services/pointFantasyLineupService", async original => ({ ...await original<typeof import("@/services/pointFantasyLineupService")>(), loadLineupContext:vi.fn(), listMyFantasyLineups:vi.fn(), listFantasyCompetitions:vi.fn(), getFantasyLineup:vi.fn(), createFantasyLineup:vi.fn(), updateFantasyLineup:vi.fn(), duplicateFantasyLineup:vi.fn(), deleteFantasyLineup:vi.fn() }));
+vi.mock("@/services/apiClient", async original => ({ ...await original<typeof import("@/services/apiClient")>(), apiFetch:vi.fn() }));
+vi.mock("@/services/pointFantasyLineupService", async original => ({ ...await original<typeof import("@/services/pointFantasyLineupService")>(), loadLineupContext:vi.fn(), listMyFantasyLineups:vi.fn(), listFantasyCompetitions:vi.fn(), getFantasyLineup:vi.fn(), createFantasyLineup:vi.fn(), updateFantasyLineup:vi.fn(), duplicateFantasyLineup:vi.fn(), deleteFantasyLineup:vi.fn(), confirmFreeFantasyLineups:vi.fn() }));
 beforeEach(() => {
   vi.mocked(service.loadLineupContext).mockReset().mockResolvedValue(testContext());
   vi.mocked(service.listMyFantasyLineups).mockReset().mockResolvedValue(testMyLineups([]));
@@ -24,6 +26,8 @@ beforeEach(() => {
   vi.mocked(service.updateFantasyLineup).mockReset().mockResolvedValue(testLineup(undefined,{ versao:2 }));
   vi.mocked(service.duplicateFantasyLineup).mockReset().mockResolvedValue(testLineup(undefined,{ id:13 }));
   vi.mocked(service.deleteFantasyLineup).mockReset().mockResolvedValue({ id:12, excluida:true });
+  vi.mocked(service.confirmFreeFantasyLineups).mockReset();
+  vi.mocked(apiClient.apiFetch).mockReset().mockResolvedValue(testContext().competition);
   auth.authenticated = true; auth.loading = false; auth.status = "ATIVO";
   vi.spyOn(window, "confirm").mockReturnValue(true);
   Object.defineProperty(HTMLDialogElement.prototype,"showModal",{ configurable:true,value:function() { this.setAttribute("open",""); } });
@@ -202,7 +206,7 @@ describe("Athlete picker", () => {
 describe("Private journey", () => {
   it("opens the selected competition through the existing authenticated editor without creating a draft", async () => {
     render(<FantasyLineupBuilder competitionId={19} onBack={vi.fn()} />);
-    fireEvent.click(await screen.findByRole("button", { name: /Bora escalar/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Escale seu time/ }));
     await screen.findByRole("region", { name: "Campinho 4-3-3" });
     expect(service.loadLineupContext).toHaveBeenCalledWith(19, expect.any(AbortSignal));
     expect(service.listFantasyCompetitions).not.toHaveBeenCalled();
@@ -222,7 +226,7 @@ describe("Private journey", () => {
   });
   it("discovers competitions and creates an incomplete draft without fake validation", async () => {
     render(<FantasyLineupBuilder />); fireEvent.click(await screen.findByText("Participar"));
-    fireEvent.click(await screen.findByRole("button", { name: /Bora escalar/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Escale seu time/ }));
     fireEvent.click(await screen.findByText("Salvar time"));
     await screen.findByText("Time salvo. Em montagem.");
     expect(service.createFantasyLineup).toHaveBeenCalledWith(8,emptySelection(),expect.objectContaining({chaveIdempotencia:expect.any(String)}));
@@ -508,6 +512,73 @@ describe("Team navigation refinements", () => {
     vi.mocked(window.confirm).mockReturnValueOnce(false); fireEvent.click(screen.getByRole("button",{name:"+ Novo time"})); expect(screen.getByRole("button",{name:"Ações de Jogador 1"})).toBeTruthy();
     fireEvent.click(screen.getByRole("button",{name:"+ Novo time"})); expect(screen.queryByRole("button",{name:"Ações de Jogador 1"})).toBeNull();
     fireEvent.click(screen.getAllByRole("button",{name:"Adicionar Goleiro 1"})[0]); expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Jogador");
+    expect(service.createFantasyLineup).not.toHaveBeenCalled();
+  });
+  it("shows the free per-lineup price and starts the existing flow from Ranking without registering", async () => {
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup(undefined,{nomePublico:"Escalação preservada"})]));
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} integrated />);
+    const action = await screen.findByRole("button",{name:"Escale seu time"});
+    expect(screen.getByText("Cada escalação: Grátis")).toBeTruthy();
+    const header = screen.getByRole("region",{name:"Competição selecionada"});
+    const tabs = screen.getByRole("tablist",{name:"Ambiente da competição"});
+    expect(header.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(action.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("button",{name:/Novo time|Bora escalar/i})).toBeNull();
+    expect(screen.getByText("Escalação preservada")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab",{name:"Ranking"}));
+    fireEvent.click(screen.getByRole("button",{name:"Escale seu time"}));
+    expect(screen.getByRole("tab",{name:"Meus times"}).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByText("Tropa do Mago")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab",{name:"Premiação"}));
+    fireEvent.click(screen.getByRole("button",{name:"Escale seu time"}));
+    expect(screen.getByRole("tab",{name:"Meus times"}).getAttribute("aria-selected")).toBe("true");
+    expect(service.createFantasyLineup).not.toHaveBeenCalled();
+    expect(service.confirmFreeFantasyLineups).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button",{name:"← Meus times"}));
+    expect(screen.getByText("Escalação preservada")).toBeTruthy();
+  });
+  it("formats the actual paid fee and uses a neutral message for inconsistent values", async () => {
+    const paid = testContext(); paid.competition.tipoAcesso = "PAGO"; paid.competition.valorInscricao = "12.50";
+    vi.mocked(service.loadLineupContext).mockResolvedValue(paid);
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} integrated />);
+    expect(await screen.findByText("Cada escalação: R$ 12,50")).toBeTruthy();
+
+    cleanup();
+    const missing = testContext(); missing.competition.tipoAcesso = "PAGO"; missing.competition.valorInscricao = "";
+    vi.mocked(service.loadLineupContext).mockResolvedValue(missing);
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} integrated />);
+    expect(await screen.findByText("Valor por escalação indisponível")).toBeTruthy();
+    expect(screen.queryByText(/Cada escalação: R\$/)).toBeNull();
+  });
+  it.each([
+    ["Prazo encerrado", (context: ReturnType<typeof testContext>) => { context.competition.fimInscricao = "2020-01-01T00:00:00Z"; }],
+    ["Competição indisponível", (context: ReturnType<typeof testContext>) => { context.competition.status = "ENCERRADA"; }],
+    ["Catálogo indisponível", (context: ReturnType<typeof testContext>) => { context.catalog.status = "ABERTO"; }],
+  ])("keeps the call to action blocked when %s", async (_label, change) => {
+    const context = testContext(); change(context);
+    vi.mocked(service.loadLineupContext).mockResolvedValue(context);
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} integrated />);
+    expect((await screen.findByRole("button",{name:"Escale seu time"}) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByRole("status").some(status => /encerrad|indisponível/i.test(status.textContent ?? ""))).toBe(true);
+    expect(service.createFantasyLineup).not.toHaveBeenCalled();
+  });
+  it("disables the call to action and explains the participant limit", async () => {
+    const context = testContext(); context.competition.limiteEscalacoesUsuario = 1;
+    vi.mocked(service.loadLineupContext).mockResolvedValue(context);
+    vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([testLineup()]));
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} integrated />);
+    expect((await screen.findByRole("button",{name:"Escale seu time"}) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("Limite de escalações atingido (1/1).")).toBeTruthy();
+  });
+  it("offers the login return path to visitors without loading private lineups", async () => {
+    auth.authenticated = false;
+    render(<FantasyLineupBuilder competitionId={8} />);
+    const action = await screen.findByRole("link",{name:"Escale seu time"});
+    expect(await screen.findByText("Cada escalação: Grátis")).toBeTruthy();
+    expect(action.getAttribute("href")).toContain(encodeURIComponent("/point-fantasy?competicao=8"));
+    expect(service.listMyFantasyLineups).not.toHaveBeenCalled();
+    expect(service.loadLineupContext).not.toHaveBeenCalled();
     expect(service.createFantasyLineup).not.toHaveBeenCalled();
   });
 });
