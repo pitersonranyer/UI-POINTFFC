@@ -528,15 +528,31 @@ describe("Team navigation refinements", () => {
 
     fireEvent.click(screen.getByRole("tab",{name:"Ranking"}));
     fireEvent.click(screen.getByRole("button",{name:"Escale seu time"}));
-    expect(screen.getByRole("tab",{name:"Meus times"}).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByText("Tropa do Mago")).toBeTruthy();
-    fireEvent.click(screen.getByRole("tab",{name:"Premiação"}));
-    fireEvent.click(screen.getByRole("button",{name:"Escale seu time"}));
-    expect(screen.getByRole("tab",{name:"Meus times"}).getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByRole("tablist",{name:"Ambiente da competição"})).toBeNull();
+    expect(screen.queryByRole("region",{name:"Competição selecionada"})).toBeNull();
+    expect(screen.queryByRole("button",{name:"Escale seu time"})).toBeNull();
+    expect(screen.getByRole("button",{name:"← Meus times"})).toBeTruthy();
+    expect(screen.getByText("Tropa do Mago",{exact:true})).toBeTruthy();
     expect(service.createFantasyLineup).not.toHaveBeenCalled();
     expect(service.confirmFreeFantasyLineups).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button",{name:"← Meus times"}));
+    expect(screen.getByRole("tab",{name:"Meus times"}).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByText("Escalação preservada")).toBeTruthy();
+  });
+  it("keeps unsaved local selections when leaving and resuming the focused editor", async () => {
+    render(<LineupEditor competitionId={8} onBack={vi.fn()} integrated />);
+    fireEvent.click(await screen.findByRole("button",{name:"Escale seu time"}));
+    fireEvent.click((await screen.findAllByRole("button",{name:"Adicionar Goleiro 1"}))[0]);
+    fireEvent.click(await screen.findByRole("button",{name:"Comprar Jogador 1"}));
+    expect(screen.getByRole("button",{name:"Ações de Jogador 1"})).toBeTruthy();
+    fireEvent.click(screen.getByRole("button",{name:"← Meus times"}));
+    expect(screen.getByRole("status").textContent).toContain("alterações locais continuam preservadas");
+    expect(screen.getByRole("button",{name:"Continuar editando"})).toBeTruthy();
+    fireEvent.click(screen.getByRole("button",{name:"Continuar editando"}));
+    expect(screen.getByRole("button",{name:"Ações de Jogador 1"})).toBeTruthy();
+    expect(service.createFantasyLineup).not.toHaveBeenCalled();
+    expect(service.updateFantasyLineup).not.toHaveBeenCalled();
+    expect(service.confirmFreeFantasyLineups).not.toHaveBeenCalled();
   });
   it("formats the actual paid fee and uses a neutral message for inconsistent values", async () => {
     const paid = testContext(); paid.competition.tipoAcesso = "PAGO"; paid.competition.valorInscricao = "12.50";

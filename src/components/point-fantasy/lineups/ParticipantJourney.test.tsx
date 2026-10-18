@@ -39,7 +39,7 @@ it("saves a complete team and retries registration with the same key", async () 
  vi.mocked(service.confirmFreeFantasyLineups).mockRejectedValue(new Error("timeout"));
  render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>);
  fireEvent.click(await screen.findByRole("button",{name:"Editar"}));
- await screen.findByText(/Time #12/);
+ await screen.findByText("Em montagem",{exact:true});
  fireEvent.click(screen.getByRole("button",{name:"Salvar time"}));
  await screen.findByText(/Não foi possível concluir a inscrição/);
  const first=vi.mocked(service.confirmFreeFantasyLineups).mock.calls[0][1];
@@ -89,7 +89,7 @@ it.each([false,true])("lists registered and unfinished teams and respects closed
  const publicName=await screen.findByText("Tropa 01"); expect(publicName.getAttribute("title")).toBe("Tropa 01");
  expect(screen.getAllByRole("img",{name:"Brasão do time"})).toHaveLength(2); expect(screen.getAllByText("4-3-3",{exact:true})).toHaveLength(2); expect(screen.getByText("Inscrito",{exact:true})).toBeTruthy(); expect(screen.getByText("Em montagem",{exact:true})).toBeTruthy();
  fireEvent.click(screen.getAllByRole("button",{name:closed ? "Visualizar" : "Editar"})[0]);
- await screen.findByText(/Inscrita · Tropa 01/);
+ await screen.findByText("Inscrito",{exact:true});
  const formation=screen.getByRole("combobox",{name:"Formação tática"}) as HTMLSelectElement;
  expect(formation.disabled).toBe(closed);
  expect((screen.getByRole("button",{name:"Duplicar time"}) as HTMLButtonElement).disabled).toBe(true);
@@ -121,7 +121,7 @@ it("recovers an unresolved registration key after remount", async () => {
  vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([team]));
  vi.mocked(service.getFantasyLineup).mockResolvedValue(team);
  vi.mocked(service.confirmFreeFantasyLineups).mockRejectedValue(new Error("timeout"));
- const open=async () => { render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>); fireEvent.click(await screen.findByRole("button",{name:"Editar"})); await screen.findByText(/Time #12 · v1/); fireEvent.click(screen.getByRole("button",{name:"Salvar time"})); await screen.findByText(/Não foi possível concluir a inscrição/); };
+ const open=async () => { render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>); fireEvent.click(await screen.findByRole("button",{name:"Editar"})); await screen.findByText("Em montagem",{exact:true}); fireEvent.click(screen.getByRole("button",{name:"Salvar time"})); await screen.findByText(/Não foi possível concluir a inscrição/); };
  await open(); const first=vi.mocked(service.confirmFreeFantasyLineups).mock.calls[0][1]; cleanup();
  await open(); expect(vi.mocked(service.confirmFreeFantasyLineups).mock.calls[1][1]).toEqual(first);
 });

@@ -19,18 +19,22 @@ beforeEach(()=>{
  vi.mocked(getFantasyCompetitionRanking).mockResolvedValue({competicaoId:8,estadoPontuacao:"NAO_INICIADA",items:[],total:0,page:1,limit:50});
 });
 afterEach(cleanup);
-it("loads ranking only on its tab and preserves the pitch and prize placeholder",async()=>{
+it("keeps the editor focused, then loads ranking from Meus times without losing its local formation",async()=>{
  render(<FantasyLineupBuilder competitionId={8}/>);
  fireEvent.click(await screen.findByRole("button",{name:/Escale seu time/}));
  fireEvent.change(screen.getByRole("combobox",{name:"Formação tática"}),{target:{value:"4-4-2"}});
  expect(getFantasyCompetitionRanking).not.toHaveBeenCalled();
+ expect(screen.queryByRole("tablist",{name:"Ambiente da competição"})).toBeNull();
+ fireEvent.click(screen.getByRole("button",{name:"← Meus times"}));
+ expect(screen.getByRole("button",{name:"Continuar editando"})).toBeTruthy();
  fireEvent.click(screen.getByRole("tab",{name:"Ranking"}));await screen.findByText("Nenhum time inscrito nesta competição.");
  expect(getFantasyCompetitionRanking).toHaveBeenCalledTimes(1);
  fireEvent.click(screen.getByRole("tab",{name:"Premiação"}));expect(screen.getByText(/Funcionalidade disponível em breve/)).toBeTruthy();
  expect(getFantasyCompetitionRanking).toHaveBeenCalledTimes(1);
  fireEvent.click(screen.getByRole("tab",{name:"Meus times"}));
+ fireEvent.click(screen.getByRole("button",{name:"Continuar editando"}));
  expect((screen.getByRole("combobox",{name:"Formação tática"}) as HTMLSelectElement).value).toBe("4-4-2");
- expect(screen.getAllByRole("tab")).toHaveLength(3);
+ expect(screen.queryByRole("tablist",{name:"Ambiente da competição"})).toBeNull();
 });
 it("gives anonymous visitors public ranking access and keeps private teams protected",async()=>{
  auth.isAuthenticated=false;auth.accessToken="";
