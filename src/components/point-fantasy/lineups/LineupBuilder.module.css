@@ -244,6 +244,59 @@
 .builder .myTeamActions.myTeamActions button { min-height:40px; padding:5px 8px; border:1px solid #c5ac70; border-radius:7px; background:#fffaf0; color:#6f5419; font-size:.66rem; white-space:nowrap; }
 .teamHeading { display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
 .teamHeading input { display:block; width:100%; max-width:280px; padding:8px; }
+.focusMode { width:100%; max-width:none; gap:7px; }
+.focusedTeamHeader { display:grid; grid-template-columns:auto 30px minmax(0,1fr) auto; align-items:center; gap:6px 8px; min-width:0; padding:4px 0; border-bottom:1px solid #e1e8e2; }
+.focusedTeamHeader>svg { display:block; width:28px; height:32px; }
+.focusBack { min-height:40px!important; padding:6px 9px!important; white-space:nowrap; }
+.focusedTeamIdentity { display:grid; min-width:0; gap:2px; }
+.focusedTeamIdentity>strong { display:block; min-width:0; overflow:hidden; font-size:.88rem; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
+.focusedTeamIdentity label { display:grid; gap:2px; min-width:0; font-size:.62rem; line-height:1.1; }
+.focusedTeamIdentity input { box-sizing:border-box; width:100%; min-width:0; min-height:36px; padding:6px 8px; border:1px solid #c8d3cb; border-radius:7px; font:inherit; }
+.focusedTeamStatus { overflow:hidden; color:#68756c; font-size:.62rem; line-height:1.2; text-overflow:ellipsis; white-space:nowrap; }
+.focusedTeamCount { padding:4px 6px; border:1px solid #e4d8af; border-radius:999px; background:#fffaf0; color:#70591e; font-size:.66rem; font-weight:800; white-space:nowrap; }
+.nameSuggestion { grid-column:3; justify-self:start; min-height:34px!important; padding:4px 8px!important; font-size:.66rem!important; }
+.focusMode .lineupControls { gap:4px; }
+.focusMode .teamNavigation[data-compact="true"] { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px; min-width:0; padding:0; }
+.focusMode .teamNavigation[data-compact="true"] .teamSwitcher { flex:initial; min-width:0; gap:3px; }
+.focusMode .teamNavigation[data-compact="true"] .teamSwitcher>button { box-sizing:border-box; width:38px; min-width:38px; min-height:40px; padding:4px; }
+.focusMode .teamNavigation[data-compact="true"] .teamSelect select { min-height:40px; padding:5px 7px; font-size:.73rem; }
+.focusMode .teamNavigation[data-compact="true"] .teamActions { flex-wrap:nowrap; gap:4px; }
+.focusMode .teamNavigation[data-compact="true"] .teamActions button { min-height:40px; padding:5px 8px; font-size:.68rem; white-space:nowrap; }
+.focusMode .teamNavigation[data-compact="true"] .teamCount { display:none; }
+.focusMode .toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:6px 10px; padding:5px 7px; }
+.focusMode .toolbar label { display:grid; min-width:0; gap:3px; font-size:.65rem; }
+.focusMode .toolbar label select { min-height:40px; }
+.focusMode .rosterValue { align-self:center; color:#235d37; font-size:.78rem; }
+.focusMode .workspace { gap:8px; }
+.focusMode .pitch { box-sizing:border-box; width:100%; max-width:100%; margin:0; }
+.focusMode .summary h3 { margin:0; }
+.localDraftNotice { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin:0 0 8px; color:#56665b; font-size:.75rem; }
+.localDraftNotice button { min-height:36px; padding:5px 9px; font-size:.7rem; }
+@media(max-width:767px) {
+  .focusMode { gap:5px; padding-inline:0; }
+  .focusedTeamHeader { grid-template-columns:auto 26px minmax(0,1fr) auto; gap:4px 6px; padding:2px 0 5px; }
+  .focusedTeamHeader>svg { width:25px; height:29px; }
+  .focusBack { min-height:40px!important; padding:5px 7px!important; font-size:.68rem!important; }
+  .focusedTeamIdentity>strong { font-size:.8rem; }
+  .focusedTeamStatus { font-size:.58rem; }
+  .focusedTeamCount { padding:4px 5px; font-size:.6rem; }
+  .focusMode .teamNavigation[data-compact="true"] .teamSwitcher>button { width:36px; min-width:36px; }
+  .focusMode .teamNavigation[data-compact="true"] .teamActions button { padding-inline:6px; }
+  .focusMode .teamNavigation[data-compact="true"] .note { font-size:.62rem; }
+  .focusMode .pitch { min-height:392px; padding:11px 3px 8px; row-gap:4px; }
+  .focusMode .pitchLines { inset:8px; }
+  .focusMode .benchSection { margin-top:6px; }
+}
+@media(max-width:360px) {
+  .focusedTeamHeader { grid-template-columns:auto 24px minmax(0,1fr) auto; gap:4px; }
+  .focusedTeamHeader>svg { width:23px; height:27px; }
+  .focusBack { padding-inline:5px!important; font-size:.63rem!important; }
+  .focusMode .teamNavigation[data-compact="true"] { gap:3px; }
+  .focusMode .teamNavigation[data-compact="true"] .teamSwitcher>button { width:34px; min-width:34px; min-height:40px; }
+  .focusMode .teamNavigation[data-compact="true"] .teamSelect select { padding-inline:4px; font-size:.68rem; }
+  .focusMode .teamNavigation[data-compact="true"] .teamActions { gap:3px; }
+  .focusMode .teamNavigation[data-compact="true"] .teamActions button { padding-inline:5px; font-size:.62rem; }
+}
 @media(max-width:700px) {
   .fantasyCompetitionHeader { padding:2px 2px 10px; }
   .fantasyCompetitionHeader h1 { font-size:22px; }
