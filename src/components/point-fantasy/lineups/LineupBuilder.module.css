@@ -222,6 +222,13 @@
 .competitionMetadata dt { color:#777; }
 .competitionMetadata dd { color:#222; }
 .deadlineNotice { margin:0; }
+.lineupAction { display:grid; gap:6px; width:100%; min-width:0; }
+.lineupPrice { margin:0; color:#68736b; font-size:.74rem; line-height:1.35; text-align:center; }
+.lineupActionButton { display:flex; box-sizing:border-box; width:100%; min-height:50px; align-items:center; justify-content:center; gap:8px; padding:11px 16px; border:1px solid #19663b; border-radius:8px; background:#19663b; color:white; font:inherit; font-size:.95rem; font-weight:800; text-align:center; text-decoration:none; cursor:pointer; transition:background-color .15s ease; }
+.lineupActionButton:hover { background:#155631; }
+.lineupActionButton:focus-visible { outline:3px solid #d4af37; outline-offset:3px; }
+.lineupActionButtonDisabled,.lineupActionButton:disabled { border-color:#cfd6d0; background:#e9eeea; color:#616b63; cursor:not-allowed; }
+.lineupActionReason { margin:0; color:#68736b; font-size:.7rem; line-height:1.4; text-align:center; }
 .myTeams { list-style:none; margin:0; padding:0; }
 .myTeamsToolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 8px; }
 .myTeamsToolbar h2 { margin:0; font-size:1rem; letter-spacing:-.02em; }
@@ -245,6 +252,7 @@
   .fantasyHeaderMetrics strong { font-size:10px; line-height:1.25; }
   .fantasyHeaderMetrics small { font-size:8px; line-height:1.2; }
   .builder .detailsToggle { min-height:40px; margin-top:8px; }
+  .lineupActionButton { min-height:50px; font-size:.9rem; }
   .deadlineNotice { padding:8px 10px; font-size:11px; line-height:1.4; }
   .myTeamsToolbar { margin-bottom:6px; }
   .builder .myTeamsToolbar>button { min-height:40px; padding:7px 10px; font-size:10px; }

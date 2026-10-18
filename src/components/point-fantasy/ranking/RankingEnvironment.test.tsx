@@ -21,7 +21,7 @@ beforeEach(()=>{
 afterEach(cleanup);
 it("loads ranking only on its tab and preserves the pitch and prize placeholder",async()=>{
  render(<FantasyLineupBuilder competitionId={8}/>);
- fireEvent.click(await screen.findByRole("button",{name:/Bora escalar/}));
+ fireEvent.click(await screen.findByRole("button",{name:/Escale seu time/}));
  fireEvent.change(screen.getByRole("combobox",{name:"Formação tática"}),{target:{value:"4-4-2"}});
  expect(getFantasyCompetitionRanking).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole("tab",{name:"Ranking"}));await screen.findByText("Nenhum time inscrito nesta competição.");
@@ -44,7 +44,7 @@ it("gives anonymous visitors public ranking access and keeps private teams prote
 it("aborts ranking when leaving the tab and ignores a late response",async()=>{
  let finish!:(value:Awaited<ReturnType<typeof getFantasyCompetitionRanking>>)=>void;
  vi.mocked(getFantasyCompetitionRanking).mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));
- render(<FantasyLineupBuilder competitionId={8}/>);await screen.findByRole("button",{name:/Bora escalar/});
+ render(<FantasyLineupBuilder competitionId={8}/>);await screen.findByRole("button",{name:/Escale seu time/});
  fireEvent.click(screen.getByRole("tab",{name:"Ranking"}));const signal=vi.mocked(getFantasyCompetitionRanking).mock.calls[0][2];
  fireEvent.click(screen.getByRole("tab",{name:"Premiação"}));expect(signal.aborted).toBe(true);
  await act(async()=>finish({competicaoId:8,estadoPontuacao:"NAO_INICIADA",items:[],total:0,page:1,limit:50}));
