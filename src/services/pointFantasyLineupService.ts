@@ -3,7 +3,7 @@ import { loadFantasyPages } from "./pointFantasyService";
 import type { FantasyReference, PointFantasyAthlete, PointFantasyCatalog } from "@/types/pointFantasy";
 import type { CompetitionDetail, CreateLineupIdentity, FantasyCompetition, FantasyLineup, FreeLineupRegistrationRequest, FreeLineupRegistrationResult, LineupContext, LineupSelection, MyFantasyLineups } from "@/types/pointFantasyLineup";
 
-const authenticated = { authenticated: true, preserveSessionOnForbidden: true };
+const authenticated = { authenticated: true, preserveSessionOnForbidden: true, cache: "no-store" as const };
 const base = "/point-fantasy";
 export const listFantasyCompetitions = (signal: AbortSignal) => loadFantasyPages<FantasyCompetition>(`${base}/competicoes`, signal);
 export async function loadLineupContext(id: number, signal: AbortSignal): Promise<LineupContext> {

@@ -1,4 +1,5 @@
 "use client";
+import { formatOfficialScore, scoreState } from "@/lib/fantasyScore";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { RefreshCw } from "lucide-react";
@@ -53,6 +54,7 @@ function RankingPage({ competitionId, page, authenticated, onPage, onRetry }: { 
   const pages = Math.max(1, Math.ceil(data.total / data.limit));
   return <div className={`${leagueStyles.panel} ${styles.ranking}`}>
     <header className={`${leagueStyles.heading} ${styles.header}`}><div><h2>Ranking</h2><p>{data.total.toLocaleString("pt-BR")} {data.total === 1 ? "time inscrito" : "times inscritos"}</p></div><button type="button" onClick={onRetry}><RefreshCw size={15} aria-hidden="true"/>Atualizar</button></header>
+    <p role="status">{scoreState(data.estadoPontuacao)}</p>
     {data.total === 0 && data.estadoPontuacao === "NAO_INICIADA" && <p className={styles.message}>A competição ainda não começou. Confira os times que já estão na disputa!</p>}
     {data.total === 0 && data.estadoPontuacao === "INDISPONIVEL" && <p className={styles.message}>A pontuação do POINT FFC Fantasy ainda não está disponível.</p>}
     {!data.items.length ? <p role="status" className={styles.state}>{data.total === 0 ? "Nenhum time inscrito nesta competição." : "Não há times nesta página. Volte à página anterior."}</p> : <ul className={`${leagueStyles.entries} ${styles.list}`} aria-label="Times inscritos">
@@ -62,7 +64,7 @@ function RankingPage({ competitionId, page, authenticated, onPage, onRetry }: { 
           <strong className={`${leagueStyles.position} ${styles.position}`} aria-label={team.posicao === null ? "Posição não disponível" : `Posição ${team.posicao}`}>{team.posicao ?? "—"}</strong>
           <TeamCrest team={{ id:team.escalacaoId, competicaoId:competitionId, identidade:team.identidade, sequencial:team.identidade?.sequencial ?? null }} />
           <div className={`${leagueStyles.teamName} ${styles.identity}`}><strong><span className={styles.name} title={team.nomePublico ?? `Time #${team.escalacaoId}`}>{team.nomePublico ?? `Time #${team.escalacaoId}`}</span>{mine && <span className={`${leagueStyles.ownBadge} ${styles.badge}`}>Seu time</span>}</strong>{team.formacao && <small>{team.formacao}</small>}</div>
-          <span className={`${leagueStyles.score} ${styles.score}`} aria-label={team.pontuacao === null ? "Pontuação não disponível" : `Pontuação ${team.pontuacao.toLocaleString("pt-BR")}`}>{team.pontuacao === null ? "—" : team.pontuacao.toLocaleString("pt-BR", { maximumFractionDigits:20 })}</span>
+          <span className={`${leagueStyles.score} ${styles.score}`} aria-label={team.pontuacao === null ? "Pontuação não disponível" : `Pontuação ${formatOfficialScore(team.pontuacao)}`}>{team.pontuacao === null ? "—" : formatOfficialScore(team.pontuacao)}</span>
         </li>;
       })}
     </ul>}

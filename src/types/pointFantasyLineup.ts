@@ -1,3 +1,4 @@
+import type { LineupResultSummaryDto, LineupResultDetailDto } from "./pointFantasyResult";
 import type { FantasyReference, PointFantasyAthlete, PointFantasyCatalog } from "./pointFantasy";
 
 export type Formation = "4-3-3" | "4-4-2" | "3-5-2" | "3-4-3" | "4-5-1" | "5-3-2" | "5-4-1";
@@ -16,6 +17,7 @@ export interface LineupSelection {
   capitaoAtletaId: number | null; reservaMagoAtletaId: number | null;
 }
 export interface FantasyLineup extends LineupSelection {
+  resultado?: LineupResultSummaryDto | LineupResultDetailDto;
   nomePublico: string | null; sequencial: number | null; legado: boolean; identidade: FantasyTeamIdentity | null;
   id: number; competicaoId: number; status: "RASCUNHO" | "INSCRITA"; confirmadaEm?: string | null; versao: number; criadoEm: string; atualizadoEm: string;
   atletas: { catalogoAtletaId: number; papel: "TITULAR" | "TECNICO" | "RESERVA"; atleta: PointFantasyAthlete }[];

@@ -8,9 +8,14 @@ import { ReserveCategoryMedal } from "./ReserveCategoryMedal";
 import { athleteInSlot, formationCounts, positionalAthletes, positionLabels, reserveCeiling, reserveCounts } from "./lineupPresentation";
 import styles from "./LineupBuilder.module.css";
 
-interface Props { value: LineupSelection; athletes: PointFantasyAthlete[]; clubs?: FantasyReference[]; placements?: LineupSlotPlacements; disabled: boolean; onOpen: (slot: LineupSlot) => void; onRemove: (slot: LineupSlot) => void; onCaptain: (id: number | null) => void; onPowerReserve: (id: number | null) => void }
+import type { LineupResultDetailDto } from "@/types/pointFantasyResult";
+import { formatOfficialScore } from "@/lib/fantasyScore";
+
+interface Props { result?: LineupResultDetailDto; value: LineupSelection; athletes: PointFantasyAthlete[]; clubs?: FantasyReference[]; placements?: LineupSlotPlacements; disabled: boolean; onOpen: (slot: LineupSlot) => void; onRemove: (slot: LineupSlot) => void; onCaptain: (id: number | null) => void; onPowerReserve: (id: number | null) => void }
 function AthleteSlot({ slot, excess, expanded, onActions, ...props }: Props & { slot: LineupSlot; excess?: boolean; expanded: boolean; onActions: (slot: LineupSlot, id: number, excess: boolean) => void }) {
   const athlete = athleteInSlot(props.value, props.athletes, slot, props.placements);
+  const score = props.result?.atletas.find(item => item.catalogoAtletaId === athlete?.id);
+  const substitution = props.result?.substituicoes.find(item => item.titularSaiuId === athlete?.id);
   const captain = slot.role === "titulares" && athlete?.id === props.value.capitaoAtletaId;
   const powerReserve = slot.role === "reservas" && athlete?.id === props.value.reservaMagoAtletaId;
   const ceiling = slot.role === "reservas" ? reserveCeiling(props.value, props.athletes, slot.position) : undefined;
@@ -26,6 +31,16 @@ function AthleteSlot({ slot, excess, expanded, onActions, ...props }: Props & { 
       <strong>{athlete?.apelido ?? positionLabels[slot.position]}</strong>
     </button>
     {slot.role === "reservas" && athlete && <div className={styles.reserveMeta}><small>{positionLabels[slot.position]}</small><ReserveCategoryMedal categoryId={athlete.categoriaId} /></div>}
+    {score && <div className={styles.resultScore}>
+      {score.capitaoEfetivo && <small>C · {score.multiplicador}x</small>}
+      {score.reservaMagoDesignado && <small>M · {score.utilizadoComoMago ? "Utilizado como Mago" : score.reservaUtilizado ? "Utilizado como reserva" : "Não utilizado"}</small>}
+      <strong>{score.pontuacaoOficial === null ? "Sem pontuação disponível" : `${formatOfficialScore(score.pontuacaoOficial)} pts oficiais`}</strong>
+      {score.entrouEmCampo === false && <small>Não entrou em campo</small>}
+      {score.entrouEmCampo === null && <small>Participação não informada</small>}
+      <small>{formatOfficialScore(score.pontuacaoContabilizada)} pts contabilizados</small>
+      {substitution && <small>Substituído por {props.athletes.find(a => a.id === substitution.reservaEntrouId)?.apelido ?? `#${substitution.reservaEntrouId}`}</small>}
+      {score.reservaUtilizado && <small>Entrou na escalação efetiva</small>}
+    </div>}
     {invalid && <small className={styles.invalid}>Ajuste necessário</small>}
   </div>;
 }

@@ -236,6 +236,16 @@ export function useLineupEditor(competitionId: number, integrated = false) {
       }
     });
   }
+  async function refreshResult() {
+    if (!saved || saved.status !== "INSCRITA" || dirty || running.current || pending.current || registrationLock.current) return;
+    await run(async () => {
+      const latest = await getFantasyLineup(saved.id);
+      if (active.current) {
+        accept(latest);
+        setDrafts(items => items.map(item => item.id === latest.id ? latest : item));
+      }
+    });
+  }
   async function reload() {
     if (running.current || pending.current || registrationLock.current || !discardConfirmed()) return;
     await run(async () => {
@@ -334,5 +344,5 @@ export function useLineupEditor(competitionId: number, integrated = false) {
     });
   }
   const registrationTeams = registrationIntent.current?.teams ?? drafts.filter(team => registrationIds.includes(team.id));
-  return { duplicateListed:(team: FantasyLineup) => createIntent("duplicate", undefined, team), integratedPending, teamName, setTeamName, context, drafts, saved, value, setValue, slot, setSlot, openSlot, selectAthlete, sellAthlete, slotPlacements, pickerFilters, setPickerFilters, loading, busy, error, notice, conflict, serverBlocked, dirty, save, duplicate, remove, reload, newDraft, openDraft, identityState, nameAction, pendingCreation, retryCreation, confirmName:(name: string) => nameAction ? createIntent(nameAction, name) : Promise.resolve(), cancelName:() => { if (!running.current) setNameAction(null); }, retry:() => setRetry(n => n + 1), registrationIds, toggleRegistration, registrationReview, reviewRegistration, closeRegistration, confirmRegistration, registrationError, registrationLocked, registrationRefreshRequired, registrationRetry:!!registrationIntent.current, registrationTeams, registrationCompetitionName:registrationIntent.current?.competitionName ?? context?.competition.nome ?? "" };
+  return { refreshResult, duplicateListed:(team: FantasyLineup) => createIntent("duplicate", undefined, team), integratedPending, teamName, setTeamName, context, drafts, saved, value, setValue, slot, setSlot, openSlot, selectAthlete, sellAthlete, slotPlacements, pickerFilters, setPickerFilters, loading, busy, error, notice, conflict, serverBlocked, dirty, save, duplicate, remove, reload, newDraft, openDraft, identityState, nameAction, pendingCreation, retryCreation, confirmName:(name: string) => nameAction ? createIntent(nameAction, name) : Promise.resolve(), cancelName:() => { if (!running.current) setNameAction(null); }, retry:() => setRetry(n => n + 1), registrationIds, toggleRegistration, registrationReview, reviewRegistration, closeRegistration, confirmRegistration, registrationError, registrationLocked, registrationRefreshRequired, registrationRetry:!!registrationIntent.current, registrationTeams, registrationCompetitionName:registrationIntent.current?.competitionName ?? context?.competition.nome ?? "" };
 }

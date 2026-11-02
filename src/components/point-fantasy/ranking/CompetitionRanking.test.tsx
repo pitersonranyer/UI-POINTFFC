@@ -15,6 +15,15 @@ const entry=(id:number,mine=false):FantasyRankingEntry=>({escalacaoId:id,nomePub
 const ranking=(changes:Partial<FantasyCompetitionRanking>={}):FantasyCompetitionRanking=>({competicaoId:8,estadoPontuacao:"NAO_INICIADA",items:[entry(3,true),entry(1),entry(2,true)],total:3,page:1,limit:50,...changes});
 beforeEach(()=>{vi.mocked(getFantasyCompetitionRanking).mockReset().mockResolvedValue(ranking());auth.isAuthenticated=true;auth.isLoading=false;auth.user={idUsuario:10};auth.accessToken="session-one";});
 afterEach(cleanup);
+it("preserves tied positions, decimal scores and server order",async()=>{
+ vi.mocked(getFantasyCompetitionRanking).mockResolvedValue(ranking({estadoPontuacao:"PARCIAL",items:[{...entry(3),posicao:1,pontuacao:"0"},{...entry(1),posicao:1,pontuacao:"0"},{...entry(2),posicao:3,pontuacao:"-2.5"}]}));
+ render(<CompetitionRanking competitionId={8}/>); await screen.findByText("Time 3");
+ expect(screen.getAllByLabelText("Posição 1")).toHaveLength(2);
+ expect(screen.getAllByLabelText("Pontuação 0")).toHaveLength(2);
+ expect(screen.getByLabelText("Pontuação -2,5")).toBeTruthy();
+ expect(screen.getByText("Resultado parcial")).toBeTruthy();
+ expect(within(screen.getByRole("list")).getAllByRole("listitem").map(row=>within(row).getByText(/^Time \d$/).textContent)).toEqual(["Time 3","Time 1","Time 2"]);
+});
 it("lists all participants in server order and highlights every official own team",async()=>{
  render(<CompetitionRanking competitionId={8}/>);
  await screen.findByText("3 times inscritos");

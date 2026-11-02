@@ -36,7 +36,7 @@ it.each([401,403,404,500])("preserves HTTP %s errors", async status => {
 });
 it.each([
  {competicaoId:9}, {page:3}, {limit:100}, {total:-1}, {items:[{...response().items[0],meuTime:"true"}]},
- {items:[{...response().items[0],posicao:0}]}, {items:[{...response().items[0],pontuacao:"0"}]},
+ {items:[{...response().items[0],posicao:0}]}, {items:[{...response().items[0],pontuacao:"invalida"}]},
  {items:[{...response().items[0],identidade:{sequencial:1}}]},
 ])("rejects inconsistent responses without inventing values: %j", async changes => {
  vi.stubGlobal("fetch",vi.fn().mockResolvedValue(new Response(JSON.stringify({...response(),...changes}))));
@@ -45,6 +45,11 @@ it.each([
 });
 it("preserves null legacy identity and actual future numeric scores", async () => {
  const result={...response(),estadoPontuacao:"ESTADO_FUTURO",items:[{...response().items[0],identidade:null,formacao:null,posicao:2,pontuacao:-1.25}]};
+ vi.stubGlobal("fetch",vi.fn().mockResolvedValue(new Response(JSON.stringify(result))));
+ const {getFantasyCompetitionRanking}=await service(); expect(await getFantasyCompetitionRanking(8,1,new AbortController().signal)).toEqual(result);
+});
+it.each(["12.5", "0", "-2.75"])("accepts official decimal string %s without coercion", async pontuacao => {
+ const result={...response(),estadoPontuacao:"PARCIAL",items:[{...response().items[0],posicao:1,pontuacao}]};
  vi.stubGlobal("fetch",vi.fn().mockResolvedValue(new Response(JSON.stringify(result))));
  const {getFantasyCompetitionRanking}=await service(); expect(await getFantasyCompetitionRanking(8,1,new AbortController().signal)).toEqual(result);
 });

@@ -17,6 +17,39 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 async function mount() { render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>); await screen.findByRole("button",{name:/Escale seu time/}); }
+it("loads enrolled results on demand and retains the official total on a refresh error", async () => {
+ const {context,selection}=completeTestSelection("4-3-3");
+ context.competition.fechamentoDefinitivoEm="2020-01-01T00:00:00Z";
+ const team=testLineup(selection,{status:"INSCRITA",resultado:{pontuacao:"-3.5",estadoPontuacao:"PARCIAL",revisao:"1",atualizadoEm:"2026-11-02T12:00:00Z",posicao:1}});
+ vi.mocked(service.loadLineupContext).mockResolvedValue(context);
+ vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([team]));
+ vi.mocked(service.getFantasyLineup).mockResolvedValueOnce(team).mockRejectedValueOnce(new Error("Falha temporária"));
+ render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>);
+ await screen.findByText(/-3,5 pts/);
+ expect(service.getFantasyLineup).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole("button",{name:"Visualizar"}));
+ await screen.findByRole("heading",{name:"Pontuação oficial: -3,5"});
+ fireEvent.click(screen.getByRole("button",{name:"Atualizar resultado"}));
+ await screen.findByText("Falha temporária");
+ expect(screen.getByRole("heading",{name:"Pontuação oficial: -3,5"})).toBeTruthy();
+ expect(service.getFantasyLineup).toHaveBeenCalledTimes(2);
+ expect(service.loadLineupContext).toHaveBeenCalledTimes(1);
+ expect(service.updateFantasyLineup).not.toHaveBeenCalled();
+});
+it("hides enrolled points when local formation has unsaved changes", async () => {
+ const {context,selection}=completeTestSelection("4-3-3");
+ const team=testLineup(selection,{status:"INSCRITA",resultado:{pontuacao:"12.5",estadoPontuacao:"PARCIAL",revisao:"1",atualizadoEm:"2026-11-02T12:00:00Z",posicao:1}});
+ vi.mocked(service.loadLineupContext).mockResolvedValue(context);
+ vi.mocked(service.listMyFantasyLineups).mockResolvedValue(testMyLineups([team]));
+ vi.mocked(service.getFantasyLineup).mockResolvedValue(team);
+ render(<LineupEditor integrated competitionId={8} onBack={vi.fn()}/>);
+ fireEvent.click(await screen.findByRole("button",{name:"Editar"}));
+ await screen.findByRole("heading",{name:"Pontuação oficial: 12,5"});
+ fireEvent.change(screen.getByRole("combobox",{name:"Formação tática"}),{target:{value:"4-4-2"}});
+ expect(screen.queryByLabelText("Resultado oficial")).toBeNull();
+ expect(screen.queryByRole("button",{name:"Atualizar resultado"})).toBeNull();
+ expect(service.updateFantasyLineup).not.toHaveBeenCalled();
+});
 it("opens My teams with three tabs, then an empty pitch without POST or modal", async () => {
  await mount(); expect(screen.getAllByRole("tab")).toHaveLength(3);
  fireEvent.click(screen.getByRole("tab",{name:"Premiação"})); expect(screen.getByText(/disponível em breve/)).toBeTruthy();

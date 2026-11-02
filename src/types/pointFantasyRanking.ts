@@ -7,7 +7,7 @@ export interface FantasyRankingEntry {
   formacao: Formation | null;
   meuTime: boolean;
   posicao: number | null;
-  pontuacao: number | null;
+  pontuacao: string | number | null;
 }
 
 export interface FantasyCompetitionRanking {

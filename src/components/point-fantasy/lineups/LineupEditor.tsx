@@ -4,6 +4,8 @@ import type { Formation } from "@/types/pointFantasyLineup";
 import { useAuth } from "@/contexts/AuthContext";
 import { getClubUniform } from "../uniforms/clubUniforms";
 import { blockingReason, formationCounts, friendlyPending, lineupValue, replaceSlot, selectionWarnings } from "./lineupPresentation";
+import { LineupResult } from "./LineupResult";
+import { formatOfficialScore, scoreState } from "@/lib/fantasyScore";
 import { LineupPitch } from "./LineupPitch";
 import { LineupAthletePicker } from "./LineupAthletePicker";
 import { useLineupEditor } from "./useLineupEditor";
@@ -124,7 +126,7 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
             const teamName = team.nomePublico ?? `Time #${team.id}`;
             return <li key={team.id} className={`${leagueStyles.entry} ${styles.myTeamEntry}`}>
               <span className={styles.myTeamCrest}><TeamCrest team={team}/></span>
-              <div className={`${leagueStyles.teamName} ${styles.myTeamIdentity}`}><strong title={teamName}>{teamName}</strong><small>{team.formacao}<span className={`${leagueStyles.participationStatus} ${styles.teamStatus}`}>{team.status === "INSCRITA" ? "Inscrito" : "Em montagem"}</span></small></div>
+              <div className={`${leagueStyles.teamName} ${styles.myTeamIdentity}`}><strong title={teamName}>{teamName}</strong><small>{team.formacao}<span className={`${leagueStyles.participationStatus} ${styles.teamStatus}`}>{team.status === "INSCRITA" ? "Inscrito" : "Em montagem"}</span></small>{team.status === "INSCRITA" && <small>{formatOfficialScore(team.resultado?.pontuacao ?? null)} pts · {team.resultado ? scoreState(team.resultado.estadoPontuacao) : "Resultado ainda indisponível"}</small>}</div>
               <div className={`${leagueStyles.secondaryActions} ${styles.myTeamActions}`}>
                 <button type="button" disabled={busy} onClick={() => { void editor.openDraft(team.id).then(opened => { if (opened) setEditing(true); }); }}>{blocked ? "Visualizar" : "Editar"}</button>
                 {team.status === "RASCUNHO" && editor.identityState?.estadoIdentidade === "DEFINIDA" && <button type="button" disabled={writeDisabled || editor.integratedPending || atLineupLimit} onClick={() => void editor.duplicateListed(team)}>Duplicar</button>}
@@ -146,9 +148,10 @@ export function LineupEditor({ competitionId, onBack, integrated = false }: { co
         {!focused && <span className={styles.draftStatus} role="status">{busy ? "Atualizando…" : registered ? "Inscrita" : dirty ? "Alterações não salvas" : saved ? (integrated ? "Em montagem" : "Rascunho salvo") : (integrated ? "Novo time" : "Novo rascunho")}</span>}
       </div>
     </div>
-    <div className={styles.workspace}><div><LineupPitch value={value} athletes={context.athletes} clubs={context.clubs} placements={editor.slotPlacements} disabled={disabled} onOpen={editor.openSlot} onRemove={slot => editor.setValue(replaceSlot(value, context.athletes, slot, null, editor.slotPlacements))} onCaptain={id => editor.setValue({ ...value, capitaoAtletaId:id })} onPowerReserve={id => editor.setValue({ ...value, reservaMagoAtletaId:id })} />
+    <div className={styles.workspace}><div><LineupPitch result={registered && !dirty && saved.resultado && "atletas" in saved.resultado ? saved.resultado : undefined} value={value} athletes={context.athletes} clubs={context.clubs} placements={editor.slotPlacements} disabled={disabled} onOpen={editor.openSlot} onRemove={slot => editor.setValue(replaceSlot(value, context.athletes, slot, null, editor.slotPlacements))} onCaptain={id => editor.setValue({ ...value, capitaoAtletaId:id })} onPowerReserve={id => editor.setValue({ ...value, reservaMagoAtletaId:id })} />
       {integrated && <button className={styles.primary} style={{width:"100%", marginTop:16}} disabled={writeDisabled || (registered && context.competition.tipoAcesso !== "FREE") || warnings.length > 0} onClick={() => void editor.save()}>{busy ? "Salvando…" : "Salvar time"}</button>}</div>
       <aside className={styles.summary} aria-label="Resumo da escalação">
+        {registered && !dirty && <><LineupResult lineup={saved}/><button type="button" disabled={busy} onClick={() => void editor.refreshResult()}>Atualizar resultado</button></>}
         <h3>{focused ? "Resumo do time" : registered ? `Inscrita · ${saved.nomePublico ?? `Time #${saved.id}`}` : saved ? `${integrated ? "Time" : "Rascunho"} #${saved.id} · v${saved.versao}` : integrated ? "Novo time" : "Novo rascunho"}</h3>
         <p className={styles.note}>Titulares: {value.titulares.length}/11 · Técnico: {value.tecnico === null ? "pendente" : "selecionado"} · Reservas: {value.reservas.length}/5</p>
         <dl className={styles.roleSummary}><dt>Capitão</dt><dd aria-label="Capitão escolhido">{byId.get(value.capitaoAtletaId ?? -1)?.apelido ?? "Não definido"}</dd><dt>Reserva Power</dt><dd aria-label="Reserva Power escolhido">{byId.get(value.reservaMagoAtletaId ?? -1)?.apelido ?? "Não definido"}</dd></dl>

@@ -1,3 +1,4 @@
+import { isOfficialScore } from "@/lib/fantasyScore";
 import { apiFetch } from "./apiClient";
 import type { FantasyCompetitionRanking } from "@/types/pointFantasyRanking";
 
@@ -18,7 +19,7 @@ export async function getFantasyCompetitionRanking(competitionId: number, page: 
       || (item.nomePublico !== null && typeof item.nomePublico !== "string") || typeof item.meuTime !== "boolean"
       || (item.formacao !== null && !["4-3-3", "4-4-2", "3-5-2", "3-4-3", "4-5-1", "5-3-2", "5-4-1"].includes(item.formacao))
       || (item.posicao !== null && !positiveInteger(item.posicao))
-      || (item.pontuacao !== null && (typeof item.pontuacao !== "number" || !Number.isFinite(item.pontuacao)))
+      || (item.pontuacao !== null && (!isOfficialScore(item.pontuacao)))
       || (item.identidade !== null && (!item.identidade || typeof item.identidade.identificadorPublico !== "string"
         || typeof item.identidade.nomeBase !== "string" || !positiveInteger(item.identidade.sequencial))))) {
     throw new Error("O ranking retornado está incompleto ou pertence a outra consulta. Tente novamente.");
