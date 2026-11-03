@@ -1,7 +1,7 @@
 import React, { StrictMode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MatchCenterPage, MatchCenterQueryPage, complementaryNarrative } from "./MatchCenterPage";
+import { MatchCenterPage, MatchCenterQueryPage } from "./MatchCenterPage";
 import { FantasyFieldLineup, playerCoordinates } from "./FantasyFieldLineup";
 import { apiFetch } from "@/services/apiClient";
 import { createMatchCenterLoader } from "@/services/matchCenterService";
@@ -46,7 +46,7 @@ it("preserves period-local clocks, interval nulls and removes duplicate goal nar
   await show(); tab("Sumário"); await screen.findByText("45+7'");
   expect(screen.getByText("2º tempo")).toBeTruthy(); expect(screen.getByText("Intervalo")).toBeTruthy(); expect(screen.getByText("Entra: Vitinho")).toBeTruthy(); expect(screen.getByText("Assistência: Savarino")).toBeTruthy();
   expect(screen.queryByText("52'")).toBeNull(); expect(screen.queryByText("Gol marcado por Lucho Acosta")).toBeNull();
-  expect(complementaryNarrative(responses.sumario)).toEqual([]);
+  expect(screen.queryByText(/Narrativa complementar/)).toBeNull();
 });
 it("preserves zero and null statistics and does not draw comparison for missing opponents", async () => {
   await show(); tab("Estatísticas"); await screen.findByRole("table");
@@ -88,11 +88,14 @@ it("deduplicates concurrent requests and rejects invalid IDs and mismatched prov
   await expect(createMatchCenterLoader("321")("sumario")).rejects.toThrow("incompatível");
 });
 
-it("preserves complementary commentary mentioning goals and VAR when no structured VAR is supplied", () => {
-  const base = responses.sumario.narrativa[0];
-  const commentary = { ...base, idExterno: 2, tipo: "comment", texto: "Goleiro evita chance de gol" };
-  const review = { ...base, idExterno: 3, tipo: "VAR", texto: "Revisão concluída" };
-  expect(complementaryNarrative({ ...responses.sumario, narrativa: [base, commentary, commentary, review] })).toEqual([commentary, review]);
+it("removes raw details and narrative while preserving structured events", async () => {
+  vi.mocked(apiFetch).mockImplementation(async path => path.endsWith("sumario") ? {
+    ...responses.sumario, eventos: responses.sumario.eventos.map(event => ({ ...event, comentarios: "Texto narrativo", origem: { tipo: event.tipo, detalhe: "normal" } })),
+  } : structuredClone(responses[path.split("/").at(-1) as keyof MatchCenterResponses]));
+  await show(); tab("Sumário"); await screen.findByText("45+7'");
+  expect(screen.queryByText("normal")).toBeNull();
+  expect(screen.queryByText("Texto narrativo")).toBeNull();
+  expect(screen.queryByText("Gol marcado por Lucho Acosta")).toBeNull();
 });
 
 it("opens a different V2 fixture through the static query entry", async () => {

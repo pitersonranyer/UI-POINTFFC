@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ImageOff } from "lucide-react";
+import { ImageOff, CircleDot, ArrowLeftRight, RectangleVertical, MonitorCheck, Handshake } from "lucide-react";
 import type { FantasyEvent, FantasyMatch, FantasyPlayer, FantasyPreMatch, FantasySectionState, FantasySquad, FantasyStatistics, FantasyStatisticsValues, FantasySummary, FantasyTeam, MatchCenterResponses } from "@/types/fantasy";
 import { createMatchCenterLoader, validFixtureId } from "@/services/matchCenterService";
 import { FantasyFieldLineup } from "./FantasyFieldLineup";
@@ -11,7 +11,7 @@ type Tab = keyof MatchCenterResponses;
 type Loader = ReturnType<typeof createMatchCenterLoader>;
 const tabs: { key: Tab; label: string }[] = [{ key: "pre-jogo", label: "Pré-jogo" }, { key: "sumario", label: "Sumário" }, { key: "formacao", label: "Formação" }, { key: "estatisticas", label: "Estatísticas" }];
 const sides = ["mandante", "visitante"] as const;
-const labels: Record<string, string> = { GOL: "Gol", CARTAO_AMARELO: "Cartão amarelo", CARTAO_VERMELHO: "Cartão vermelho", SUBSTITUICAO: "Substituição", VAR: "VAR", CONFIRMADA: "Confirmada", PROVAVEL: "Provável", ENCERRADA: "Encerrada", EM_ANDAMENTO: "Em andamento", PRE_JOGO: "Pré-jogo", AGENDADA: "Agendada", INTERVALO: "Intervalo", ADIADA: "Adiada", CANCELADA: "Cancelada", INTERROMPIDA: "Interrompida", ABANDONADA: "Abandonada", RESULTADO_ADMINISTRATIVO: "Resultado administrativo", DESCONHECIDO: "Status indisponível", "primeiro-tempo": "1º tempo", "segundo-tempo": "2º tempo", intervalo: "Intervalo", "pre-jogo": "Pré-jogo", "prorrogacao-primeiro-tempo": "Prorrogação · 1º tempo", "prorrogacao-segundo-tempo": "Prorrogação · 2º tempo", "prorrogacao-intervalo": "Intervalo da prorrogação", "disputa-penaltis": "Pênaltis", encerrado: "Encerrado" };
+const labels: Record<string, string> = { GOL: "Gol", CARTAO_AMARELO: "Cartão amarelo", CARTAO_VERMELHO: "Cartão vermelho", SUBSTITUICAO: "Substituição", VAR: "VAR", ASSISTENCIA: "Assistência", CONFIRMADA: "Confirmada", PROVAVEL: "Provável", ENCERRADA: "Encerrada", EM_ANDAMENTO: "Em andamento", PRE_JOGO: "Pré-jogo", AGENDADA: "Agendada", INTERVALO: "Intervalo", ADIADA: "Adiada", CANCELADA: "Cancelada", INTERROMPIDA: "Interrompida", ABANDONADA: "Abandonada", RESULTADO_ADMINISTRATIVO: "Resultado administrativo", DESCONHECIDO: "Status indisponível", "primeiro-tempo": "1º tempo", "segundo-tempo": "2º tempo", intervalo: "Intervalo", "pre-jogo": "Pré-jogo", "prorrogacao-primeiro-tempo": "Prorrogação · 1º tempo", "prorrogacao-segundo-tempo": "Prorrogação · 2º tempo", "prorrogacao-intervalo": "Intervalo da prorrogação", "disputa-penaltis": "Pênaltis", encerrado: "Encerrado" };
 const label = (value: string | null) => value == null ? "Indisponível" : labels[value] ?? value;
 const number = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
 const value = (n: number | null, percent = false) => n == null ? "—" : `${number.format(n)}${percent ? "%" : ""}`;
@@ -65,53 +65,48 @@ function PreMatch({ data }: { data: FantasyPreMatch }) {
     const lineups = data.escalacoes[side];
     return <section className={styles.panel} key={side}><h2>{data.partida[side].nome}</h2>
       {!lineups.confirmada && !lineups.provavel && <p className={styles.help}>Escalações indisponíveis.</p>}
-      {(["confirmada", "provavel"] as const).map(kind => lineups[kind] && <div key={kind}><h3>{kind === "confirmada" ? "Escalação confirmada" : "Escalação provável"}</h3><Squad squad={lineups[kind]!} /></div>)}
+      {(["confirmada", "provavel"] as const).map(kind => lineups[kind] && <div key={kind} className={styles.lineupBlock}><h3 className={kind === "confirmada" ? styles.confirmed : styles.probable}>{kind === "confirmada" ? "Escalação confirmada" : "Escalação provável"}</h3><Squad squad={lineups[kind]!} /></div>)}
     </section>;
   })}<section className={styles.panel}><h2>Desfalques</h2>{!data.desfalquesInformados ? <p className={styles.help}>Desfalques indisponíveis.</p> : !data.desfalques.length ? <p className={styles.help}>Nenhum desfalque informado pela fonte.</p> : <ul className={styles.absences}>{data.desfalques.map((entry, i) => <li key={i}><strong>{entry.atleta?.nome ?? "Atleta não informado"}</strong> · {entry.equipe.nome}<p>{entry.situacao ?? "Situação indisponível"} · {entry.motivo ?? "Motivo indisponível"}</p></li>)}</ul>}</section></div>;
 }
-function EventList({ events }: { events: FantasyEvent[] }) {
-  return <ol className={styles.timeline}>{events.map((event, index) => <li className={styles.event} key={index}>
-    <span className={styles.minute}>{event.tempo.exibicao ?? "—"}</span><div className={styles.eventDetails}><small>{label(event.periodo)}</small><h3>{label(event.tipo)} · {event.equipe.nome}</h3>
-      {event.jogador?.nome && <strong>{event.jogador.nome}</strong>}
-      {event.assistencia?.nome && <p>Assistência: {event.assistencia.nome}</p>}
-      {event.jogadorSai?.nome && <p>Sai: {event.jogadorSai.nome}</p>}{event.jogadorEntra?.nome && <p>Entra: {event.jogadorEntra.nome}</p>}
-      {event.comissaoTecnica?.nome && <p>Comissão técnica: {event.comissaoTecnica.nome}</p>}
-      {event.origem.detalhe && <p>{event.origem.detalhe}</p>}{event.comentarios && event.comentarios !== event.origem.detalhe && <p>{event.comentarios}</p>}
-    </div></li>)}</ol>;
+const eventIcons = { GOL: CircleDot, ASSISTENCIA: Handshake, CARTAO_AMARELO: RectangleVertical, CARTAO_VERMELHO: RectangleVertical, SUBSTITUICAO: ArrowLeftRight, VAR: MonitorCheck };
+const periodOrder = ["pre-jogo", "primeiro-tempo", "intervalo", "segundo-tempo", "prorrogacao-primeiro-tempo", "prorrogacao-intervalo", "prorrogacao-segundo-tempo", "disputa-penaltis", "encerrado"];
+function structuredEvents(events: FantasyEvent[]) {
+  return events.filter(event => Object.prototype.hasOwnProperty.call(eventIcons, event.tipo));
 }
-// Structured incidents remain authoritative. Suppress narrative incident classes
-// even with different clocks; minute-only matching loses legitimate commentary.
-export function complementaryNarrative(data: FantasySummary) {
-  const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const incidentTypes: Record<string, RegExp> = {
-    GOL: /\b(goal|goals|gol|gols)\b/,
-    CARTAO_AMARELO: /\b(yellow card|cartao amarelo)\b/,
-    CARTAO_VERMELHO: /\b(red card|cartao vermelho)\b/,
-    SUBSTITUICAO: /\b(substitution|substituicao)\b/,
-    VAR: /\b(var|video)\b/,
-  };
-  const seen = new Set<string>();
-  return data.narrativa.filter(item => {
-    const text = normalize([item.titulo, item.texto].filter(Boolean).join(" ").trim());
-    if (!text || seen.has(text)) return false;
-    seen.add(text);
-    const kind = normalize(item.tipo ?? item.titulo ?? "").replace(/[_-]/g, " ");
-    if (data.eventos.some(event => incidentTypes[event.tipo]?.test(kind))) return false;
-    return !data.eventos.some(event => event.comentarios && normalize(event.comentarios) === text);
+function EventList({ events }: { events: FantasyEvent[] }) {
+  const groups = new Map<string, FantasyEvent[]>();
+  structuredEvents(events).forEach(event => {
+    const period = event.periodo && periodOrder.includes(event.periodo) ? event.periodo : "unknown";
+    groups.set(period, [...(groups.get(period) ?? []), event]);
   });
+  return <div>{[...groups].sort(([a], [b]) => (a === "unknown" ? 99 : periodOrder.indexOf(a)) - (b === "unknown" ? 99 : periodOrder.indexOf(b))).map(([period, incidents]) => <section key={period} className={styles.period}>
+    <h3 className={styles.periodHeading}>{period === "unknown" ? "Período não informado" : label(period)}</h3>
+    <ol className={styles.timeline}>{incidents.map((event, index) => {
+      const Icon = eventIcons[event.tipo as keyof typeof eventIcons];
+      const minute = event.tempo.exibicao ?? (event.tempo.minuto == null ? "—" : event.tempo.minuto + (event.tempo.acrescimo == null ? "" : "+" + event.tempo.acrescimo) + "'");
+      return <li className={styles.event} key={index}>
+        <span className={styles.minute}>{minute}</span><span className={styles.eventIcon} data-kind={event.tipo}><Icon size={17} aria-label={label(event.tipo)} /></span>
+        <div className={styles.eventDetails}><div className={styles.eventHeading}><strong>{label(event.tipo)}</strong><small>{event.equipe.nome}</small></div>
+          {event.jogador?.nome && <strong>{event.jogador.nome}</strong>}
+          {event.assistencia?.nome && <p>Assistência: {event.assistencia.nome}</p>}
+          {event.jogadorEntra?.nome && <p className={styles.playerIn}>Entra: {event.jogadorEntra.nome}</p>}{event.jogadorSai?.nome && <p>Sai: {event.jogadorSai.nome}</p>}
+          {event.comissaoTecnica?.nome && <p>Comissão técnica: {event.comissaoTecnica.nome}</p>}
+        </div>
+      </li>;
+    })}</ol>
+  </section>)}</div>;
 }
 function Summary({ data }: { data: FantasySummary }) {
-  const narrative = complementaryNarrative(data);
-  return <section className={styles.panel}><h2>Cronologia da partida</h2>{!data.eventosDisponiveis ? <p className={styles.help}>Acontecimentos indisponíveis.</p> : !data.eventos.length ? <p className={styles.help}>Nenhum acontecimento informado.</p> : <EventList events={data.eventos} />}
-    <details className={styles.narrative}><summary>Narrativa complementar ({narrative.length})</summary>{!data.narrativaDisponivel ? <p>Narrativa indisponível.</p> : !narrative.length ? <p>Nenhum lance complementar informado.</p> : <ol className={styles.timeline}>{narrative.map((item, i) => <li className={styles.event} key={item.idExterno ?? i}><span className={styles.minute}>{item.minuto == null ? "—" : `${item.minuto}${item.acrescimo == null ? "" : `+${item.acrescimo}`}'`}</span><div className={styles.eventDetails}><small>{label(item.periodo)}</small>{item.titulo && <h3>{item.titulo}</h3>}{item.texto && item.texto !== item.titulo && <p>{item.texto}</p>}</div></li>)}</ol>}</details>
-  </section>;
+  const events = structuredEvents(data.eventos);
+  return <section className={styles.panel}><h2>Cronologia da partida</h2>{!data.eventosDisponiveis ? <p className={styles.help}>Acontecimentos indisponíveis.</p> : !events.length ? <p className={styles.help}>Nenhum acontecimento informado.</p> : <EventList events={events} />}</section>;
 }
 const metrics: { key: keyof FantasyStatisticsValues; label: string; percent?: boolean }[] = [
   { key: "posseBola", label: "Posse de bola", percent: true }, { key: "finalizacoes", label: "Finalizações" }, { key: "finalizacoesNoGol", label: "Finalizações no gol" }, { key: "finalizacoesFora", label: "Finalizações fora" }, { key: "finalizacoesBloqueadas", label: "Finalizações bloqueadas" }, { key: "finalizacoesDentroArea", label: "Finalizações dentro da área" }, { key: "finalizacoesForaArea", label: "Finalizações fora da área" }, { key: "passes", label: "Passes" }, { key: "passesCertos", label: "Passes certos" }, { key: "precisaoPasses", label: "Precisão de passes", percent: true }, { key: "escanteios", label: "Escanteios" }, { key: "faltas", label: "Faltas" }, { key: "impedimentos", label: "Impedimentos" }, { key: "cartoesAmarelos", label: "Cartões amarelos" }, { key: "cartoesVermelhos", label: "Cartões vermelhos" }, { key: "golsEsperados", label: "Gols esperados (xG)" }, { key: "defesasGoleiro", label: "Defesas do goleiro" }, { key: "golsEvitados", label: "Gols evitados" },
 ];
 function Statistics({ data }: { data: FantasyStatistics }) {
   return <section className={styles.panel}><h2>Estatísticas da partida</h2><p className={styles.help}>— indica um dado indisponível.</p>{sides.map(side => !data[side].disponivel && <p key={side} className={styles.help}>Estatísticas de {data[side].nome}: indisponíveis.</p>)}
-    <table className={styles.statistics}><caption className={styles.srOnly}>Comparação das equipes</caption><thead><tr><th>{data.mandante.nome}</th><th>Estatística</th><th>{data.visitante.nome}</th></tr></thead><tbody>{metrics.map(metric => {
+    <table className={styles.statistics}><caption className={styles.srOnly}>Comparação das equipes</caption><colgroup><col style={{ width: "17%" }} /><col style={{ width: "66%" }} /><col style={{ width: "17%" }} /></colgroup><thead><tr><th colSpan={3}><div className={styles.statisticsTeams}><span>{data.mandante.nome}</span><span>{data.visitante.nome}</span></div><span className={styles.srOnly}>Estatística</span></th></tr></thead><tbody>{metrics.map(metric => {
       const home = data.mandante.estatisticas[metric.key], away = data.visitante.estatisticas[metric.key];
       const comparable = home != null && away != null && home >= 0 && away >= 0 && home + away > 0;
       return <tr key={metric.key}><td>{value(home, metric.percent)}</td><th scope="row">{metric.label}{comparable && <span className={styles.comparison} aria-hidden="true"><span style={{ width: `${home / (home + away) * 100}%` }} /></span>}</th><td>{value(away, metric.percent)}</td></tr>;
