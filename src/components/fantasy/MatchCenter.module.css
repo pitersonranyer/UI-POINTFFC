@@ -66,3 +66,30 @@ span.shield { border-radius: 50%; color: var(--muted); background: var(--green-s
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (min-width: 600px) { .scoreboard { padding: 24px; }.shield { width: 78px; height: 78px; }.team strong { font-size: 1rem; }.panel { padding: 24px; }.statistics { font-size: .85rem; }.event { grid-template-columns: 66px minmax(0, 1fr) auto; gap: 16px; } }
 @media (max-width: 400px) { .tabs button { padding: 9px 10px; font-size: .7rem; }.event { gap: 7px; grid-template-columns: 48px minmax(0, 1fr) auto; }.statistics { font-size: .7rem; }.lineupTeam { padding: 10px; } }
+/* Compact match centre, using the existing POINT palette. */
+.pageHeading { margin-bottom: 12px; }
+.scoreboard { padding: 14px 12px; }
+.matchup { margin: 14px 0; }
+.shield { width: 48px; height: 48px; }
+.tabs { gap: 4px; margin: 12px 0; }
+.tabs button { min-width: 0; padding: 9px 6px; font-size: .72rem; }
+.event { padding: 12px 0; grid-template-columns: 54px minmax(0, 1fr); }
+.eventDetails small { display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: .68rem; }
+.preGrid { display: grid; gap: 12px; }
+.preGrid h3 { font-size: .85rem; margin-top: 20px; }
+.absences { padding-left: 18px; font-size: .8rem; }
+.absences li { padding: 8px 0; }
+.absences p { color: var(--text-secondary); }
+.narrative { margin-top: 16px; font-size: .8rem; }
+.narrative summary { cursor: pointer; padding: 12px 0; font-weight: 700; }
+.comparison { display: block; height: 5px; margin-top: 7px; background: var(--gold); border-radius: 5px; overflow: hidden; }
+.comparison > span { display: block; height: 100%; background: var(--green); }
+.fieldPlayer { border: 0; background: transparent; cursor: pointer; padding: 0; font: inherit; }
+.playerList button, .unpositioned button { border: 0; background: transparent; color: var(--ink); text-align: left; font: inherit; font-weight: 700; padding: 4px 0; cursor: pointer; overflow-wrap: anywhere; }
+.athleteDetails { padding: 14px; margin-top: 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--background); font-size: .8rem; }
+.athleteDetails > button { min-height: 40px; padding: 7px 12px; background: var(--ink); color: var(--surface); border: 0; border-radius: 6px; cursor: pointer; }
+.athleteMetrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.athleteMetrics > div { padding: 8px; border-bottom: 1px solid var(--line); }
+.athleteMetrics dt { color: var(--text-secondary); }
+.athleteMetrics dd { margin: 5px 0 0; font-weight: 800; }
+@media (min-width: 700px) { .preGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.preGrid > section:last-child { grid-column: 1 / -1; }.shield { width: 58px; height: 58px; } }

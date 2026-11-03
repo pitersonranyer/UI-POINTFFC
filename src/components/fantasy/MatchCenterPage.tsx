@@ -1,150 +1,173 @@
-"use client";
+﻿"use client";
 
-import { useRef, useState, type ReactNode } from "react";
-import { CalendarDays, ImageOff, MapPin } from "lucide-react";
-import type { FantasyLineup, FantasyLineupTeam, FantasySectionState, FantasyStatistics, FantasyStatisticsValues, FantasySummary, FantasyTeam } from "@/types/fantasy";
-import { FantasyFieldLineup, type FieldPlayer } from "./FantasyFieldLineup";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ImageOff } from "lucide-react";
+import type { FantasyEvent, FantasyMatch, FantasyPlayer, FantasyPreMatch, FantasySectionState, FantasySquad, FantasyStatistics, FantasyStatisticsValues, FantasySummary, FantasyTeam, MatchCenterResponses } from "@/types/fantasy";
+import { createMatchCenterLoader, validFixtureId } from "@/services/matchCenterService";
+import { FantasyFieldLineup } from "./FantasyFieldLineup";
 import styles from "./MatchCenter.module.css";
 
-export interface MatchCenterSections {
-  summary: FantasySectionState<FantasySummary>;
-  statistics: FantasySectionState<FantasyStatistics>;
-  lineup: FantasySectionState<FantasyLineup>;
+type Tab = keyof MatchCenterResponses;
+type Loader = ReturnType<typeof createMatchCenterLoader>;
+const tabs: { key: Tab; label: string }[] = [{ key: "pre-jogo", label: "Pré-jogo" }, { key: "sumario", label: "Sumário" }, { key: "formacao", label: "Formação" }, { key: "estatisticas", label: "Estatísticas" }];
+const sides = ["mandante", "visitante"] as const;
+const labels: Record<string, string> = { GOL: "Gol", CARTAO_AMARELO: "Cartão amarelo", CARTAO_VERMELHO: "Cartão vermelho", SUBSTITUICAO: "Substituição", VAR: "VAR", CONFIRMADA: "Confirmada", PROVAVEL: "Provável", ENCERRADA: "Encerrada", EM_ANDAMENTO: "Em andamento", PRE_JOGO: "Pré-jogo", AGENDADA: "Agendada", INTERVALO: "Intervalo", ADIADA: "Adiada", CANCELADA: "Cancelada", INTERROMPIDA: "Interrompida", ABANDONADA: "Abandonada", RESULTADO_ADMINISTRATIVO: "Resultado administrativo", DESCONHECIDO: "Status indisponível", "primeiro-tempo": "1º tempo", "segundo-tempo": "2º tempo", intervalo: "Intervalo", "pre-jogo": "Pré-jogo", "prorrogacao-primeiro-tempo": "Prorrogação · 1º tempo", "prorrogacao-segundo-tempo": "Prorrogação · 2º tempo", "prorrogacao-intervalo": "Intervalo da prorrogação", "disputa-penaltis": "Pênaltis", encerrado: "Encerrado" };
+const label = (value: string | null) => value == null ? "Indisponível" : labels[value] ?? value;
+const number = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
+const value = (n: number | null, percent = false) => n == null ? "—" : `${number.format(n)}${percent ? "%" : ""}`;
+function dateText(date: string | null) {
+  if (!date || Number.isNaN(Date.parse(date))) return "Data indisponível";
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }).format(new Date(date));
 }
-type Examples = Record<"mandante" | "visitante", Omit<FieldPlayer, "idExterno">[]>;
-const tabs = ["Sumário", "Estatísticas", "Formação"] as const;
-
-function TeamShield({ team }: { team: FantasyTeam }) {
-  const [failed, setFailed] = useState<string | null>(null);
-  return team.logo && failed !== team.logo
-    ? <img className={styles.shield} src={team.logo} alt={`Escudo do ${team.nome}`} onError={() => setFailed(team.logo)} />
-    : <span className={styles.shield} role="img" aria-label={`Escudo do ${team.nome} indisponível`}><ImageOff aria-hidden="true" /></span>;
+function useSection<K extends Tab>(loader: Loader, tab: K, enabled = true) {
+  const [state, setState] = useState<FantasySectionState<MatchCenterResponses[K]>>({ status: "loading" });
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    setState({ status: "loading" });
+    loader(tab).then(data => { if (active) setState({ status: "ready", data }); }, error => { if (active) setState({ status: "error", message: error instanceof Error ? error.message : "Não foi possível carregar os dados." }); });
+    return () => { active = false; };
+  }, [loader, tab, enabled]);
+  return state;
 }
-
-function SectionState<T>({ state, label, children }: { state: FantasySectionState<T>; label: string; children: (data: T) => ReactNode }) {
-  if (state.status === "loading") return <div className={styles.feedback} role="status">Carregando {label.toLowerCase()}...</div>;
-  if (state.status === "error") return <div className={styles.feedback} role="alert"><strong>{label} indisponível</strong><p>{state.message}</p></div>;
-  if (state.status === "empty") return <div className={styles.feedback}>Nenhum dado de {label.toLowerCase()} disponível.</div>;
+function SectionState<T>({ state, children }: { state: FantasySectionState<T>; children: (data: T) => ReactNode }) {
+  if (state.status === "loading") return <div className={styles.feedback} role="status">Carregando dados da partida...</div>;
+  if (state.status === "error") return <div className={styles.feedback} role="alert"><strong>Dados indisponíveis</strong><p>{state.message}</p></div>;
   return <>{children(state.data)}</>;
 }
-
-function MatchHeader({ summary }: { summary: FantasySummary }) {
-  const { partida } = summary;
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(partida.data)
-    ? partida.data.split("-").reverse().join("/")
-    : new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(new Date(partida.data));
+function TeamShield({ team }: { team: FantasyTeam }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  return team.logo && failed !== team.logo ? <img className={styles.shield} src={team.logo} alt={`Escudo do ${team.nome ?? "clube"}`} onError={() => setFailed(team.logo)} /> : <span className={styles.shield} role="img" aria-label="Escudo indisponível"><ImageOff aria-hidden="true" /></span>;
+}
+function MatchHeader({ partida }: { partida: FantasyMatch }) {
   return <section className={styles.scoreboard} aria-label="Dados da partida">
-    <div className={styles.matchHeading}><strong>{partida.campeonato}</strong><span>{partida.rodada == null ? "Rodada indisponível" : `Rodada ${partida.rodada}`}</span></div>
+    <div className={styles.matchHeading}><strong>{partida.campeonato ?? "Campeonato indisponível"}</strong><span>{partida.rodada == null ? "Rodada indisponível" : `Rodada ${partida.rodada}`}</span></div>
     <div className={styles.matchup}>
-      <div className={styles.team}><TeamShield team={partida.mandante} /><strong>{partida.mandante.nome}</strong></div>
-      <div className={styles.score}><strong aria-label={`Placar: ${partida.placar.mandante ?? "indisponível"} a ${partida.placar.visitante ?? "indisponível"}`}>{partida.placar.mandante ?? "—"} × {partida.placar.visitante ?? "—"}</strong><span>{partida.status}</span></div>
-      <div className={styles.team}><TeamShield team={partida.visitante} /><strong>{partida.visitante.nome}</strong></div>
+      <div className={styles.team}><TeamShield team={partida.mandante} /><strong>{partida.mandante.nome ?? "Mandante"}</strong></div>
+      <div className={styles.score}><strong aria-label="Placar">{value(partida.placar.mandante)} × {value(partida.placar.visitante)}</strong><span>{label(partida.status)}</span></div>
+      <div className={styles.team}><TeamShield team={partida.visitante} /><strong>{partida.visitante.nome ?? "Visitante"}</strong></div>
     </div>
-    <div className={styles.facts}><span><CalendarDays size={15} aria-hidden="true" /><time dateTime={partida.data}>{date}</time></span><span><MapPin size={15} aria-hidden="true" />{partida.estadio ?? "Estádio indisponível"}</span></div>
+    <div className={styles.facts}><time dateTime={partida.data ?? undefined}>{dateText(partida.data)}</time><span>{partida.estadio ?? "Estádio indisponível"}</span>{partida.periodo && <span>{label(partida.periodo)}{partida.minuto != null ? ` · ${partida.minuto}'` : ""}</span>}</div>
   </section>;
 }
-
-function MatchSummary({ data }: { data: FantasySummary }) {
-  return <section className={styles.panel} aria-label="Acontecimentos da partida"><h2>Acontecimentos da partida</h2>
-    {!data.eventos.length ? <p className={styles.empty}>Nenhum acontecimento disponível.</p> : <ol className={styles.timeline}>{data.eventos.map((event, index) => {
-      const label = event.tipo === "GOL" ? "Gol" : event.tipo === "SUBSTITUICAO" ? "Substituição" : event.tipo;
-      return <li className={styles.event} key={`${event.tempo.exibicao}-${index}`}>
-        <span className={styles.minute}>{event.tempo.exibicao || "—"}</span>
-        <div className={styles.eventDetails}><h3>{label}{event.equipe && <span> · {event.equipe.nome}</span>}</h3>
-          {event.jogador && <strong>{event.jogador.nome}</strong>}
-          {event.assistencia && <p>Assistência: {event.assistencia.nome}</p>}
-          {event.jogadorSai && <p>Sai: {event.jogadorSai.nome}</p>}
-          {event.jogadorEntra && <p>Entra: {event.jogadorEntra.nome}</p>}
-          {event.comentarios && <p>{event.comentarios}</p>}
-        </div>
-        {event.placarAposEvento && <span className={styles.eventScore} aria-label="Placar após evento">{event.placarAposEvento.mandante ?? "—"} × {event.placarAposEvento.visitante ?? "—"}</span>}
-      </li>;
-    })}</ol>}
+function PlayerList({ players, onPlayer }: { players: FantasyPlayer[]; onPlayer?: (player: FantasyPlayer) => void }) {
+  return players.length ? <ul className={styles.playerList}>{players.map((player, index) => <li key={player.idExterno ?? index}><b>{player.numero ?? "—"}</b>{onPlayer ? <button type="button" onClick={() => onPlayer(player)}>{player.nome ?? "Nome indisponível"}</button> : <strong>{player.nome ?? "Nome indisponível"}</strong>}<span>{player.funcaoPartida.nome ?? player.posicao ?? "—"}</span></li>)}</ul> : <p className={styles.help}>Nenhum atleta informado.</p>;
+}
+function Squad({ squad, onPlayer }: { squad: FantasySquad; onPlayer?: (player: FantasyPlayer) => void }) {
+  return <div className={styles.roster}><p className={styles.help}>Esquema: {squad.formacao ?? "Indisponível"} · Técnico: {squad.treinador?.nome ?? "Indisponível"}</p>
+    {squad.atualizadoEm && <p className={styles.help}>Atualização: {dateText(squad.atualizadoEm)}</p>}
+    <h4>Titulares ({squad.titulares.length})</h4><PlayerList players={squad.titulares} onPlayer={onPlayer} />
+    <h4>Reservas ({squad.reservas.length})</h4><PlayerList players={squad.reservas} onPlayer={onPlayer} />
+  </div>;
+}
+function PreMatch({ data }: { data: FantasyPreMatch }) {
+  return <div className={styles.preGrid}>{sides.map(side => {
+    const lineups = data.escalacoes[side];
+    return <section className={styles.panel} key={side}><h2>{data.partida[side].nome}</h2>
+      {!lineups.confirmada && !lineups.provavel && <p className={styles.help}>Escalações indisponíveis.</p>}
+      {(["confirmada", "provavel"] as const).map(kind => lineups[kind] && <div key={kind}><h3>{kind === "confirmada" ? "Escalação confirmada" : "Escalação provável"}</h3><Squad squad={lineups[kind]!} /></div>)}
+    </section>;
+  })}<section className={styles.panel}><h2>Desfalques</h2>{!data.desfalquesInformados ? <p className={styles.help}>Desfalques indisponíveis.</p> : !data.desfalques.length ? <p className={styles.help}>Nenhum desfalque informado pela fonte.</p> : <ul className={styles.absences}>{data.desfalques.map((entry, i) => <li key={i}><strong>{entry.atleta?.nome ?? "Atleta não informado"}</strong> · {entry.equipe.nome}<p>{entry.situacao ?? "Situação indisponível"} · {entry.motivo ?? "Motivo indisponível"}</p></li>)}</ul>}</section></div>;
+}
+function EventList({ events }: { events: FantasyEvent[] }) {
+  return <ol className={styles.timeline}>{events.map((event, index) => <li className={styles.event} key={index}>
+    <span className={styles.minute}>{event.tempo.exibicao ?? "—"}</span><div className={styles.eventDetails}><small>{label(event.periodo)}</small><h3>{label(event.tipo)} · {event.equipe.nome}</h3>
+      {event.jogador?.nome && <strong>{event.jogador.nome}</strong>}
+      {event.assistencia?.nome && <p>Assistência: {event.assistencia.nome}</p>}
+      {event.jogadorSai?.nome && <p>Sai: {event.jogadorSai.nome}</p>}{event.jogadorEntra?.nome && <p>Entra: {event.jogadorEntra.nome}</p>}
+      {event.comissaoTecnica?.nome && <p>Comissão técnica: {event.comissaoTecnica.nome}</p>}
+      {event.origem.detalhe && <p>{event.origem.detalhe}</p>}{event.comentarios && event.comentarios !== event.origem.detalhe && <p>{event.comentarios}</p>}
+    </div></li>)}</ol>;
+}
+// Structured incidents remain authoritative. Suppress narrative incident classes
+// even with different clocks; minute-only matching loses legitimate commentary.
+export function complementaryNarrative(data: FantasySummary) {
+  const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const incidentTypes: Record<string, RegExp> = {
+    GOL: /\b(goal|goals|gol|gols)\b/,
+    CARTAO_AMARELO: /\b(yellow card|cartao amarelo)\b/,
+    CARTAO_VERMELHO: /\b(red card|cartao vermelho)\b/,
+    SUBSTITUICAO: /\b(substitution|substituicao)\b/,
+    VAR: /\b(var|video)\b/,
+  };
+  const seen = new Set<string>();
+  return data.narrativa.filter(item => {
+    const text = normalize([item.titulo, item.texto].filter(Boolean).join(" ").trim());
+    if (!text || seen.has(text)) return false;
+    seen.add(text);
+    const kind = normalize(item.tipo ?? item.titulo ?? "").replace(/[_-]/g, " ");
+    if (data.eventos.some(event => incidentTypes[event.tipo]?.test(kind))) return false;
+    return !data.eventos.some(event => event.comentarios && normalize(event.comentarios) === text);
+  });
+}
+function Summary({ data }: { data: FantasySummary }) {
+  const narrative = complementaryNarrative(data);
+  return <section className={styles.panel}><h2>Cronologia da partida</h2>{!data.eventosDisponiveis ? <p className={styles.help}>Acontecimentos indisponíveis.</p> : !data.eventos.length ? <p className={styles.help}>Nenhum acontecimento informado.</p> : <EventList events={data.eventos} />}
+    <details className={styles.narrative}><summary>Narrativa complementar ({narrative.length})</summary>{!data.narrativaDisponivel ? <p>Narrativa indisponível.</p> : !narrative.length ? <p>Nenhum lance complementar informado.</p> : <ol className={styles.timeline}>{narrative.map((item, i) => <li className={styles.event} key={item.idExterno ?? i}><span className={styles.minute}>{item.minuto == null ? "—" : `${item.minuto}${item.acrescimo == null ? "" : `+${item.acrescimo}`}'`}</span><div className={styles.eventDetails}><small>{label(item.periodo)}</small>{item.titulo && <h3>{item.titulo}</h3>}{item.texto && item.texto !== item.titulo && <p>{item.texto}</p>}</div></li>)}</ol>}</details>
   </section>;
 }
-
 const metrics: { key: keyof FantasyStatisticsValues; label: string; percent?: boolean }[] = [
-  { key: "finalizacoesNoGol", label: "Finalizações no gol" }, { key: "finalizacoesFora", label: "Finalizações fora" },
-  { key: "finalizacoes", label: "Finalizações" }, { key: "finalizacoesBloqueadas", label: "Finalizações bloqueadas" },
-  { key: "finalizacoesDentroArea", label: "Finalizações dentro da área" }, { key: "finalizacoesForaArea", label: "Finalizações fora da área" },
-  { key: "faltas", label: "Faltas" }, { key: "escanteios", label: "Escanteios" }, { key: "impedimentos", label: "Impedimentos" },
-  { key: "posseBola", label: "Posse de bola", percent: true }, { key: "cartoesAmarelos", label: "Cartões amarelos" },
-  { key: "cartoesVermelhos", label: "Cartões vermelhos" }, { key: "defesasGoleiro", label: "Defesas do goleiro" },
-  { key: "passes", label: "Passes" }, { key: "passesCertos", label: "Passes certos" },
-  { key: "precisaoPasses", label: "Precisão de passes", percent: true }, { key: "golsEsperados", label: "Gols esperados (xG)" },
-  { key: "golsEvitados", label: "Gols evitados" },
+  { key: "posseBola", label: "Posse de bola", percent: true }, { key: "finalizacoes", label: "Finalizações" }, { key: "finalizacoesNoGol", label: "Finalizações no gol" }, { key: "finalizacoesFora", label: "Finalizações fora" }, { key: "finalizacoesBloqueadas", label: "Finalizações bloqueadas" }, { key: "finalizacoesDentroArea", label: "Finalizações dentro da área" }, { key: "finalizacoesForaArea", label: "Finalizações fora da área" }, { key: "passes", label: "Passes" }, { key: "passesCertos", label: "Passes certos" }, { key: "precisaoPasses", label: "Precisão de passes", percent: true }, { key: "escanteios", label: "Escanteios" }, { key: "faltas", label: "Faltas" }, { key: "impedimentos", label: "Impedimentos" }, { key: "cartoesAmarelos", label: "Cartões amarelos" }, { key: "cartoesVermelhos", label: "Cartões vermelhos" }, { key: "golsEsperados", label: "Gols esperados (xG)" }, { key: "defesasGoleiro", label: "Defesas do goleiro" }, { key: "golsEvitados", label: "Gols evitados" },
 ];
-const number = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
-
-function MatchStatistics({ data }: { data: FantasyStatistics }) {
-  const value = (n: number | null, percent = false) => n == null ? <span aria-label="Indisponível">—</span> : `${number.format(n)}${percent ? "%" : ""}`;
-  return <section className={styles.panel}><h2>Estatísticas da partida</h2><p className={styles.help}>— indica um dado indisponível.</p>
-    <table className={styles.statistics}><caption className={styles.srOnly}>Comparação entre {data.mandante.nome} e {data.visitante.nome}</caption>
-      <thead><tr><th scope="col">{data.mandante.nome}</th><th scope="col">Estatística</th><th scope="col">{data.visitante.nome}</th></tr></thead>
-      <tbody>{metrics.map(metric => <tr key={metric.key}><td>{value(data.mandante.estatisticas[metric.key], metric.percent)}</td><th scope="row">{metric.label}</th><td>{value(data.visitante.estatisticas[metric.key], metric.percent)}</td></tr>)}</tbody>
-    </table>
+function Statistics({ data }: { data: FantasyStatistics }) {
+  return <section className={styles.panel}><h2>Estatísticas da partida</h2><p className={styles.help}>— indica um dado indisponível.</p>{sides.map(side => !data[side].disponivel && <p key={side} className={styles.help}>Estatísticas de {data[side].nome}: indisponíveis.</p>)}
+    <table className={styles.statistics}><caption className={styles.srOnly}>Comparação das equipes</caption><thead><tr><th>{data.mandante.nome}</th><th>Estatística</th><th>{data.visitante.nome}</th></tr></thead><tbody>{metrics.map(metric => {
+      const home = data.mandante.estatisticas[metric.key], away = data.visitante.estatisticas[metric.key];
+      const comparable = home != null && away != null && home >= 0 && away >= 0 && home + away > 0;
+      return <tr key={metric.key}><td>{value(home, metric.percent)}</td><th scope="row">{metric.label}{comparable && <span className={styles.comparison} aria-hidden="true"><span style={{ width: `${home / (home + away) * 100}%` }} /></span>}</th><td>{value(away, metric.percent)}</td></tr>;
+    })}</tbody></table>
   </section>;
 }
-
-function LineupTeam({ team, examples = [] }: { team: FantasyLineupTeam; examples?: Examples["mandante"] }) {
-  const usingExamples = !team.titulares.length && examples.length > 0;
-  return <section className={styles.lineupTeam} aria-label={`Formação de ${team.nome}`}>
-    <header className={styles.lineupHeading}><TeamShield team={team} /><div><h3>{team.nome}</h3><p>Formação <strong>{team.formacao ?? "—"}</strong></p><p>Treinador: {team.treinador?.nome ?? "Indisponível"}</p></div></header>
-    {usingExamples && <p className={styles.help}>Exemplos parciais de demonstração; IDs dos jogadores ainda não fornecidos.</p>}
-    <FantasyFieldLineup players={usingExamples ? examples : team.titulares} formation={team.formacao} teamName={team.nome} />
-    <div className={styles.roster}><h4>Titulares disponíveis no mock ({team.titulares.length})</h4>{team.titulares.length ? <PlayerList players={team.titulares} /> : <p>Nenhum registro completo disponível.</p>}
-      {usingExamples && <><h4>Exemplos conhecidos ({examples.length})</h4><PlayerList players={examples} /></>}
-      <h4>Reservas disponíveis no mock ({team.reservas.length})</h4>{team.reservas.length ? <PlayerList players={team.reservas} /> : <p>Nenhum reserva fornecido nesta POC.</p>}
-    </div>
+const athleteMetricLabels: Record<string, string> = { minutosJogados: "Minutos jogados", nota: "Nota", gols: "Gols", assistencias: "Assistências", finalizacoes: "Finalizações", finalizacoesNoGol: "Finalizações no gol", passes: "Passes", passesCertos: "Passes certos", precisaoPasses: "Precisão de passes", desarmes: "Desarmes", interceptacoes: "Interceptações", cartoesAmarelos: "Cartões amarelos", cartoesVermelhos: "Cartões vermelhos", golsEsperados: "Gols esperados (xG)", defesas: "Defesas", golsSofridos: "Gols sofridos", golsEvitados: "Gols evitados", penaltisDefendidos: "Pênaltis defendidos" };
+function AthleteDetails({ player, side, loader, onClose }: { player: FantasyPlayer; side: typeof sides[number]; loader: Loader; onClose: () => void }) {
+  const stats = useSection(loader, "estatisticas");
+  const close = useRef<HTMLButtonElement>(null);
+  useEffect(() => { close.current?.focus(); }, []);
+  return <section className={styles.athleteDetails} aria-label={`Detalhes de ${player.nome ?? "atleta"}`} onKeyDown={event => { if (event.key === "Escape") onClose(); }}><button ref={close} type="button" onClick={onClose}>Fechar detalhes</button><h3>{player.nome ?? "Nome indisponível"}</h3>
+    <p>Camisa: {player.numero ?? "—"} · Função na partida: {player.funcaoPartida.nome ?? player.posicao ?? "Indisponível"}</p><p>Posição cadastral: {player.posicaoCadastral?.nome ?? "Indisponível"}</p>
+    <SectionState state={stats}>{data => {
+      const athlete = data[side].atletas.find(item => player.idExterno != null && item.atleta.idExterno === player.idExterno);
+      if (!athlete) return <p>Estatísticas individuais indisponíveis.</p>;
+      return <><p>{athlete.titular == null ? "Titularidade indisponível" : athlete.titular ? "Titular" : "Reserva"}</p>{[athlete.estatisticas, athlete.goleiroEstatisticas].map((group, index) => group && <div key={index}><h4>{index ? "Goleiro" : "Estatísticas individuais"}</h4><dl className={styles.athleteMetrics}>{Object.entries(athleteMetricLabels).filter(([key]) => Object.prototype.hasOwnProperty.call(group, key)).map(([key, text]) => <div key={key}><dt>{text}</dt><dd>{value(group[key])}</dd></div>)}</dl></div>)}</>;
+    }}</SectionState>
   </section>;
 }
-
-function PlayerList({ players }: { players: FieldPlayer[] }) {
-  return <ul className={styles.playerList}>{players.map((player, index) => <li key={player.idExterno ?? `example-${index}`}><b>{player.numero ?? "—"}</b><strong>{player.nome}</strong><span>{player.posicao ?? "—"}</span></li>)}</ul>;
+function Formation({ loader }: { loader: Loader }) {
+  const state = useSection(loader, "formacao");
+  const [side, setSide] = useState<typeof sides[number]>("mandante");
+  const [player, setPlayer] = useState<FantasyPlayer | null>(null);
+  const origin = useRef<HTMLElement | null>(null);
+  const showPlayer = (next: FantasyPlayer) => { origin.current = document.activeElement as HTMLElement; setPlayer(next); };
+  const closePlayer = () => { setPlayer(null); origin.current?.focus(); };
+  return <SectionState state={state}>{data => <section aria-label="Formação das equipes"><div className={styles.teamTabs} role="group" aria-label="Equipe da formação">{sides.map(key => <button type="button" key={key} aria-pressed={key === side} className={key === side ? styles.selectedTeam : undefined} onClick={() => { setSide(key); setPlayer(null); }}><TeamShield team={data[key]} /><span>{data[key].nome}</span></button>)}</div>
+    <section className={styles.lineupTeam}><h2>{data[side].nome}</h2><p className={styles.help}>Escalação: {label(data[side].tipoEscalacao)}</p>
+      {!data[side].disponivel && <p className={styles.help}>Escalação indisponível.</p>}
+      <FantasyFieldLineup players={data[side].titulares} teamName={data[side].nome} onPlayer={showPlayer} />
+      {player && <AthleteDetails key={`${side}-${player.idExterno}`} player={player} side={side} loader={loader} onClose={closePlayer} />}
+      <Squad squad={data[side]} onPlayer={showPlayer} />
+    </section>{data.substituicoes.length > 0 && <section className={styles.panel}><h2>Substituições</h2><EventList events={data.substituicoes} /></section>}
+  </section>}</SectionState>;
 }
-
-function MatchLineup({ data, examples }: { data: FantasyLineup; examples?: Examples }) {
-  const sides = ["mandante", "visitante"] as const;
-  const [selectedSide, setSelectedSide] = useState<typeof sides[number]>("mandante");
-  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  return <section aria-label="Escalações">
-    <h2 className={styles.sectionTitle}>Formação das equipes</h2>
-    <p className={styles.help}>Visualização parcial da POC. Os elencos completos não foram fornecidos.</p>
-    <div className={styles.teamTabs} role="tablist" aria-label="Equipe da formação">
-      {sides.map((side, index) => <button key={side} ref={element => { buttons.current[index] = element; }} type="button" role="tab" id={`fantasy-team-tab-${side}`} aria-controls={`fantasy-team-panel-${side}`} aria-label={data[side].nome} aria-selected={selectedSide === side} tabIndex={selectedSide === side ? 0 : -1} className={selectedSide === side ? styles.selectedTeam : undefined} onClick={() => setSelectedSide(side)} onKeyDown={event => {
-        let next: number;
-        if (event.key === "ArrowRight" || event.key === "ArrowLeft") next = 1 - index;
-        else if (event.key === "Home") next = 0;
-        else if (event.key === "End") next = 1;
-        else return;
-        event.preventDefault(); setSelectedSide(sides[next]); buttons.current[next]?.focus();
-      }}><TeamShield team={data[side]} /><span>{data[side].nome}</span></button>)}
-    </div>
-    {sides.map(side => <div key={side} role="tabpanel" id={`fantasy-team-panel-${side}`} aria-labelledby={`fantasy-team-tab-${side}`} hidden={selectedSide !== side} tabIndex={0}>
-      {selectedSide === side && <LineupTeam key={side} team={data[side]} examples={examples?.[side]} />}
-    </div>)}
-  </section>;
-}
-
-export function MatchCenterPage({ sections, examples }: { sections: MatchCenterSections; examples?: Examples }) {
+function SummaryTab({ loader }: { loader: Loader }) { const state = useSection(loader, "sumario"); return <SectionState state={state}>{data => <Summary data={data} />}</SectionState>; }
+function StatisticsTab({ loader }: { loader: Loader }) { const state = useSection(loader, "estatisticas"); return <SectionState state={state}>{data => <Statistics data={data} />}</SectionState>; }
+export function MatchCenterPage({ fixtureId }: { fixtureId: string }) {
+  const loader = useMemo(() => createMatchCenterLoader(fixtureId), [fixtureId]);
+  const pre = useSection(loader, "pre-jogo");
   const [selected, setSelected] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  return <div className={`page-shell ${styles.shell}`}>
-    <header className={styles.pageHeading}><p className="eyebrow">POINT FFC</p><h1 className="page-title">Central da Partida</h1><p className="page-subtitle">Acompanhe os acontecimentos, as estatísticas e a formação.</p><span className={styles.demo}>POC · Dados de demonstração</span></header>
-    {sections.summary.status === "ready" && <MatchHeader summary={sections.summary.data} />}
-    <div className={styles.tabs} role="tablist" aria-label="Seções da partida">{tabs.map((tab, index) => <button key={tab} ref={element => { buttons.current[index] = element; }} type="button" role="tab" id={`fantasy-tab-${index}`} aria-controls={`fantasy-panel-${index}`} aria-selected={selected === index} tabIndex={selected === index ? 0 : -1} className={selected === index ? styles.active : undefined} onClick={() => setSelected(index)} onKeyDown={event => {
-      let next: number;
-      if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-      else if (event.key === "ArrowLeft") next = (index + tabs.length - 1) % tabs.length;
-      else if (event.key === "Home") next = 0;
-      else if (event.key === "End") next = tabs.length - 1;
-      else return;
-      event.preventDefault(); setSelected(next); buttons.current[next]?.focus();
-    }}>{tab}</button>)}</div>
-    {tabs.map((tab, index) => <div key={tab} role="tabpanel" id={`fantasy-panel-${index}`} aria-labelledby={`fantasy-tab-${index}`} hidden={selected !== index} tabIndex={0}>
-      {selected === index && (index === 0 ? <SectionState state={sections.summary} label="Sumário">{data => <MatchSummary data={data} />}</SectionState>
-        : index === 1 ? <SectionState state={sections.statistics} label="Estatísticas">{data => <MatchStatistics data={data} />}</SectionState>
-          : <SectionState state={sections.lineup} label="Formação">{data => <MatchLineup data={data} examples={examples} />}</SectionState>)}
-    </div>)}
+  return <div className={`page-shell ${styles.shell}`}><header className={styles.pageHeading}><p className="eyebrow">POINT FFC</p><h1 className="page-title">Central da Partida</h1></header>
+    <SectionState state={pre}>{data => <MatchHeader partida={data.partida} />}</SectionState>
+    <div className={styles.tabs} role="tablist" aria-label="Seções da partida">{tabs.map((tab, index) => <button key={tab.key} ref={element => { buttons.current[index] = element; }} type="button" role="tab" id={`match-tab-${tab.key}`} aria-controls={`match-panel-${tab.key}`} aria-selected={selected === index} tabIndex={selected === index ? 0 : -1} className={selected === index ? styles.active : undefined} onClick={() => setSelected(index)} onKeyDown={event => {
+      const next = event.key === "ArrowRight" ? (index + 1) % tabs.length : event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null;
+      if (next != null) { event.preventDefault(); setSelected(next); buttons.current[next]?.focus(); }
+    }}>{tab.label}</button>)}</div>
+    {tabs.map((tab, index) => <div key={tab.key} role="tabpanel" id={`match-panel-${tab.key}`} aria-labelledby={`match-tab-${tab.key}`} hidden={selected !== index} tabIndex={0}>{selected === index && (tab.key === "pre-jogo" ? pre.status === "ready" ? <PreMatch data={pre.data} /> : null : tab.key === "sumario" ? <SummaryTab loader={loader} /> : tab.key === "formacao" ? <Formation loader={loader} /> : <StatisticsTab loader={loader} />)}</div>)}
   </div>;
+}
+export function MatchCenterQueryPage() {
+  const [id, setId] = useState<string | null>(null);
+  useEffect(() => { setId(new URLSearchParams(window.location.search).get("fixtureId") ?? "321"); }, []);
+  if (id == null) return <div className={styles.feedback} role="status">Carregando partida...</div>;
+  if (!validFixtureId(id)) return <div className={styles.feedback} role="alert">ID da API Futebol V2 inválido.</div>;
+  return <MatchCenterPage key={id} fixtureId={id} />;
 }

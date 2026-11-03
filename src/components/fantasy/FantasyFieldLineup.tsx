@@ -1,40 +1,36 @@
-import type { FantasyPlayer } from "@/types/fantasy";
+﻿import type { FantasyPlayer } from "@/types/fantasy";
 import fieldReference from "@/components/teams/TeamDetail.module.css";
 import styles from "./MatchCenter.module.css";
 
-// Presentation accepts examples without identity; contract players still require an ID.
-export type FieldPlayer = Omit<FantasyPlayer, "idExterno"> & { idExterno?: number };
-
-function coordinates(grid: string | null) {
-  if (!grid || !/^[1-9]\d*:[1-9]\d*$/.test(grid)) return null;
-  const [row, column] = grid.split(":").map(Number);
-  return row <= 12 && column <= 11 ? { row, column } : null;
+export function playerCoordinates(player: FantasyPlayer) {
+  const grid = player.grid?.match(/^([1-9]\d*):([1-9]\d*)$/);
+  const valid = (row: number | null | undefined, column: number | null | undefined) => row != null && column != null && Number.isInteger(row) && Number.isInteger(column) && row > 0 && row <= 12 && column > 0 && column <= 11;
+  const coordinate = player.coordenada;
+  if (coordinate && valid(coordinate.linha, coordinate.coluna)) return { row: coordinate.linha!, column: coordinate.coluna! };
+  if (grid && valid(Number(grid[1]), Number(grid[2]))) return { row: Number(grid[1]), column: Number(grid[2]) };
+  return null;
 }
-
-export function FantasyFieldLineup({ players, formation, teamName }: { players: FieldPlayer[]; formation: string | null; teamName: string }) {
-  const formationColumns = formation && /^\d+(?:-\d+)*$/.test(formation)
-    ? [1, ...formation.split("-").map(Number)] : [];
+export function FantasyFieldLineup({ players, teamName, onPlayer }: { players: FantasyPlayer[]; teamName: string | null; onPlayer: (player: FantasyPlayer) => void }) {
   const positioned = players.flatMap((player, index) => {
-    const position = coordinates(player.grid);
+    const position = playerCoordinates(player);
     return position ? [{ player, position, index }] : [];
   });
-  const rowCount = Math.max(formationColumns.length, ...positioned.map(item => item.position.row), 1);
-  const unpositioned = players.filter(player => !coordinates(player.grid));
+  const rowCount = Math.max(...positioned.map(item => item.position.row), 1);
+  const unpositioned = players.filter(player => !playerCoordinates(player));
   return <>
-    <section className={`${fieldReference.pitch} ${styles.field}`} aria-label={`Campo de ${teamName}`}>
+    <section className={`${fieldReference.pitch} ${styles.field}`} aria-label={`Campo de ${teamName ?? "equipe"}`}>
       {Array.from({ length: rowCount }, (_, index) => {
-        // Reverse visual rows so the goalkeeper stays at the bottom, as in FieldLineup.
         const row = rowCount - index;
         const items = positioned.filter(item => item.position.row === row);
-        const columns = Math.min(11, Math.max(formationColumns[row - 1] ?? 1, ...items.map(item => item.position.column)));
+        const columns = Math.max(...items.map(item => item.position.column), 1);
         return <div className={styles.fieldRow} key={row} data-field-row={row} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
-          {items.map(({ player, position, index: playerIndex }) => <div className={styles.fieldPlayer} key={player.idExterno ?? `example-${playerIndex}`} style={{ gridColumn: position.column }}>
-            <span>{player.numero ?? "—"}</span><strong>{player.nome}</strong>
-          </div>)}
+          {items.map(({ player, position, index: playerIndex }) => <button type="button" className={styles.fieldPlayer} key={player.idExterno ?? playerIndex} style={{ gridColumn: position.column }} onClick={() => onPlayer(player)} aria-label={`Detalhes de ${player.nome ?? "atleta"}`}>
+            <span>{player.numero ?? "—"}</span><strong>{player.nome ?? "Nome indisponível"}</strong>
+          </button>)}
         </div>;
       })}
       {!positioned.length && <p className={styles.fieldEmpty}>Posições no campo indisponíveis</p>}
     </section>
-    {unpositioned.length > 0 && <div className={styles.unpositioned}><strong>Sem posição no campo informada</strong><ul>{unpositioned.map((player, index) => <li key={player.idExterno ?? index}>{player.numero == null ? "" : `${player.numero} · `}{player.nome}</li>)}</ul></div>}
+    {unpositioned.length > 0 && <div className={styles.unpositioned}><strong>Sem posição no campo informada</strong><ul>{unpositioned.map((player, index) => <li key={player.idExterno ?? index}><button type="button" onClick={() => onPlayer(player)}>{player.nome ?? "Nome indisponível"}</button></li>)}</ul></div>}
   </>;
 }
