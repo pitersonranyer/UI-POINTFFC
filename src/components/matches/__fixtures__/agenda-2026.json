@@ -1,0 +1,200 @@
+﻿{
+    "fornecedor":  "API_FUTEBOL_V2",
+    "competicao":  "Brasileirão Série A",
+    "temporada":  2026,
+    "rodada":  34,
+    "totalRodadas":  38,
+    "partidas":  [
+                     {
+                         "fixtureId":  335,
+                         "mandante":  {
+                                          "id":  6,
+                                          "nome":  "Bragantino",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/237/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  14,
+                                           "nome":  "Santos",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/253/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-02T20:00:00-03:00",
+                         "status":  "ENCERRADA",
+                         "placar":  {
+                                        "mandante":  2,
+                                        "visitante":  1
+                                    }
+                     },
+                     {
+                         "fixtureId":  340,
+                         "mandante":  {
+                                          "id":  13,
+                                          "nome":  "Chapecoense",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/252/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  17,
+                                           "nome":  "Mirassol",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/260/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-03T19:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  337,
+                         "mandante":  {
+                                          "id":  3,
+                                          "nome":  "Internacional",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  5,
+                                           "nome":  "Coritiba",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/236/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-03T21:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  331,
+                         "mandante":  {
+                                          "id":  16,
+                                          "nome":  "Flamengo",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/257/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  10,
+                                           "nome":  "Grêmio",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/245/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-04T19:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  338,
+                         "mandante":  {
+                                          "id":  4,
+                                          "nome":  "Athletico-PR",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/233/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  18,
+                                           "nome":  "Vasco",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/261/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-04T19:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  332,
+                         "mandante":  {
+                                          "id":  19,
+                                          "nome":  "Botafogo",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/264/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  1,
+                                           "nome":  "Atlético-MG",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/228/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-04T21:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  333,
+                         "mandante":  {
+                                          "id":  15,
+                                          "nome":  "São Paulo",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/256/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  11,
+                                           "nome":  "Corinthians",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/248/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-04T21:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  334,
+                         "mandante":  {
+                                          "id":  2,
+                                          "nome":  "Palmeiras",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/229/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  8,
+                                           "nome":  "Remo",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/241/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-05T19:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  336,
+                         "mandante":  {
+                                          "id":  20,
+                                          "nome":  "Cruzeiro",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/265/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  12,
+                                           "nome":  "Bahia",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/249/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-05T21:30:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     },
+                     {
+                         "fixtureId":  339,
+                         "mandante":  {
+                                          "id":  7,
+                                          "nome":  "Vitória",
+                                          "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/240/2026.svg"
+                                      },
+                         "visitante":  {
+                                           "id":  9,
+                                           "nome":  "Fluminense",
+                                           "escudo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                                       },
+                         "dataHora":  "2026-11-06T20:00:00-03:00",
+                         "status":  "AGENDADA",
+                         "placar":  {
+                                        "mandante":  null,
+                                        "visitante":  null
+                                    }
+                     }
+                 ]
+}
+
