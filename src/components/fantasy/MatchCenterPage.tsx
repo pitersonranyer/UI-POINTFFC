@@ -5,6 +5,7 @@ import { ImageOff, CircleDot, ArrowLeftRight, RectangleVertical, MonitorCheck, H
 import type { FantasyEvent, FantasyMatch, FantasyPlayer, FantasyPreMatch, FantasySectionState, FantasySquad, FantasyStatistics, FantasyStatisticsValues, FantasySummary, FantasyTeam, MatchCenterResponses } from "@/types/fantasy";
 import { createMatchCenterLoader, validFixtureId } from "@/services/matchCenterService";
 import { FantasyFieldLineup, tacticalRows } from "./FantasyFieldLineup";
+import { AthleteIncidents, formationEventMap, mergeFormationEvents, type FormationIncident } from "./FormationEvents";
 import styles from "./MatchCenter.module.css";
 
 type Tab = keyof MatchCenterResponses;
@@ -115,12 +116,13 @@ function Statistics({ data }: { data: FantasyStatistics }) {
   </section>;
 }
 const athleteMetricLabels: Record<string, string> = { minutosJogados: "Minutos jogados", nota: "Nota", gols: "Gols", assistencias: "Assistências", finalizacoes: "Finalizações", finalizacoesNoGol: "Finalizações no gol", passes: "Passes", passesCertos: "Passes certos", precisaoPasses: "Precisão de passes", desarmes: "Desarmes", interceptacoes: "Interceptações", cartoesAmarelos: "Cartões amarelos", cartoesVermelhos: "Cartões vermelhos", golsEsperados: "Gols esperados (xG)", defesas: "Defesas", golsSofridos: "Gols sofridos", golsEvitados: "Gols evitados", penaltisDefendidos: "Pênaltis defendidos" };
-function AthleteDetails({ player, side, loader, onClose }: { player: FantasyPlayer; side: typeof sides[number]; loader: Loader; onClose: () => void }) {
+function AthleteDetails({ player, side, loader, incidents, eventsLoading, eventsAvailable, onClose }: { player: FantasyPlayer; side: typeof sides[number]; loader: Loader; incidents: FormationIncident[]; eventsLoading: boolean; eventsAvailable: boolean; onClose: () => void }) {
   const stats = useSection(loader, "estatisticas");
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => { close.current?.focus(); }, []);
   return <section className={styles.athleteDetails} aria-label={`Detalhes de ${player.nome ?? "atleta"}`} onKeyDown={event => { if (event.key === "Escape") onClose(); }}><button ref={close} type="button" onClick={onClose}>Fechar detalhes</button><h3>{player.nome ?? "Nome indisponível"}</h3>
     <p>Camisa: {player.numero ?? "—"} · Função na partida: {player.funcaoPartida.nome ?? player.posicao ?? "Indisponível"}</p><p>Posição cadastral: {player.posicaoCadastral?.nome ?? "Indisponível"}</p>
+    <AthleteIncidents incidents={incidents} loading={eventsLoading} available={eventsAvailable} />
     <SectionState state={stats}>{data => {
       const athlete = data[side].atletas.find(item => player.idExterno != null && item.atleta.idExterno === player.idExterno);
       if (!athlete) return <p>Estatísticas individuais indisponíveis.</p>;
@@ -130,16 +132,20 @@ function AthleteDetails({ player, side, loader, onClose }: { player: FantasyPlay
 }
 function Formation({ loader }: { loader: Loader }) {
   const state = useSection(loader, "formacao");
+  const summary = useSection(loader, "sumario");
   const [selection, setSelection] = useState<{ player: FantasyPlayer; side: typeof sides[number] } | null>(null);
   const origin = useRef<HTMLElement | null>(null);
   const showPlayer = (player: FantasyPlayer, side: typeof sides[number]) => { origin.current = document.activeElement as HTMLElement; setSelection({ player, side }); };
   const closePlayer = () => { setSelection(null); origin.current?.focus(); };
   return <SectionState state={state}>{data => {
     const pitchReady = sides.every(side => data[side].disponivel && tacticalRows(data[side].titulares, data[side].formacao));
+    const eventsAvailable = summary.status === "ready" && summary.data.eventosDisponiveis;
+    const events = mergeFormationEvents(eventsAvailable ? summary.data.eventos : [], data.substituicoes);
+    const incidents = formationEventMap(events, data);
     return <section aria-label="Formação das equipes" className={styles.formationPanel}>
       <div className={styles.formationTeams}>{sides.map(side => <header key={side} data-side={side}><TeamShield team={data[side]} /><div><h2>{data[side].nome}</h2><small>{side === "mandante" ? "Mandante" : "Visitante"} · {label(data[side].tipoEscalacao)}</small></div><strong aria-label={`Esquema de ${data[side].nome}`}>{data[side].formacao ?? "Esquema indisponível"}</strong></header>)}</div>
-      {pitchReady ? <div className={styles.pitch} aria-label="Campo tático das equipes"><span className={styles.centerCircle} aria-hidden="true" />{sides.map(side => <FantasyFieldLineup key={side} players={data[side].titulares} teamName={data[side].nome} formation={data[side].formacao} side={side} onPlayer={player => showPlayer(player, side)} />)}</div> : <div className={styles.lineupLists}>{sides.map(side => <div key={side}><h3>{data[side].nome}</h3><FantasyFieldLineup players={data[side].titulares} teamName={data[side].nome} side={side} onPlayer={player => showPlayer(player, side)} /></div>)}</div>}
-      {selection && <AthleteDetails key={`${selection.side}-${selection.player.idExterno}`} player={selection.player} side={selection.side} loader={loader} onClose={closePlayer} />}
+      {pitchReady ? <div className={styles.pitch} aria-label="Campo tático das equipes"><span className={styles.centerCircle} aria-hidden="true" />{sides.map(side => <FantasyFieldLineup key={side} players={data[side].titulares} teamName={data[side].nome} formation={data[side].formacao} side={side} incidents={incidents[side]} onPlayer={player => showPlayer(player, side)} />)}</div> : <div className={styles.lineupLists}>{sides.map(side => <div key={side}><h3>{data[side].nome}</h3><FantasyFieldLineup players={data[side].titulares} teamName={data[side].nome} side={side} onPlayer={player => showPlayer(player, side)} /></div>)}</div>}
+      {selection && <AthleteDetails key={`${selection.side}-${selection.player.idExterno}`} player={selection.player} side={selection.side} loader={loader} incidents={selection.player.idExterno == null ? [] : incidents[selection.side].get(selection.player.idExterno) ?? []} eventsLoading={summary.status === "loading"} eventsAvailable={eventsAvailable} onClose={closePlayer} />}
       <div className={styles.lineupLists}>{sides.map(side => <section key={side} className={styles.lineupTeam}><h3>{data[side].nome}</h3><Squad squad={data[side]} showStarters={false} onPlayer={player => showPlayer(player, side)} /></section>)}</div>
       {data.substituicoes.length > 0 && <section className={styles.substitutions}><h2>Substituições</h2><EventList events={data.substituicoes} teams={data} /></section>}
     </section>;

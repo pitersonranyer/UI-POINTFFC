@@ -1,5 +1,6 @@
 ﻿import type { FantasyPlayer } from "@/types/fantasy";
 import styles from "./MatchCenter.module.css";
+import { FormationIndicators, type FormationIncident } from "./FormationEvents";
 
 export function playerCoordinates(player: FantasyPlayer) {
   const grid = player.grid?.match(/^([1-9]\d*):([1-9]\d*)$/);
@@ -39,13 +40,14 @@ export function tacticalRows(players: FantasyPlayer[], formation: string | null)
   return tactical.some(row => new Set(row.map(item => item.x)).size !== row.length) ? null : tactical;
 }
 
-export function FantasyFieldLineup({ players, teamName, formation = null, side = "mandante", onPlayer }: { players: FantasyPlayer[]; teamName: string | null; formation?: string | null; side?: "mandante" | "visitante"; onPlayer: (player: FantasyPlayer) => void }) {
+export function FantasyFieldLineup({ players, teamName, formation = null, side = "mandante", incidents, onPlayer }: { players: FantasyPlayer[]; teamName: string | null; formation?: string | null; side?: "mandante" | "visitante"; incidents?: Map<number, FormationIncident[]>; onPlayer: (player: FantasyPlayer) => void }) {
   const rows = tacticalRows(players, formation);
   if (!rows) return <section className={styles.formationFallback} aria-label={`Titulares de ${teamName ?? "equipe"}`}><p className={styles.help}>Dados insuficientes para representar o esquema no campo.</p><ul className={styles.playerList}>{players.map((player, index) => <li key={player.idExterno ?? index}><b>{player.numero ?? "—"}</b><button type="button" onClick={() => onPlayer(player)} aria-label={`Detalhes de ${player.nome ?? "atleta"}`}>{player.nome ?? "Nome indisponível"}</button><span>{player.funcaoPartida.nome ?? player.posicao ?? "—"}</span></li>)}</ul>{!players.length && <p className={styles.help}>Nenhum atleta informado.</p>}</section>;
   const oriented = side === "mandante" ? rows : [...rows].reverse();
   return <section className={styles.fieldHalf} data-side={side} aria-label={`Campo de ${teamName ?? "equipe"}`}>
     {oriented.map((row, index) => <div className={styles.fieldRow} data-player-count={row.length} data-tactical-row={side === "mandante" ? index : rows.length - index - 1} key={index}>
-      {row.map(({ player, position, x }, playerIndex) => <button type="button" className={styles.fieldPlayer} key={player.idExterno ?? playerIndex} data-source-grid={`${position.row}:${position.column}`} style={{ left: `${(side === "mandante" ? x : 1 - x) * 100}%`, width: `${Math.min(.25, ...row.filter(item => item.player !== player).map(item => Math.abs(item.x - x))) * 100}%` }} onClick={() => onPlayer(player)} aria-label={`Detalhes de ${player.nome ?? "atleta"}`} title={player.nome ?? undefined}>
+      {row.map(({ player, position, x }, playerIndex) => <button type="button" className={styles.fieldPlayer} key={player.idExterno ?? playerIndex} data-source-grid={`${position.row}:${position.column}`} data-has-events={player.idExterno != null && !!incidents?.get(player.idExterno)?.length || undefined} style={{ left: `${(side === "mandante" ? x : 1 - x) * 100}%`, width: `${Math.min(.25, ...row.filter(item => item.player !== player).map(item => Math.abs(item.x - x))) * 100}%` }} onClick={() => onPlayer(player)} aria-label={`Detalhes de ${player.nome ?? "atleta"}`} title={player.nome ?? undefined}>
+        {player.idExterno != null && !!incidents?.get(player.idExterno)?.length && <FormationIndicators incidents={incidents.get(player.idExterno)!} />}
         <span>{player.numero ?? "—"}</span><strong>{player.nome ?? "Nome indisponível"}</strong>
       </button>)}
     </div>)}

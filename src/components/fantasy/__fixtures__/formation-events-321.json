@@ -1,0 +1,494 @@
+﻿[
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "intervalo",
+        "tempo":  {
+                      "minuto":  null,
+                      "acrescimo":  null,
+                      "exibicao":  null
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  97,
+                           "nome":  "Bernabei"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  100,
+                             "nome":  "Vitinho"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "GOL",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  0,
+                      "acrescimo":  null,
+                      "exibicao":  "0\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  {
+                        "idExterno":  102,
+                        "nome":  "Alan Patrick"
+                    },
+        "assistencia":  {
+                            "idExterno":  560,
+                            "nome":  "Matheus Bahia"
+                        },
+        "jogadorSai":  null,
+        "jogadorEntra":  null,
+        "comissaoTecnica":  null,
+        "comentarios":  "Gol de Alan Patrick! Colorado abre o placar com apenas 57 segundos do segundo tempo. Vitinho acha bom passe para Matheus Bahia na esquerda. Ele avança e entrega para Alan Patrick dentro da área. O camisa 10 domina e bate cruzado, no cantinho de Fábio. Sem chances para o goleiro tricolor.",
+        "origem":  {
+                       "tipo":  "GOL",
+                       "detalhe":  "normal"
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  12,
+                      "acrescimo":  null,
+                      "exibicao":  "12\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  10,
+                           "nome":  "Hulk"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  608,
+                             "nome":  "Rodrigo Castillo"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  12,
+                      "acrescimo":  null,
+                      "exibicao":  "12\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  200,
+                           "nome":  "Ganso"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  189,
+                             "nome":  "Lucho Acosta"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  12,
+                      "acrescimo":  null,
+                      "exibicao":  "12\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  462,
+                           "nome":  "Thiago Maia"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  109,
+                             "nome":  "Villagra"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "CARTAO_AMARELO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  15,
+                      "acrescimo":  null,
+                      "exibicao":  "15\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  {
+                        "idExterno":  464,
+                        "nome":  "Alerrandro"
+                    },
+        "assistencia":  null,
+        "jogadorSai":  null,
+        "jogadorEntra":  null,
+        "comissaoTecnica":  null,
+        "comentarios":  "Cartão amarelo para Alerrandro.",
+        "origem":  {
+                       "tipo":  "CARTAO_AMARELO",
+                       "detalhe":  "Comportamento antidesportivo"
+                   }
+    },
+    {
+        "tipo":  "CARTAO_AMARELO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  17,
+                      "acrescimo":  null,
+                      "exibicao":  "17\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  {
+                        "idExterno":  195,
+                        "nome":  "Ignácio"
+                    },
+        "assistencia":  null,
+        "jogadorSai":  null,
+        "jogadorEntra":  null,
+        "comissaoTecnica":  null,
+        "comentarios":  "Cartão amarelo para Ignácio, por falta em Matheus Bahia na frente da área.. Pode ser uma boa chance para o Inter.",
+        "origem":  {
+                       "tipo":  "CARTAO_AMARELO",
+                       "detalhe":  "Comportamento antidesportivo"
+                   }
+    },
+    {
+        "tipo":  "CARTAO_AMARELO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  24,
+                      "acrescimo":  null,
+                      "exibicao":  "24\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  {
+                        "idExterno":  186,
+                        "nome":  "Renê"
+                    },
+        "assistencia":  null,
+        "jogadorSai":  null,
+        "jogadorEntra":  null,
+        "comissaoTecnica":  null,
+        "comentarios":  "Cartão amarelo para Renê por falta dura em cima de Ronaldo.",
+        "origem":  {
+                       "tipo":  "CARTAO_AMARELO",
+                       "detalhe":  "Comportamento antidesportivo"
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  28,
+                      "acrescimo":  null,
+                      "exibicao":  "28\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  190,
+                           "nome":  "Canobbio"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  192,
+                             "nome":  "Serna"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  28,
+                      "acrescimo":  null,
+                      "exibicao":  "28\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  201,
+                           "nome":  "Savarino"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  501,
+                             "nome":  "Wesley Natã"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "GOL",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  33,
+                      "acrescimo":  null,
+                      "exibicao":  "33\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  {
+                        "idExterno":  541,
+                        "nome":  "Hércules"
+                    },
+        "assistencia":  null,
+        "jogadorSai":  null,
+        "jogadorEntra":  null,
+        "comissaoTecnica":  null,
+        "comentarios":  "Gol de Hércules! Renê cobra falta na área, Villagra afasta parcialmente, e Hércules, sem deixar a bola cair, solta uma pancada de perna direita no cantinho de Kauan Jesus. Tudo igual no Maracanã.",
+        "origem":  {
+                       "tipo":  "GOL",
+                       "detalhe":  "normal"
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  34,
+                      "acrescimo":  null,
+                      "exibicao":  "34\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  186,
+                           "nome":  "Renê"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  197,
+                             "nome":  "Guilherme Arana"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  43,
+                      "acrescimo":  null,
+                      "exibicao":  "43\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  102,
+                           "nome":  "Alan Patrick"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  110,
+                             "nome":  "Paulinho"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  43,
+                      "acrescimo":  null,
+                      "exibicao":  "43\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  99,
+                           "nome":  "Ronaldo"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  113,
+                             "nome":  "João Victor"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "CARTAO_AMARELO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  45,
+                      "acrescimo":  4,
+                      "exibicao":  "45+4\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  {
+                        "idExterno":  105,
+                        "nome":  "Aguirre"
+                    },
+        "assistencia":  null,
+        "jogadorSai":  null,
+        "jogadorEntra":  null,
+        "comissaoTecnica":  null,
+        "comentarios":  "Cartão amarelo para Aguirre por falta em Wesley Natã.",
+        "origem":  {
+                       "tipo":  "CARTAO_AMARELO",
+                       "detalhe":  "Comportamento antidesportivo"
+                   }
+    },
+    {
+        "tipo":  "SUBSTITUICAO",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  45,
+                      "acrescimo":  5,
+                      "exibicao":  "45+5\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  3,
+                       "nome":  "Internacional",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                   },
+        "jogador":  null,
+        "assistencia":  null,
+        "jogadorSai":  {
+                           "idExterno":  560,
+                           "nome":  "Matheus Bahia"
+                       },
+        "jogadorEntra":  {
+                             "idExterno":  96,
+                             "nome":  "Victor Gabriel"
+                         },
+        "comissaoTecnica":  null,
+        "comentarios":  null,
+        "origem":  {
+                       "tipo":  "SUBSTITUICAO",
+                       "detalhe":  null
+                   }
+    },
+    {
+        "tipo":  "GOL",
+        "periodo":  "segundo-tempo",
+        "tempo":  {
+                      "minuto":  45,
+                      "acrescimo":  7,
+                      "exibicao":  "45+7\u0027"
+                  },
+        "equipe":  {
+                       "idExterno":  9,
+                       "nome":  "Fluminense",
+                       "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                   },
+        "jogador":  {
+                        "idExterno":  189,
+                        "nome":  "Lucho Acosta"
+                    },
+        "assistencia":  null,
+        "jogadorSai":  null,
+        "jogadorEntra":  null,
+        "comissaoTecnica":  null,
+        "comentarios":  "Gol de Lucho Acosta! Lucho chama o jogo no meio e abre na direita para Guga. O lateral cruza de primeira, Castillo finaliza na segunda trave, Kauan Jesus faz boa defesa. No rebote, Lucho pega o rebote e estufa a rede do Inter. Fluminense vira no último lance do jogo!",
+        "origem":  {
+                       "tipo":  "GOL",
+                       "detalhe":  "normal"
+                   }
+    }
+]

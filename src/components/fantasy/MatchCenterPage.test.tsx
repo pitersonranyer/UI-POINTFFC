@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { MatchCenterPage, MatchCenterQueryPage } from "./MatchCenterPage";
 import { FantasyFieldLineup, playerCoordinates, tacticalRows } from "./FantasyFieldLineup";
 import formation321 from "./__fixtures__/formation-321.json";
+import events321 from "./__fixtures__/formation-events-321.json";
+import { formationEventMap } from "./FormationEvents";
 import { apiFetch } from "@/services/apiClient";
 import { createMatchCenterLoader } from "@/services/matchCenterService";
 import type { FantasyPlayer, FantasyStatisticsValues, MatchCenterResponses } from "@/types/fantasy";
@@ -91,11 +93,11 @@ it("preserves zero and null statistics and does not draw comparison for missing 
 });
 it("opens athlete details within Formation and reuses the statistics request", async () => {
   await show(); tab("Formação"); await screen.findByRole("button", { name: "Detalhes de Savarino" });
-  expect(apiFetch).toHaveBeenCalledTimes(2); screen.getByRole("button", { name: "Detalhes de Savarino" }).focus(); fireEvent.click(screen.getByRole("button", { name: "Detalhes de Savarino" }));
+  expect(apiFetch).toHaveBeenCalledTimes(3); screen.getByRole("button", { name: "Detalhes de Savarino" }).focus(); fireEvent.click(screen.getByRole("button", { name: "Detalhes de Savarino" }));
   const details = await screen.findByRole("region", { name: "Detalhes de Savarino" }); await within(details).findByText("Minutos jogados");
   expect(within(details).getByText("90")).toBeTruthy(); expect(within(details).getByText("0")).toBeTruthy(); expect(within(details).getByText("Posição cadastral: Indisponível")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Fechar detalhes" })); expect(document.activeElement?.getAttribute("aria-label")).toBe("Detalhes de Savarino");
-  tab("Estatísticas"); await screen.findByRole("table"); expect(apiFetch).toHaveBeenCalledTimes(3); expect(screen.getAllByRole("tab")).toHaveLength(4);
+  tab("Estatísticas"); await screen.findByRole("table"); expect(apiFetch).toHaveBeenCalledTimes(4); expect(screen.getAllByRole("tab")).toHaveLength(4);
 });
 it("shows loading and independent errors without falling back to mocks", async () => {
   vi.mocked(apiFetch).mockImplementation(path => path.endsWith("pre-jogo") ? Promise.resolve(responses["pre-jogo"]) : Promise.reject(new Error("Serviço indisponível")));
@@ -192,4 +194,65 @@ it("distinguishes home and away incidents and keeps assists attached to goals", 
   expect(goal.getAttribute("data-side")).toBe("mandante");
   expect(substitution.getAttribute("data-side")).toBe("visitante");
   expect(within(goal).getByText("Assistência: Savarino")).toBeTruthy();
+});
+
+it("keeps the 22 original starters with fixture 321 badges and reserve incident details", async () => {
+  vi.mocked(apiFetch).mockImplementation(async path => path.endsWith("formacao") ? structuredClone(formation321) : path.endsWith("sumario") ? { ...responses.sumario, eventos: structuredClone(events321) } : structuredClone(responses[path.split("/").at(-1) as keyof MatchCenterResponses]));
+  await show(); tab("Formação");
+  const home = await screen.findByRole("region", { name: "Campo de Fluminense" });
+  const awayPitch = screen.getByRole("region", { name: "Campo de Internacional" });
+  await waitFor(() => expect(within(home).getByRole("button", { name: "Detalhes de Hércules" }).querySelector('[data-event-kind="goal"]')).not.toBeNull());
+  expect(within(home).getAllByRole("button")).toHaveLength(11);
+  expect(within(awayPitch).getAllByRole("button")).toHaveLength(11);
+  const rene = within(home).getByRole("button", { name: "Detalhes de Renê" });
+  expect(rene.querySelectorAll('[data-event-kind]')).toHaveLength(2);
+  expect(rene.querySelector('[data-event-kind="yellow"]')).toBeTruthy();
+  expect(rene.querySelector('[data-event-kind="substitution"]')).toBeTruthy();
+  expect(within(home).queryByRole("button", { name: "Detalhes de Lucho Acosta" })).toBeNull();
+  fireEvent.click(within(home).getByRole("button", { name: "Detalhes de Hulk" }));
+  let details = await screen.findByRole("region", { name: "Detalhes de Hulk" });
+  expect(within(details).getByText("12'")).toBeTruthy();
+  expect(within(details).getByText("Entra: Rodrigo Castillo")).toBeTruthy();
+  fireEvent.click(within(details).getByRole("button", { name: "Fechar detalhes" }));
+  fireEvent.click(screen.getAllByText("Reservas")[0].closest("summary")!);
+  fireEvent.click(screen.getByRole("button", { name: "Lucho Acosta" }));
+  details = await screen.findByRole("region", { name: "Detalhes de Lucho Acosta" });
+  expect(within(details).getByText("Gol")).toBeTruthy();
+  expect(within(details).getByText("45+7'")).toBeTruthy();
+  expect(within(details).getByText("Sai: Ganso")).toBeTruthy();
+  expect(within(home).getAllByRole("button")).toHaveLength(11);
+  tab("Sumário"); expect(await screen.findByText("Lucho Acosta")).toBeTruthy();
+  expect(apiFetch).toHaveBeenCalledTimes(4);
+});
+
+it("keeps formation substitutions available when the summary request fails", async () => {
+  vi.mocked(apiFetch).mockImplementation(async path => {
+    if (path.endsWith("sumario")) throw new Error("Eventos indisponíveis");
+    return path.endsWith("formacao") ? structuredClone(formation321) : structuredClone(responses[path.split("/").at(-1) as keyof MatchCenterResponses]);
+  });
+  await show(); tab("Formação");
+  const home = await screen.findByRole("region", { name: "Campo de Fluminense" });
+  const hulk = within(home).getByRole("button", { name: "Detalhes de Hulk" });
+  expect(hulk.querySelector('[data-event-kind="substitution"]')).toBeTruthy();
+  fireEvent.click(hulk);
+  const details = await screen.findByRole("region", { name: "Detalhes de Hulk" });
+  expect(within(details).getByText("Eventos de gols e cartões indisponíveis.")).toBeTruthy();
+  expect(within(details).getByText("Entra: Rodrigo Castillo")).toBeTruthy();
+});
+
+it("renders multiple badge kinds and goal counts without replacing the starter or confusing own goals", () => {
+  const teams = formation321 as MatchCenterResponses["formacao"];
+  const starter = teams.mandante.titulares[0];
+  const base = { ...responses.sumario.eventos[0], equipe: teams.mandante, jogador: starter, assistencia: null };
+  const events = [base, { ...base }, { ...base, tipo: "GOL_CONTRA" }, { ...base, tipo: "CARTAO_AMARELO" }, { ...base, tipo: "CARTAO_VERMELHO" }, { ...base, tipo: "SUBSTITUICAO", jogador: null, jogadorSai: starter, jogadorEntra: teams.mandante.reservas[0] }];
+  const onPlayer = vi.fn();
+  render(<FantasyFieldLineup players={teams.mandante.titulares} teamName={teams.mandante.nome} formation={teams.mandante.formacao} incidents={formationEventMap(events, teams).mandante} onPlayer={onPlayer} />);
+  const pitch = screen.getByRole("region", { name: "Campo de Fluminense" });
+  expect(within(pitch).getAllByRole("button")).toHaveLength(11);
+  const button = within(pitch).getByRole("button", { name: "Detalhes de Fábio" });
+  expect(button.querySelectorAll('[data-event-kind]')).toHaveLength(5);
+  expect(within(button).getByRole("img", { name: /^Gol \(2\):/ })).toBeTruthy();
+  expect(within(button).getByRole("img", { name: /^Gol contra:/ })).toBeTruthy();
+  expect(button.querySelector('[data-event-kind="red"]')).toBeTruthy();
+  fireEvent.click(button); expect(onPlayer).toHaveBeenCalledTimes(1); expect(onPlayer).toHaveBeenCalledWith(starter);
 });

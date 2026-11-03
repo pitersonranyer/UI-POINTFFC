@@ -116,6 +116,20 @@ span.shield { border-radius:50%; color:var(--muted); background:var(--green-soft
 .fieldHalf[data-side="visitante"] .fieldPlayer > span { background:#f4dc96; border-color:#f4dc96; }
 .fieldPlayer strong { display:block; max-width:100%; padding:0 2px; font-size:.65rem; font-weight:600; text-shadow:0 1px 3px #123c25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .fieldRow[data-player-count="6"] .fieldPlayer strong { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; white-space:normal; font-size:.6rem; line-height:1.15; }
+.fieldPlayer[data-has-events] { height:60px; padding:0; gap:1px; justify-content:center; }
+.fieldRow .fieldPlayer[data-has-events] > strong { display:block; flex-shrink:0; white-space:nowrap; line-height:12px; }
+.fieldPlayer[data-has-events] > span:not(.formationIndicators) { flex-shrink:0; }
+.fieldPlayer > .formationIndicators { display:grid; flex-shrink:0; align-self:center; width:auto; height:auto; max-width:100%; grid-auto-rows:9px; gap:0; border:0; border-radius:0; background:transparent; }
+.fieldHalf .fieldPlayer > .formationIndicators { background:transparent; border-color:transparent; }
+.formationIndicator { display:block; position:relative; min-width:0; width:11px; height:9px; border-radius:2px; background:#fff; }
+.formationIndicator svg { display:block; width:10px; height:9px; }
+.formationIndicator sup { position:absolute; top:-2px; right:-1px; padding:0 1px; border-radius:2px; background:#fff; color:var(--ink); font-size:6px; line-height:7px; }
+.athleteIncidents { margin:12px 0; border-top:1px solid var(--line); }
+.athleteIncidents h4 { margin:10px 0; }
+.athleteIncidents ul { list-style:none; padding:0; margin:0; }
+.athleteIncidents li { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 8px; padding:8px 0; border-bottom:1px solid var(--line); }
+.athleteIncidents li > span { font-variant-numeric:tabular-nums; color:var(--text-secondary); }
+.athleteIncidents li p { grid-column:1/-1; margin:0; }
 .lineupLists { display:grid; gap:12px; margin-top:14px; }
 .lineupLists h3 { margin:0 0 10px; font-size:.82rem; }
 .lineupTeam { min-width:0; border-top:2px solid var(--green); padding-top:10px; }
