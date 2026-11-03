@@ -63,9 +63,9 @@ function Squad({ squad, onPlayer, showStarters = true }: { squad: FantasySquad; 
 function PreMatch({ data }: { data: FantasyPreMatch }) {
   return <div className={styles.preGrid}>{sides.map(side => {
     const lineups = data.escalacoes[side];
-    return <section className={styles.panel} key={side}><h2>{data.partida[side].nome}</h2>
-      {!lineups.confirmada && !lineups.provavel && <p className={styles.help}>Escalações indisponíveis.</p>}
-      {(["confirmada", "provavel"] as const).map(kind => lineups[kind] && <div key={kind} className={styles.lineupBlock}><h3 className={kind === "confirmada" ? styles.confirmed : styles.probable}>{kind === "confirmada" ? "Escalação confirmada" : "Escalação provável"}</h3><Squad squad={lineups[kind]!} /></div>)}
+    const squad = lineups.confirmada ?? lineups.provavel;
+    return <section className={`${styles.panel} ${styles.preTeam}`} key={side} data-side={side} aria-label={`Escalação de ${data.partida[side].nome}`}><h2>{data.partida[side].nome}</h2>
+      {!squad ? <p className={styles.help}>Escalações indisponíveis.</p> : <div className={styles.lineupBlock}><h3 className={lineups.confirmada ? styles.confirmed : styles.probable}>{lineups.confirmada ? "Escalação confirmada" : "Escalação provável"}</h3><Squad squad={squad} /></div>}
     </section>;
   })}<section className={styles.panel}><h2>Desfalques</h2>{!data.desfalquesInformados ? <p className={styles.help}>Desfalques indisponíveis.</p> : !data.desfalques.length ? <p className={styles.help}>Nenhum desfalque informado pela fonte.</p> : <ul className={styles.absences}>{data.desfalques.map((entry, i) => <li key={i}><strong>{entry.atleta?.nome ?? "Atleta não informado"}</strong><span>{entry.equipe.nome}</span><small>{entry.situacao ?? "Situação indisponível"}</small><p>{entry.motivo ?? "Motivo indisponível"}</p></li>)}</ul>}</section></div>;
 }

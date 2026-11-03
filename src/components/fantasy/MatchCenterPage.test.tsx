@@ -43,6 +43,40 @@ it("loads only the active tab and shares requests in StrictMode and after tab sw
   expect(screen.getByText("Escalação confirmada")).toBeTruthy(); expect(screen.getByText("Escalação provável")).toBeTruthy(); expect(screen.getByText("Desfalques indisponíveis.")).toBeTruthy();
   tab("Sumário"); await screen.findByText("45+7'"); tab("Pré-jogo"); tab("Sumário"); await screen.findByText("45+7'"); expect(apiFetch).toHaveBeenCalledTimes(2);
 });
+it.each([
+  ["confirmada", "confirmada"],
+  ["provavel", "provavel"],
+  ["confirmada", "provavel"],
+  ["provavel", "confirmada"],
+] as const)("selects one pre-match squad per club: home %s, away %s", async (homeKind, awayKind) => {
+  const kinds = { mandante: homeKind, visitante: awayKind };
+  const pre = structuredClone(responses["pre-jogo"]);
+  for (const side of ["mandante", "visitante"] as const) {
+    const confirmed = structuredClone(formation321[side]) as MatchCenterResponses["formacao"]["mandante"];
+    const probable = { ...confirmed, titulares: confirmed.titulares.map(player => ({ ...player, nome: `Provável ${player.nome}` })), reservas: confirmed.reservas.map(player => ({ ...player, nome: `Provável ${player.nome}` })) };
+    // A probable squad remains present even when confirmed, to catch duplication.
+    pre.escalacoes[side] = { confirmada: kinds[side] === "confirmada" ? confirmed : null, provavel: probable };
+  }
+  vi.mocked(apiFetch).mockResolvedValue(pre);
+  await show();
+  for (const side of ["mandante", "visitante"] as const) {
+    const region = screen.getByRole("region", { name: `Escalação de ${pre.partida[side].nome}` });
+    const selected = pre.escalacoes[side][kinds[side]]!;
+    expect(within(region).getByText(kinds[side] === "confirmada" ? "Escalação confirmada" : "Escalação provável")).toBeTruthy();
+    expect(region.querySelectorAll('details')).toHaveLength(1);
+    expect(region.querySelectorAll('ul')[0].children).toHaveLength(11);
+    for (const player of selected.titulares) expect(within(region).getByText(player.nome!)).toBeTruthy();
+    if (kinds[side] === "confirmada") expect(within(region).queryByText(/^Provável /)).toBeNull();
+    const bench = region.querySelector('details')!;
+    expect(bench.open).toBe(false);
+    fireEvent.click(bench.querySelector('summary')!);
+    expect(bench.open).toBe(true);
+    expect(within(bench).getAllByRole("listitem")).toHaveLength(selected.reservas.length);
+    expect(within(region).getByText(selected.formacao!)).toBeTruthy();
+  }
+  expect(apiFetch).toHaveBeenCalledTimes(1);
+  expect(screen.getByText("Desfalques indisponíveis.")).toBeTruthy();
+});
 it("preserves period-local clocks, interval nulls and removes duplicate goal narrative despite divergent added time", async () => {
   await show(); tab("Sumário"); await screen.findByText("45+7'");
   expect(screen.getByText("2º tempo")).toBeTruthy(); expect(screen.getByText("Intervalo")).toBeTruthy(); expect(screen.getByText("Entra: Vitinho")).toBeTruthy(); expect(screen.getByText("Assistência: Savarino")).toBeTruthy();
