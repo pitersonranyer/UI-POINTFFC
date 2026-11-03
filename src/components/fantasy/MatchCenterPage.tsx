@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ImageOff, CircleDot, ArrowLeftRight, RectangleVertical, MonitorCheck, Handshake } from "lucide-react";
 import type { FantasyEvent, FantasyMatch, FantasyPlayer, FantasyPreMatch, FantasySectionState, FantasySquad, FantasyStatistics, FantasyStatisticsValues, FantasySummary, FantasyTeam, MatchCenterResponses } from "@/types/fantasy";
 import { createMatchCenterLoader, validFixtureId } from "@/services/matchCenterService";
-import { FantasyFieldLineup } from "./FantasyFieldLineup";
+import { FantasyFieldLineup, tacticalRows } from "./FantasyFieldLineup";
 import styles from "./MatchCenter.module.css";
 
 type Tab = keyof MatchCenterResponses;
@@ -53,11 +53,11 @@ function MatchHeader({ partida }: { partida: FantasyMatch }) {
 function PlayerList({ players, onPlayer }: { players: FantasyPlayer[]; onPlayer?: (player: FantasyPlayer) => void }) {
   return players.length ? <ul className={styles.playerList}>{players.map((player, index) => <li key={player.idExterno ?? index}><b>{player.numero ?? "—"}</b>{onPlayer ? <button type="button" onClick={() => onPlayer(player)}>{player.nome ?? "Nome indisponível"}</button> : <strong>{player.nome ?? "Nome indisponível"}</strong>}<span>{player.funcaoPartida.nome ?? player.posicao ?? "—"}</span></li>)}</ul> : <p className={styles.help}>Nenhum atleta informado.</p>;
 }
-function Squad({ squad, onPlayer }: { squad: FantasySquad; onPlayer?: (player: FantasyPlayer) => void }) {
-  return <div className={styles.roster}><p className={styles.help}>Esquema: {squad.formacao ?? "Indisponível"} · Técnico: {squad.treinador?.nome ?? "Indisponível"}</p>
+function Squad({ squad, onPlayer, showStarters = true }: { squad: FantasySquad; onPlayer?: (player: FantasyPlayer) => void; showStarters?: boolean }) {
+  return <div className={styles.roster}><div className={styles.squadFacts}><span>Esquema <b>{squad.formacao ?? "Indisponível"}</b></span><span>Técnico <b>{squad.treinador?.nome ?? "Indisponível"}</b></span></div>
     {squad.atualizadoEm && <p className={styles.help}>Atualização: {dateText(squad.atualizadoEm)}</p>}
-    <h4>Titulares ({squad.titulares.length})</h4><PlayerList players={squad.titulares} onPlayer={onPlayer} />
-    <h4>Reservas ({squad.reservas.length})</h4><PlayerList players={squad.reservas} onPlayer={onPlayer} />
+    {showStarters && <><h4>Titulares <span>{squad.titulares.length}</span></h4><PlayerList players={squad.titulares} onPlayer={onPlayer} /></>}
+    <details className={styles.bench}><summary>Reservas <span>{squad.reservas.length}</span></summary><PlayerList players={squad.reservas} onPlayer={onPlayer} /></details>
   </div>;
 }
 function PreMatch({ data }: { data: FantasyPreMatch }) {
@@ -67,14 +67,14 @@ function PreMatch({ data }: { data: FantasyPreMatch }) {
       {!lineups.confirmada && !lineups.provavel && <p className={styles.help}>Escalações indisponíveis.</p>}
       {(["confirmada", "provavel"] as const).map(kind => lineups[kind] && <div key={kind} className={styles.lineupBlock}><h3 className={kind === "confirmada" ? styles.confirmed : styles.probable}>{kind === "confirmada" ? "Escalação confirmada" : "Escalação provável"}</h3><Squad squad={lineups[kind]!} /></div>)}
     </section>;
-  })}<section className={styles.panel}><h2>Desfalques</h2>{!data.desfalquesInformados ? <p className={styles.help}>Desfalques indisponíveis.</p> : !data.desfalques.length ? <p className={styles.help}>Nenhum desfalque informado pela fonte.</p> : <ul className={styles.absences}>{data.desfalques.map((entry, i) => <li key={i}><strong>{entry.atleta?.nome ?? "Atleta não informado"}</strong> · {entry.equipe.nome}<p>{entry.situacao ?? "Situação indisponível"} · {entry.motivo ?? "Motivo indisponível"}</p></li>)}</ul>}</section></div>;
+  })}<section className={styles.panel}><h2>Desfalques</h2>{!data.desfalquesInformados ? <p className={styles.help}>Desfalques indisponíveis.</p> : !data.desfalques.length ? <p className={styles.help}>Nenhum desfalque informado pela fonte.</p> : <ul className={styles.absences}>{data.desfalques.map((entry, i) => <li key={i}><strong>{entry.atleta?.nome ?? "Atleta não informado"}</strong><span>{entry.equipe.nome}</span><small>{entry.situacao ?? "Situação indisponível"}</small><p>{entry.motivo ?? "Motivo indisponível"}</p></li>)}</ul>}</section></div>;
 }
 const eventIcons = { GOL: CircleDot, ASSISTENCIA: Handshake, CARTAO_AMARELO: RectangleVertical, CARTAO_VERMELHO: RectangleVertical, SUBSTITUICAO: ArrowLeftRight, VAR: MonitorCheck };
 const periodOrder = ["pre-jogo", "primeiro-tempo", "intervalo", "segundo-tempo", "prorrogacao-primeiro-tempo", "prorrogacao-intervalo", "prorrogacao-segundo-tempo", "disputa-penaltis", "encerrado"];
 function structuredEvents(events: FantasyEvent[]) {
   return events.filter(event => Object.prototype.hasOwnProperty.call(eventIcons, event.tipo));
 }
-function EventList({ events }: { events: FantasyEvent[] }) {
+function EventList({ events, teams }: { events: FantasyEvent[]; teams: Pick<FantasyMatch, "mandante" | "visitante"> }) {
   const groups = new Map<string, FantasyEvent[]>();
   structuredEvents(events).forEach(event => {
     const period = event.periodo && periodOrder.includes(event.periodo) ? event.periodo : "unknown";
@@ -85,11 +85,12 @@ function EventList({ events }: { events: FantasyEvent[] }) {
     <ol className={styles.timeline}>{incidents.map((event, index) => {
       const Icon = eventIcons[event.tipo as keyof typeof eventIcons];
       const minute = event.tempo.exibicao ?? (event.tempo.minuto == null ? "—" : event.tempo.minuto + (event.tempo.acrescimo == null ? "" : "+" + event.tempo.acrescimo) + "'");
-      return <li className={styles.event} key={index}>
+      const side = event.equipe.idExterno != null && event.equipe.idExterno === teams.mandante.idExterno ? "mandante" : event.equipe.idExterno != null && event.equipe.idExterno === teams.visitante.idExterno ? "visitante" : "unknown";
+      return <li className={styles.event} data-side={side} key={index}>
         <span className={styles.minute}>{minute}</span><span className={styles.eventIcon} data-kind={event.tipo}><Icon size={17} aria-label={label(event.tipo)} /></span>
         <div className={styles.eventDetails}><div className={styles.eventHeading}><strong>{label(event.tipo)}</strong><small>{event.equipe.nome}</small></div>
           {event.jogador?.nome && <strong>{event.jogador.nome}</strong>}
-          {event.assistencia?.nome && <p>Assistência: {event.assistencia.nome}</p>}
+          {event.tipo === "GOL" && event.assistencia?.nome && <p>Assistência: {event.assistencia.nome}</p>}
           {event.jogadorEntra?.nome && <p className={styles.playerIn}>Entra: {event.jogadorEntra.nome}</p>}{event.jogadorSai?.nome && <p>Sai: {event.jogadorSai.nome}</p>}
           {event.comissaoTecnica?.nome && <p>Comissão técnica: {event.comissaoTecnica.nome}</p>}
         </div>
@@ -99,7 +100,7 @@ function EventList({ events }: { events: FantasyEvent[] }) {
 }
 function Summary({ data }: { data: FantasySummary }) {
   const events = structuredEvents(data.eventos);
-  return <section className={styles.panel}><h2>Cronologia da partida</h2>{!data.eventosDisponiveis ? <p className={styles.help}>Acontecimentos indisponíveis.</p> : !events.length ? <p className={styles.help}>Nenhum acontecimento informado.</p> : <EventList events={events} />}</section>;
+  return <section className={styles.panel}><h2>Cronologia da partida</h2><div className={styles.timelineTeams}><span>{data.partida.mandante.nome}</span><span>{data.partida.visitante.nome}</span></div>{!data.eventosDisponiveis ? <p className={styles.help}>Acontecimentos indisponíveis.</p> : !events.length ? <p className={styles.help}>Nenhum acontecimento informado.</p> : <EventList events={events} teams={data.partida} />}</section>;
 }
 const metrics: { key: keyof FantasyStatisticsValues; label: string; percent?: boolean }[] = [
   { key: "posseBola", label: "Posse de bola", percent: true }, { key: "finalizacoes", label: "Finalizações" }, { key: "finalizacoesNoGol", label: "Finalizações no gol" }, { key: "finalizacoesFora", label: "Finalizações fora" }, { key: "finalizacoesBloqueadas", label: "Finalizações bloqueadas" }, { key: "finalizacoesDentroArea", label: "Finalizações dentro da área" }, { key: "finalizacoesForaArea", label: "Finalizações fora da área" }, { key: "passes", label: "Passes" }, { key: "passesCertos", label: "Passes certos" }, { key: "precisaoPasses", label: "Precisão de passes", percent: true }, { key: "escanteios", label: "Escanteios" }, { key: "faltas", label: "Faltas" }, { key: "impedimentos", label: "Impedimentos" }, { key: "cartoesAmarelos", label: "Cartões amarelos" }, { key: "cartoesVermelhos", label: "Cartões vermelhos" }, { key: "golsEsperados", label: "Gols esperados (xG)" }, { key: "defesasGoleiro", label: "Defesas do goleiro" }, { key: "golsEvitados", label: "Gols evitados" },
@@ -129,19 +130,20 @@ function AthleteDetails({ player, side, loader, onClose }: { player: FantasyPlay
 }
 function Formation({ loader }: { loader: Loader }) {
   const state = useSection(loader, "formacao");
-  const [side, setSide] = useState<typeof sides[number]>("mandante");
-  const [player, setPlayer] = useState<FantasyPlayer | null>(null);
+  const [selection, setSelection] = useState<{ player: FantasyPlayer; side: typeof sides[number] } | null>(null);
   const origin = useRef<HTMLElement | null>(null);
-  const showPlayer = (next: FantasyPlayer) => { origin.current = document.activeElement as HTMLElement; setPlayer(next); };
-  const closePlayer = () => { setPlayer(null); origin.current?.focus(); };
-  return <SectionState state={state}>{data => <section aria-label="Formação das equipes"><div className={styles.teamTabs} role="group" aria-label="Equipe da formação">{sides.map(key => <button type="button" key={key} aria-pressed={key === side} className={key === side ? styles.selectedTeam : undefined} onClick={() => { setSide(key); setPlayer(null); }}><TeamShield team={data[key]} /><span>{data[key].nome}</span></button>)}</div>
-    <section className={styles.lineupTeam}><h2>{data[side].nome}</h2><p className={styles.help}>Escalação: {label(data[side].tipoEscalacao)}</p>
-      {!data[side].disponivel && <p className={styles.help}>Escalação indisponível.</p>}
-      <FantasyFieldLineup players={data[side].titulares} teamName={data[side].nome} onPlayer={showPlayer} />
-      {player && <AthleteDetails key={`${side}-${player.idExterno}`} player={player} side={side} loader={loader} onClose={closePlayer} />}
-      <Squad squad={data[side]} onPlayer={showPlayer} />
-    </section>{data.substituicoes.length > 0 && <section className={styles.panel}><h2>Substituições</h2><EventList events={data.substituicoes} /></section>}
-  </section>}</SectionState>;
+  const showPlayer = (player: FantasyPlayer, side: typeof sides[number]) => { origin.current = document.activeElement as HTMLElement; setSelection({ player, side }); };
+  const closePlayer = () => { setSelection(null); origin.current?.focus(); };
+  return <SectionState state={state}>{data => {
+    const pitchReady = sides.every(side => data[side].disponivel && tacticalRows(data[side].titulares, data[side].formacao));
+    return <section aria-label="Formação das equipes" className={styles.formationPanel}>
+      <div className={styles.formationTeams}>{sides.map(side => <header key={side} data-side={side}><TeamShield team={data[side]} /><div><h2>{data[side].nome}</h2><small>{side === "mandante" ? "Mandante" : "Visitante"} · {label(data[side].tipoEscalacao)}</small></div><strong aria-label={`Esquema de ${data[side].nome}`}>{data[side].formacao ?? "Esquema indisponível"}</strong></header>)}</div>
+      {pitchReady ? <div className={styles.pitch} aria-label="Campo tático das equipes"><span className={styles.centerCircle} aria-hidden="true" />{sides.map(side => <FantasyFieldLineup key={side} players={data[side].titulares} teamName={data[side].nome} formation={data[side].formacao} side={side} onPlayer={player => showPlayer(player, side)} />)}</div> : <div className={styles.lineupLists}>{sides.map(side => <div key={side}><h3>{data[side].nome}</h3><FantasyFieldLineup players={data[side].titulares} teamName={data[side].nome} side={side} onPlayer={player => showPlayer(player, side)} /></div>)}</div>}
+      {selection && <AthleteDetails key={`${selection.side}-${selection.player.idExterno}`} player={selection.player} side={selection.side} loader={loader} onClose={closePlayer} />}
+      <div className={styles.lineupLists}>{sides.map(side => <section key={side} className={styles.lineupTeam}><h3>{data[side].nome}</h3><Squad squad={data[side]} showStarters={false} onPlayer={player => showPlayer(player, side)} /></section>)}</div>
+      {data.substituicoes.length > 0 && <section className={styles.substitutions}><h2>Substituições</h2><EventList events={data.substituicoes} teams={data} /></section>}
+    </section>;
+  }}</SectionState>;
 }
 function SummaryTab({ loader }: { loader: Loader }) { const state = useSection(loader, "sumario"); return <SectionState state={state}>{data => <Summary data={data} />}</SectionState>; }
 function StatisticsTab({ loader }: { loader: Loader }) { const state = useSection(loader, "estatisticas"); return <SectionState state={state}>{data => <Statistics data={data} />}</SectionState>; }

@@ -2,7 +2,8 @@ import React, { StrictMode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MatchCenterPage, MatchCenterQueryPage } from "./MatchCenterPage";
-import { FantasyFieldLineup, playerCoordinates } from "./FantasyFieldLineup";
+import { FantasyFieldLineup, playerCoordinates, tacticalRows } from "./FantasyFieldLineup";
+import formation321 from "./__fixtures__/formation-321.json";
 import { apiFetch } from "@/services/apiClient";
 import { createMatchCenterLoader } from "@/services/matchCenterService";
 import type { FantasyPlayer, FantasyStatisticsValues, MatchCenterResponses } from "@/types/fantasy";
@@ -78,8 +79,9 @@ it("uses supplied coordinates and grid only, keeping missing positions off the p
   expect(playerCoordinates({ ...player, grid: "1:1", coordenada: { linha: 4, coluna: 2 } })).toEqual({ row: 4, column: 2 });
   expect(playerCoordinates({ ...player, grid: "1:1", coordenada: { linha: 4, coluna: null } })).toEqual({ row: 1, column: 1 });
   render(<FantasyFieldLineup teamName="Equipe" players={[player, { ...player, idExterno: 202, nome: "Sem posição", grid: null, coordenada: null }]} onPlayer={vi.fn()} />);
-  const positioned = screen.getByRole("button", { name: "Detalhes de Savarino" }); expect(positioned.style.gridColumn).toBe("3"); expect(positioned.closest("[data-field-row]")?.getAttribute("data-field-row")).toBe("4");
-  expect(within(screen.getByRole("region", { name: "Campo de Equipe" })).queryByText("Sem posição")).toBeNull(); expect(screen.getByText("Sem posição")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Campo de Equipe" })).toBeNull();
+  expect(screen.getByRole("region", { name: "Titulares de Equipe" })).toBeTruthy();
+  expect(screen.getByText("Sem posição")).toBeTruthy();
 });
 it("deduplicates concurrent requests and rejects invalid IDs and mismatched providers", async () => {
   const load = createMatchCenterLoader("321"); await Promise.all([load("sumario"), load("sumario")]); expect(apiFetch).toHaveBeenCalledTimes(1);
@@ -103,4 +105,57 @@ it("opens a different V2 fixture through the static query entry", async () => {
   window.history.replaceState({}, "", "/fantasy/partidas/?fixtureId=340");
   render(<MatchCenterQueryPage />); await screen.findByText("Campeonato Brasileiro");
   expect(apiFetch).toHaveBeenCalledWith("/fantasy/partidas/340/pre-jogo");
+});
+
+// Public API snapshot: GET /fantasy/partidas/321/formacao, captured 2026-11-03.
+// Grid sub-lines are 1/4/2/3/1 for Fluminense, while the supplied shape is 4-3-3.
+it("renders fixture 321 as real 4-3-3 and 3-6-1 with opposite orientations and athlete selection", async () => {
+  vi.mocked(apiFetch).mockImplementation(async path => path.endsWith("formacao") ? structuredClone(formation321) : structuredClone(responses[path.split("/").at(-1) as keyof MatchCenterResponses]));
+  await show(); tab("Formação");
+  const home = await screen.findByRole("region", { name: "Campo de Fluminense" });
+  const awayPitch = screen.getByRole("region", { name: "Campo de Internacional" });
+  expect(screen.getByLabelText("Esquema de Fluminense").textContent).toBe("4-3-3");
+  expect(screen.getByLabelText("Esquema de Internacional").textContent).toBe("3-6-1");
+  const rows = (pitch: HTMLElement) => Array.from(pitch.querySelectorAll('[data-tactical-row]'));
+  expect(rows(home).map(row => row.querySelectorAll('button').length)).toEqual([1, 4, 3, 3]);
+  expect(rows(awayPitch).map(row => row.querySelectorAll('button').length)).toEqual([1, 6, 3, 1]);
+  expect(rows(home)[2].textContent).toContain("Ganso");
+  expect(rows(home)[3].textContent).toContain("Hulk");
+  expect(rows(home)[0].textContent).toContain("Fábio");
+  expect(rows(awayPitch).at(-1)?.textContent).toContain("Kauan Jesus");
+  expect(within(home).getByRole("button", { name: "Detalhes de Guga" }).style.left).toBe("87.5%");
+  const bruno = within(awayPitch).getByRole("button", { name: "Detalhes de Bruno Gomes" });
+  expect(parseFloat(bruno.style.left)).toBeCloseTo(16.6667, 3);
+  expect(bruno.getAttribute("data-source-grid")).toBe("2:3");
+  const savarino = within(home).getByRole("button", { name: "Detalhes de Savarino" });
+  savarino.focus(); fireEvent.click(savarino);
+  const details = await screen.findByRole("region", { name: "Detalhes de Savarino" });
+  await within(details).findByText("Minutos jogados");
+  expect(within(details).getByText("90")).toBeTruthy();
+  fireEvent.keyDown(details, { key: "Escape" }); expect(document.activeElement).toBe(savarino);
+  fireEvent.click(bruno);
+  expect(await screen.findByRole("region", { name: "Detalhes de Bruno Gomes" })).toBeTruthy();
+  expect(screen.getByText("Estatísticas individuais indisponíveis.")).toBeTruthy();
+  expect(screen.getByText("Marcão")).toBeTruthy();
+  const reserves = screen.getAllByText("Reservas")[0].closest('summary')!;
+  fireEvent.click(reserves);
+  expect(screen.getByRole("button", { name: "Vitor Eudes" })).toBeTruthy();
+});
+
+it("falls back to lists for missing coordinates or a formation inconsistent with roles", () => {
+  const squad = formation321.mandante as MatchCenterResponses["formacao"]["mandante"];
+  expect(tacticalRows(squad.titulares, squad.formacao)?.map(row => row.length)).toEqual([1, 4, 3, 3]);
+  expect(tacticalRows(squad.titulares, "4-4-2")).toBeNull();
+  expect(tacticalRows(squad.titulares.slice(1), "4-3-3")).toBeNull();
+  expect(tacticalRows(squad.titulares.map((player, i) => i ? player : { ...player, grid: null, coordenada: null }), squad.formacao)).toBeNull();
+  expect(tacticalRows(squad.titulares, null)).toBeNull();
+});
+
+it("distinguishes home and away incidents and keeps assists attached to goals", async () => {
+  await show(); tab("Sumário");
+  const goal = (await screen.findByText("Lucho Acosta")).closest('li')!;
+  const substitution = screen.getByText("Entra: Vitinho").closest('li')!;
+  expect(goal.getAttribute("data-side")).toBe("mandante");
+  expect(substitution.getAttribute("data-side")).toBe("visitante");
+  expect(within(goal).getByText("Assistência: Savarino")).toBeTruthy();
 });

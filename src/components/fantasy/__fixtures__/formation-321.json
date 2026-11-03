@@ -1,0 +1,1100 @@
+﻿{
+    "partida":  {
+                    "idExterno":  321,
+                    "fornecedor":  "API_FUTEBOL_V2"
+                },
+    "mandante":  {
+                     "idExterno":  9,
+                     "nome":  "Fluminense",
+                     "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg",
+                     "disponivel":  true,
+                     "tipoEscalacao":  "CONFIRMADA",
+                     "formacao":  "4-3-3",
+                     "treinador":  {
+                                       "idExterno":  238,
+                                       "nome":  "Marcão",
+                                       "foto":  "https://cdn.api-futebol.com.br/v2/tecnicos/27176/foto.png"
+                                   },
+                     "titulares":  [
+                                       {
+                                           "idExterno":  182,
+                                           "nome":  "Fábio",
+                                           "numero":  1,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/856/2026.png",
+                                           "posicao":  "Goleiro",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Goleiro",
+                                                                 "codigo":  "GOL",
+                                                                 "categoria":  "GOL"
+                                                             },
+                                           "grid":  "1:1",
+                                           "coordenada":  {
+                                                              "linha":  1,
+                                                              "coluna":  1
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  194,
+                                           "nome":  "Guga",
+                                           "numero":  23,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/868/2026.png",
+                                           "posicao":  "Lateral-direito",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Lateral-direito",
+                                                                 "codigo":  "LAD",
+                                                                 "categoria":  "LAT"
+                                                             },
+                                           "grid":  "2:4",
+                                           "coordenada":  {
+                                                              "linha":  2,
+                                                              "coluna":  4
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  195,
+                                           "nome":  "Ignácio",
+                                           "numero":  4,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/869/2026.png",
+                                           "posicao":  "Zagueiro direito",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Zagueiro direito",
+                                                                 "codigo":  "ZAD",
+                                                                 "categoria":  "ZAG"
+                                                             },
+                                           "grid":  "2:3",
+                                           "coordenada":  {
+                                                              "linha":  2,
+                                                              "coluna":  3
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  8094,
+                                           "nome":  "Thiago Silva",
+                                           "numero":  3,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/26181/2026.png",
+                                           "posicao":  "Zagueiro esquerdo",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Zagueiro esquerdo",
+                                                                 "codigo":  "ZAE",
+                                                                 "categoria":  "ZAG"
+                                                             },
+                                           "grid":  "2:2",
+                                           "coordenada":  {
+                                                              "linha":  2,
+                                                              "coluna":  2
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  186,
+                                           "nome":  "Renê",
+                                           "numero":  6,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/860/2026.png",
+                                           "posicao":  "Lateral-esquerdo",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Lateral-esquerdo",
+                                                                 "codigo":  "LAE",
+                                                                 "categoria":  "LAT"
+                                                             },
+                                           "grid":  "2:1",
+                                           "coordenada":  {
+                                                              "linha":  2,
+                                                              "coluna":  1
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  541,
+                                           "nome":  "Hércules",
+                                           "numero":  35,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/1286/2026.png",
+                                           "posicao":  "Volante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Volante",
+                                                                 "codigo":  "VOL",
+                                                                 "categoria":  "MEI"
+                                                             },
+                                           "grid":  "3:2",
+                                           "coordenada":  {
+                                                              "linha":  3,
+                                                              "coluna":  2
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  188,
+                                           "nome":  "Nonato",
+                                           "numero":  16,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/862/2026.png",
+                                           "posicao":  "Volante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Volante",
+                                                                 "codigo":  "VOL",
+                                                                 "categoria":  "MEI"
+                                                             },
+                                           "grid":  "3:1",
+                                           "coordenada":  {
+                                                              "linha":  3,
+                                                              "coluna":  1
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  200,
+                                           "nome":  "Ganso",
+                                           "numero":  10,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/874/2026.png",
+                                           "posicao":  "Meio-campo",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Meio-campo",
+                                                                 "codigo":  "MEC",
+                                                                 "categoria":  "MEI"
+                                                             },
+                                           "grid":  "4:2",
+                                           "coordenada":  {
+                                                              "linha":  4,
+                                                              "coluna":  2
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  190,
+                                           "nome":  "Canobbio",
+                                           "numero":  17,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/864/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  "4:1",
+                                           "coordenada":  {
+                                                              "linha":  4,
+                                                              "coluna":  1
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  10,
+                                           "nome":  "Hulk",
+                                           "numero":  7,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/660/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  "5:1",
+                                           "coordenada":  {
+                                                              "linha":  5,
+                                                              "coluna":  1
+                                                          }
+                                       },
+                                       {
+                                           "idExterno":  201,
+                                           "nome":  "Savarino",
+                                           "numero":  11,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/875/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  "4:3",
+                                           "coordenada":  {
+                                                              "linha":  4,
+                                                              "coluna":  3
+                                                          }
+                                       }
+                                   ],
+                     "reservas":  [
+                                      {
+                                          "idExterno":  193,
+                                          "nome":  "Vitor Eudes",
+                                          "numero":  98,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/867/2026.png",
+                                          "posicao":  "Goleiro",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Goleiro",
+                                                                "codigo":  "GOL",
+                                                                "categoria":  "GOL"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  183,
+                                          "nome":  "Samuel Xavier",
+                                          "numero":  2,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/857/2026.png",
+                                          "posicao":  "Lateral-direito",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Lateral-direito",
+                                                                "codigo":  "LAD",
+                                                                "categoria":  "LAT"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  196,
+                                          "nome":  "Igor Rabello",
+                                          "numero":  21,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/870/2026.png",
+                                          "posicao":  "Zagueiro direito",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Zagueiro direito",
+                                                                "codigo":  "ZAD",
+                                                                "categoria":  "ZAG"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  185,
+                                          "nome":  "Freytes",
+                                          "numero":  22,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/859/2026.png",
+                                          "posicao":  "Zagueiro esquerdo",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Zagueiro esquerdo",
+                                                                "codigo":  "ZAE",
+                                                                "categoria":  "ZAG"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  197,
+                                          "nome":  "Guilherme Arana",
+                                          "numero":  13,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/871/2026.png",
+                                          "posicao":  "Lateral-esquerdo",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Lateral-esquerdo",
+                                                                "codigo":  "LAE",
+                                                                "categoria":  "LAT"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  199,
+                                          "nome":  "Otávio",
+                                          "numero":  94,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/873/2026.png",
+                                          "posicao":  "Volante",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Volante",
+                                                                "codigo":  "VOL",
+                                                                "categoria":  "MEI"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  189,
+                                          "nome":  "Lucho Acosta",
+                                          "numero":  32,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/863/2026.png",
+                                          "posicao":  "Meio-campo",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Meio-campo",
+                                                                "codigo":  "MEC",
+                                                                "categoria":  "MEI"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  649,
+                                          "nome":  "Cano",
+                                          "numero":  14,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/4089/2026.png",
+                                          "posicao":  "Atacante",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Atacante",
+                                                                "codigo":  "ATA",
+                                                                "categoria":  "ATA"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  608,
+                                          "nome":  "Rodrigo Castillo",
+                                          "numero":  19,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/1385/2026.png",
+                                          "posicao":  "Atacante",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Atacante",
+                                                                "codigo":  "ATA",
+                                                                "categoria":  "ATA"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  542,
+                                          "nome":  "Soteldo",
+                                          "numero":  30,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/1287/2026.png",
+                                          "posicao":  "Atacante",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Atacante",
+                                                                "codigo":  "ATA",
+                                                                "categoria":  "ATA"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  501,
+                                          "nome":  "Wesley Natã",
+                                          "numero":  34,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/1231/2026.png",
+                                          "posicao":  "Atacante",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Atacante",
+                                                                "codigo":  "ATA",
+                                                                "categoria":  "ATA"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      },
+                                      {
+                                          "idExterno":  192,
+                                          "nome":  "Serna",
+                                          "numero":  90,
+                                          "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/866/2026.png",
+                                          "posicao":  "Atacante",
+                                          "posicaoCadastral":  null,
+                                          "funcaoPartida":  {
+                                                                "nome":  "Atacante",
+                                                                "codigo":  "ATA",
+                                                                "categoria":  "ATA"
+                                                            },
+                                          "grid":  null,
+                                          "coordenada":  null
+                                      }
+                                  ],
+                     "atualizadoEm":  "2026-11-02T15:31:18+00:00"
+                 },
+    "visitante":  {
+                      "idExterno":  3,
+                      "nome":  "Internacional",
+                      "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg",
+                      "disponivel":  true,
+                      "tipoEscalacao":  "CONFIRMADA",
+                      "formacao":  "3-6-1",
+                      "treinador":  {
+                                        "idExterno":  244,
+                                        "nome":  "Eduardo Baptista",
+                                        "foto":  "https://cdn.api-futebol.com.br/v2/tecnicos/28996/foto.png"
+                                    },
+                      "titulares":  [
+                                        {
+                                            "idExterno":  639,
+                                            "nome":  "Kauan Jesus",
+                                            "numero":  22,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/4060/2026.png",
+                                            "posicao":  "Goleiro",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Goleiro",
+                                                                  "codigo":  "GOL",
+                                                                  "categoria":  "GOL"
+                                                              },
+                                            "grid":  "1:1",
+                                            "coordenada":  {
+                                                               "linha":  1,
+                                                               "coluna":  1
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  94,
+                                            "nome":  "Bruno Gomes",
+                                            "numero":  15,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/756/2026.png",
+                                            "posicao":  "Zagueiro direito",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Zagueiro direito",
+                                                                  "codigo":  "ZAD",
+                                                                  "categoria":  "ZAG"
+                                                              },
+                                            "grid":  "2:3",
+                                            "coordenada":  {
+                                                               "linha":  2,
+                                                               "coluna":  3
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  8079,
+                                            "nome":  "Maripán",
+                                            "numero":  3,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/26002/2026.png",
+                                            "posicao":  "Zagueiro",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Zagueiro",
+                                                                  "codigo":  "ZAG",
+                                                                  "categoria":  "ZAG"
+                                                              },
+                                            "grid":  "2:2",
+                                            "coordenada":  {
+                                                               "linha":  2,
+                                                               "coluna":  2
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  107,
+                                            "nome":  "Juninho",
+                                            "numero":  18,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/769/2026.png",
+                                            "posicao":  "Zagueiro esquerdo",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Zagueiro esquerdo",
+                                                                  "codigo":  "ZAE",
+                                                                  "categoria":  "ZAG"
+                                                              },
+                                            "grid":  "2:1",
+                                            "coordenada":  {
+                                                               "linha":  2,
+                                                               "coluna":  1
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  105,
+                                            "nome":  "Aguirre",
+                                            "numero":  35,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/767/2026.png",
+                                            "posicao":  "Lateral-direito",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Lateral-direito",
+                                                                  "codigo":  "LAD",
+                                                                  "categoria":  "LAT"
+                                                              },
+                                            "grid":  "3:4",
+                                            "coordenada":  {
+                                                               "linha":  3,
+                                                               "coluna":  4
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  99,
+                                            "nome":  "Ronaldo",
+                                            "numero":  16,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/761/2026.png",
+                                            "posicao":  "Volante",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Volante",
+                                                                  "codigo":  "VOL",
+                                                                  "categoria":  "MEI"
+                                                              },
+                                            "grid":  "3:3",
+                                            "coordenada":  {
+                                                               "linha":  3,
+                                                               "coluna":  3
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  462,
+                                            "nome":  "Thiago Maia",
+                                            "numero":  29,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/1172/2026.png",
+                                            "posicao":  "Volante",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Volante",
+                                                                  "codigo":  "VOL",
+                                                                  "categoria":  "MEI"
+                                                              },
+                                            "grid":  "3:2",
+                                            "coordenada":  {
+                                                               "linha":  3,
+                                                               "coluna":  2
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  102,
+                                            "nome":  "Alan Patrick",
+                                            "numero":  10,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/764/2026.png",
+                                            "posicao":  "Meio-campo",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Meio-campo",
+                                                                  "codigo":  "MEC",
+                                                                  "categoria":  "MEI"
+                                                              },
+                                            "grid":  "4:2",
+                                            "coordenada":  {
+                                                               "linha":  4,
+                                                               "coluna":  2
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  97,
+                                            "nome":  "Bernabei",
+                                            "numero":  26,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/759/2026.png",
+                                            "posicao":  "Meio-campo",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Meio-campo",
+                                                                  "codigo":  "MEC",
+                                                                  "categoria":  "MEI"
+                                                              },
+                                            "grid":  "4:1",
+                                            "coordenada":  {
+                                                               "linha":  4,
+                                                               "coluna":  1
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  560,
+                                            "nome":  "Matheus Bahia",
+                                            "numero":  6,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/1309/2026.png",
+                                            "posicao":  "Lateral-esquerdo",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Lateral-esquerdo",
+                                                                  "codigo":  "LAE",
+                                                                  "categoria":  "LAT"
+                                                              },
+                                            "grid":  "3:1",
+                                            "coordenada":  {
+                                                               "linha":  3,
+                                                               "coluna":  1
+                                                           }
+                                        },
+                                        {
+                                            "idExterno":  464,
+                                            "nome":  "Alerrandro",
+                                            "numero":  9,
+                                            "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/1174/2026.png",
+                                            "posicao":  "Atacante",
+                                            "posicaoCadastral":  null,
+                                            "funcaoPartida":  {
+                                                                  "nome":  "Atacante",
+                                                                  "codigo":  "ATA",
+                                                                  "categoria":  "ATA"
+                                                              },
+                                            "grid":  "5:1",
+                                            "coordenada":  {
+                                                               "linha":  5,
+                                                               "coluna":  1
+                                                           }
+                                        }
+                                    ],
+                      "reservas":  [
+                                       {
+                                           "idExterno":  11430,
+                                           "nome":  "Henrique Menke",
+                                           "numero":  43,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/43037/2026.png",
+                                           "posicao":  "Goleiro",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Goleiro",
+                                                                 "codigo":  "GOL",
+                                                                 "categoria":  "GOL"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  106,
+                                           "nome":  "Mercado",
+                                           "numero":  25,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/768/2026.png",
+                                           "posicao":  "Zagueiro direito",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Zagueiro direito",
+                                                                 "codigo":  "ZAD",
+                                                                 "categoria":  "ZAG"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  96,
+                                           "nome":  "Victor Gabriel",
+                                           "numero":  41,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/758/2026.png",
+                                           "posicao":  "Zagueiro esquerdo",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Zagueiro esquerdo",
+                                                                 "codigo":  "ZAE",
+                                                                 "categoria":  "ZAG"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  109,
+                                           "nome":  "Villagra",
+                                           "numero":  5,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/771/2026.png",
+                                           "posicao":  "Volante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Volante",
+                                                                 "codigo":  "VOL",
+                                                                 "categoria":  "MEI"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  98,
+                                           "nome":  "Bruno Henrique",
+                                           "numero":  8,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/760/2026.png",
+                                           "posicao":  "Volante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Volante",
+                                                                 "codigo":  "VOL",
+                                                                 "categoria":  "MEI"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  110,
+                                           "nome":  "Paulinho",
+                                           "numero":  27,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/772/2026.png",
+                                           "posicao":  "Volante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Volante",
+                                                                 "codigo":  "VOL",
+                                                                 "categoria":  "MEI"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  8100,
+                                           "nome":  "Calebe",
+                                           "numero":  30,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/26338/2026.png",
+                                           "posicao":  "Meio-campo",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Meio-campo",
+                                                                 "codigo":  "MEC",
+                                                                 "categoria":  "MEI"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  112,
+                                           "nome":  "Carbonero",
+                                           "numero":  7,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/774/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  8161,
+                                           "nome":  "Eliasson",
+                                           "numero":  17,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/27614/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  100,
+                                           "nome":  "Vitinho",
+                                           "numero":  28,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/762/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  115,
+                                           "nome":  "João Bezerra",
+                                           "numero":  49,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/777/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       },
+                                       {
+                                           "idExterno":  113,
+                                           "nome":  "João Victor",
+                                           "numero":  44,
+                                           "foto":  "https://cdn.api-futebol.com.br/v2/jogadores/775/2026.png",
+                                           "posicao":  "Atacante",
+                                           "posicaoCadastral":  null,
+                                           "funcaoPartida":  {
+                                                                 "nome":  "Atacante",
+                                                                 "codigo":  "ATA",
+                                                                 "categoria":  "ATA"
+                                                             },
+                                           "grid":  null,
+                                           "coordenada":  null
+                                       }
+                                   ],
+                      "atualizadoEm":  "2026-11-02T15:31:18+00:00"
+                  },
+    "substituicoes":  [
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "intervalo",
+                              "tempo":  {
+                                            "minuto":  null,
+                                            "acrescimo":  null,
+                                            "exibicao":  null
+                                        },
+                              "equipe":  {
+                                             "idExterno":  3,
+                                             "nome":  "Internacional",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  97,
+                                                 "nome":  "Bernabei"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  100,
+                                                   "nome":  "Vitinho"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  12,
+                                            "acrescimo":  null,
+                                            "exibicao":  "12\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  9,
+                                             "nome":  "Fluminense",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  10,
+                                                 "nome":  "Hulk"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  608,
+                                                   "nome":  "Rodrigo Castillo"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  12,
+                                            "acrescimo":  null,
+                                            "exibicao":  "12\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  9,
+                                             "nome":  "Fluminense",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  200,
+                                                 "nome":  "Ganso"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  189,
+                                                   "nome":  "Lucho Acosta"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  12,
+                                            "acrescimo":  null,
+                                            "exibicao":  "12\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  3,
+                                             "nome":  "Internacional",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  462,
+                                                 "nome":  "Thiago Maia"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  109,
+                                                   "nome":  "Villagra"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  28,
+                                            "acrescimo":  null,
+                                            "exibicao":  "28\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  9,
+                                             "nome":  "Fluminense",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  190,
+                                                 "nome":  "Canobbio"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  192,
+                                                   "nome":  "Serna"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  28,
+                                            "acrescimo":  null,
+                                            "exibicao":  "28\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  9,
+                                             "nome":  "Fluminense",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  201,
+                                                 "nome":  "Savarino"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  501,
+                                                   "nome":  "Wesley Natã"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  34,
+                                            "acrescimo":  null,
+                                            "exibicao":  "34\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  9,
+                                             "nome":  "Fluminense",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/244/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  186,
+                                                 "nome":  "Renê"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  197,
+                                                   "nome":  "Guilherme Arana"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  43,
+                                            "acrescimo":  null,
+                                            "exibicao":  "43\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  3,
+                                             "nome":  "Internacional",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  102,
+                                                 "nome":  "Alan Patrick"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  110,
+                                                   "nome":  "Paulinho"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  43,
+                                            "acrescimo":  null,
+                                            "exibicao":  "43\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  3,
+                                             "nome":  "Internacional",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  99,
+                                                 "nome":  "Ronaldo"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  113,
+                                                   "nome":  "João Victor"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          },
+                          {
+                              "tipo":  "SUBSTITUICAO",
+                              "periodo":  "segundo-tempo",
+                              "tempo":  {
+                                            "minuto":  45,
+                                            "acrescimo":  5,
+                                            "exibicao":  "45+5\u0027"
+                                        },
+                              "equipe":  {
+                                             "idExterno":  3,
+                                             "nome":  "Internacional",
+                                             "logo":  "https://cdn.api-futebol.com.br/v2/escudos/232/2026.svg"
+                                         },
+                              "jogador":  null,
+                              "assistencia":  null,
+                              "jogadorSai":  {
+                                                 "idExterno":  560,
+                                                 "nome":  "Matheus Bahia"
+                                             },
+                              "jogadorEntra":  {
+                                                   "idExterno":  96,
+                                                   "nome":  "Victor Gabriel"
+                                               },
+                              "comissaoTecnica":  null,
+                              "comentarios":  null,
+                              "origem":  {
+                                             "tipo":  "SUBSTITUICAO",
+                                             "detalhe":  null
+                                         }
+                          }
+                      ]
+}
