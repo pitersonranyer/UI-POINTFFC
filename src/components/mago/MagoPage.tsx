@@ -53,7 +53,7 @@ export function MagoSgRanking({ teams, title, subtitle }: { teams: MagoTeam[]; t
 }
 
 export function MagoAlternatives({ teams, title, subtitle, startPosition }: { teams: MagoTeam[]; title?: string; subtitle?: string; startPosition?: number }) {
-  return <section aria-labelledby="alternativas" className={styles.section}><SectionTitle id="alternativas" icon={<ArrowUpRight />} title={title ?? "Alternativas no radar"} subtitle={subtitle ?? "Outros caminhos para compor sua defesa."} /><div className={styles.alternatives}>{teams.map(team => <SgCard key={team.clube} team={team} />)}</div></section>;
+  return <section aria-labelledby="alternativas" className={styles.section}><SectionTitle id="alternativas" icon={<ArrowUpRight />} title={title ?? "Alternativas no radar"} subtitle={subtitle ?? "Outros caminhos para compor sua defesa."} /><div className={styles.alternatives}>{teams.map((team, index) => <SgCard key={team.clube} team={team} position={startPosition ? startPosition + index : undefined} />)}</div></section>;
 }
 
 export function MagoAlert({ team, headingId = "alerta-mago" }: { team: MagoRound["alerta"]; headingId?: string }) {
