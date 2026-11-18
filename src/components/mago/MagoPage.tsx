@@ -35,7 +35,7 @@ export function MagoHero({ rodada, pelotoesDoMago = false, editorial }: { rodada
 export function MagoTopPick({ data, title = "ESCOLHA DO MAGO" }: { data: MagoRound; title?: string }) {
   const team = data.topSg[0];
   return <section className={styles.topPick} aria-labelledby="escolha-mago"><div>
-    <p className={styles.eyebrow}><Flame size={17} aria-hidden="true" /> {title}</p><h2 id="escolha-mago">{team.clube}</h2>{team.confianca && <Confidence value={team.confianca} /><p className={styles.pickText}>{data.escolhaTexto}</p><div className={styles.verdict}><ShieldCheck size={18} aria-hidden="true" />{team.veredito}</div>
+    <p className={styles.eyebrow}><Flame size={17} aria-hidden="true" /> {title}</p><h2 id="escolha-mago">{team.clube}</h2>{team.confianca && <Confidence value={team.confianca} />}<p className={styles.pickText}>{data.escolhaTexto}</p><div className={styles.verdict}><ShieldCheck size={18} aria-hidden="true" />{team.veredito}</div>
     </div><div className={styles.pickNumbers}><span className={styles.metricLabel}>PROBABILIDADE DE SG</span><strong className={styles.bigNumber}>{number.format(team.sg)}<small>%</small></strong><TeamMetrics team={team} /><span className={styles.pelotao}>{data.pelotoesDoMago ? "Mago" : "Especialistas"}: {team.pelotao ?? "Não informado"}</span></div>
   </section>;
 }
