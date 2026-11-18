@@ -169,8 +169,26 @@ export function MagoExpertGroups({ data }: { data: MagoRound }) {
   </section>;
 }
 
-export function MagoPage({ data }: { data: MagoRound }) {
+export export function MagoPage({ data }: { data: MagoRound }) {
   const withGroup = (team: MagoTeam): MagoTeam => ({ ...team, pelotao: data.pelotoes.find(group => group.clubes.includes(team.clube))?.nome ?? team.pelotao });
+  if (data.rodada === 35) return <div className={styles.page}><div className={styles.shell}>
+    <MagoHero rodada={data.rodada} pelotoesDoMago editorial={data.editorial} />
+    <section className={styles.crossing} aria-labelledby="visao-mago-r35"><h2 id="visao-mago-r35">A leitura da rodada</h2>{data.editorial?.visao.map(text => <p key={text}>{text}</p>)}</section>
+    <MagoTopPick data={data} title="CARTADA DO MAGO" />
+    <MagoSgRanking teams={data.topSg} title="Pelotão 1 — Favoritos ao SG" subtitle="Preferência editorial do Mago; a ordem não corresponde à classificação decrescente dos percentuais." />
+    <MagoAlternatives teams={data.alternativas} title="Pelotão 2 — Alternativas e diferenciais" subtitle="Ordem editorial. Mirassol surge como alternativa defensiva; Remo chama atenção no ataque." />
+    <MagoRadar data={data} />
+    <MagoAttackRanking data={data} />
+    <MagoPredictions data={data} />
+    <p className={styles.note}>Dados de xG e probabilidades de SG: Gato Mestre/ge. Ranking, análises, pelotões e palpites: Mago POINT FFC.</p>
+    <details className={styles.archiveDetails}><summary>Arquivo das rodadas anteriores</summary><div className={styles.archiveContent}>
+      <div className={styles.archiveLabel}><strong>Rodada 31</strong><span>Análise anterior preservada.</span></div>
+      <MagoTopPick data={magoRodada31} /><MagoSummary data={magoRodada31} />
+      <MagoSgRanking teams={magoRodada31.topSg} /><MagoAlternatives teams={magoRodada31.alternativas} />
+      <MagoExpertGroups data={magoRodada31} /><MagoAlerts data={magoRodada31} /><MagoAttackRanking data={magoRodada31} /><MagoPredictions data={magoRodada31} />
+    </div></details>
+    <footer className={styles.footer}><WandSparkles size={18} aria-hidden="true" /><span>Inteligência para decidir. O futebol continua imprevisível.</span><a href="#top-sg">Voltar ao ranking ↑</a></footer>
+  </div></div>;
   if (data.rodada === 31) return <div className={styles.page}><div className={styles.shell}>
     <MagoHero rodada={31} pelotoesDoMago editorial={{ titulo: "Rodada 31: SG, ataque e estratégia", subtitulo: "Nove confrontos válidos · 17 a 19/10/2026", visao: [], mercado: "", veredito: [], estrategia: [] }} />
     <p className={styles.preview}>Pré-jogo · Temporada 2026 · Curadoria editorial: POINT FFC. Projeções não são garantias. Horários de Brasília.</p>
