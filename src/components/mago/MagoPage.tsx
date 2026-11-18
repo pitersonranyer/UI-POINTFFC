@@ -184,6 +184,7 @@ export export function MagoPage({ data }: { data: MagoRound }) {
     <details className={styles.archiveDetails}><summary>Arquivo das rodadas anteriores</summary><div className={styles.archiveContent}>
       <div className={styles.archiveLabel}><strong>Rodada 31</strong><span>Análise anterior preservada.</span></div>
       <MagoTopPick data={magoRodada31} /><MagoSummary data={magoRodada31} />
+      <section className={styles.summary} aria-labelledby="historico-r30-r35"><SectionTitle id="historico-r30-r35" icon={<Trophy />} title="Retrospectiva preservada da Rodada 30" /><p>8/10 tendências corretas · 80% de aproveitamento · 3 placares exatos.</p><p>Resultados históricos anteriores às previsões da Rodada 35.</p></section>
       <MagoSgRanking teams={magoRodada31.topSg} /><MagoAlternatives teams={magoRodada31.alternativas} />
       <MagoExpertGroups data={magoRodada31} /><MagoAlerts data={magoRodada31} /><MagoAttackRanking data={magoRodada31} /><MagoPredictions data={magoRodada31} />
     </div></details>
