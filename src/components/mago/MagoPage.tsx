@@ -23,7 +23,7 @@ function TeamMetrics({ team }: { team: MagoTeam }) {
 export function MagoHero({ rodada, pelotoesDoMago = false, editorial }: { rodada: number; pelotoesDoMago?: boolean; editorial?: MagoRound["editorial"] }) {
   return <header className={styles.hero}>
     <div className={styles.heroCopy}><div className={styles.eyebrow}><WandSparkles size={16} aria-hidden="true" /> POINT FANTASY INTELLIGENCE <span>RODADA {rodada}</span></div>
-      <h1>{editorial?.tituloCompleto ? editorial.titulo : <>{editorial?.titulo ?? `Dicas do Cartola — Rodada ${rodada}`} | <span>Mago do POINT</span></>}</h1><p className={styles.subtitle}>{editorial?.subtitulo ?? "Inteligência para a sua rodada"}</p>
+      <h1>{editorial?.tituloCompleto ? editorial?.titulo : <>{editorial?.titulo ?? `Dicas do Cartola — Rodada ${rodada}`} | <span>Mago do POINT</span></>}</h1><p className={styles.subtitle}>{editorial?.subtitulo ?? "Inteligência para a sua rodada"}</p>
       <p className={styles.description}>{pelotoesDoMago ? "O Mago do POINT FFC combina indicadores estatísticos, análise dos confrontos, contexto das equipes e avaliação de riscos para construir seus pelotões e recomendações. A classificação expressa a curadoria editorial do POINT FFC." : "Explore a prévia editorial de dicas do Cartola, com análises de saldo de gols (SG), potencial dos ataques e placares projetados a partir de dados demonstrativos."}</p>
       <p className={styles.description}>Complemente a análise com os <Link href="/provaveis/">jogadores prováveis</Link> e os <Link href="/jogos-da-rodada/">jogos da rodada</Link>.</p>
       <a href="#top-sg" className={styles.heroLink}>Explore a análise <ArrowDown size={16} aria-hidden="true" /></a>
@@ -52,7 +52,7 @@ export function MagoSgRanking({ teams, title, subtitle }: { teams: MagoTeam[]; t
   return <section aria-labelledby="top-sg" className={styles.section}><SectionTitle id="top-sg" icon={<ShieldCheck />} title={title ?? "Top SG da rodada"} subtitle={subtitle ?? "As cinco escolhas prioritárias do Mago, em ordem de recomendação."} /><div className={styles.sgGrid}>{teams.map((team, index) => <SgCard key={team.clube} team={team} position={index + 1} />)}</div><p className={styles.note}>SG = não sofrer gols. xG = expectativa de gols. Campos não fornecidos aparecem como não informados.</p></section>;
 }
 
-export function MagoAlternatives({ teams, title, subtitle }: { teams: MagoTeam[]; title?: string; subtitle?: string }) {
+export function MagoAlternatives({ teams, title, subtitle, startPosition }: { teams: MagoTeam[]; title?: string; subtitle?: string; startPosition?: number }) {
   return <section aria-labelledby="alternativas" className={styles.section}><SectionTitle id="alternativas" icon={<ArrowUpRight />} title={title ?? "Alternativas no radar"} subtitle={subtitle ?? "Outros caminhos para compor sua defesa."} /><div className={styles.alternatives}>{teams.map(team => <SgCard key={team.clube} team={team} />)}</div></section>;
 }
 
@@ -176,7 +176,7 @@ export export function MagoPage({ data }: { data: MagoRound }) {
     <section className={styles.crossing} aria-labelledby="visao-mago-r35"><h2 id="visao-mago-r35">A leitura da rodada</h2>{data.editorial?.visao.map(text => <p key={text}>{text}</p>)}</section>
     <MagoTopPick data={data} title="CARTADA DO MAGO" />
     <MagoSgRanking teams={data.topSg} title="Pelotão 1 — Favoritos ao SG" subtitle="Preferência editorial do Mago; a ordem não corresponde à classificação decrescente dos percentuais." />
-    <MagoAlternatives teams={data.alternativas} title="Pelotão 2 — Alternativas e diferenciais" subtitle="Ordem editorial. Mirassol surge como alternativa defensiva; Remo chama atenção no ataque." />
+    <MagoAlternatives teams={data.alternativas} startPosition={6} title="Pelotão 2 — Alternativas e diferenciais" subtitle="Ordem editorial. Mirassol surge como alternativa defensiva; Remo chama atenção no ataque." />
     <MagoRadar data={data} />
     <MagoAttackRanking data={data} />
     <MagoPredictions data={data} />
