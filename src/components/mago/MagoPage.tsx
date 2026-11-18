@@ -174,7 +174,7 @@ export function MagoExpertGroups({ data }: { data: MagoRound }) {
   </section>;
 }
 
-export export function MagoPage({ data }: { data: MagoRound }) {
+export function MagoPage({ data }: { data: MagoRound }) {
   const withGroup = (team: MagoTeam): MagoTeam => ({ ...team, pelotao: data.pelotoes.find(group => group.clubes.includes(team.clube))?.nome ?? team.pelotao });
   if (data.rodada === 35) return <div className={styles.page}><div className={styles.shell}>
     <MagoHero rodada={data.rodada} pelotoesDoMago editorial={data.editorial} />
