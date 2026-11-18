@@ -132,7 +132,6 @@ export const magoRodada35: MagoRound = {
     { mandante: "Vitória", visitante: "RB Bragantino", golsMandante: 1, golsVisitante: 1 },
     { mandante: "São Paulo", visitante: "Fluminense", golsMandante: 1, golsVisitante: 0 }
   ],
-  melhorCombinacao: undefined,
   resumo: [
     { rotulo: "Pelotão 1", valor: "São Paulo · Corinthians · Flamengo · Vasco · Vitória" },
     { rotulo: "Destaque ofensivo", valor: "Remo · 1,86 xG · adversário: Chapecoense" },
